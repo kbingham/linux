@@ -205,6 +205,8 @@ struct media_entity_operations {
 			  const struct media_pad *local,
 			  const struct media_pad *remote, u32 flags);
 	int (*link_validate)(struct media_link *link);
+	bool (*has_route)(struct media_entity *entity, unsigned int pad0,
+			  unsigned int pad1);
 };
 
 /**
@@ -264,6 +266,9 @@ enum media_entity_type {
  *		for backward compatibility.
  * @minor:	Devnode minor number (zero if not applicable). Kept just
  *		for backward compatibility.
+ * @has_route:	Return whether a route exists inside the entity between
+ *		two given pads. Optional. If the operation isn't
+ *		implemented all pads will be considered as connected.
  *
  * .. note::
  *
