@@ -1462,6 +1462,27 @@ struct i2c_adapter *of_get_i2c_adapter_by_node(struct device_node *node)
 	return adapter;
 }
 EXPORT_SYMBOL(of_get_i2c_adapter_by_node);
+
+static const struct of_device_id*
+i2c_of_match_device_strip_vendor(const struct of_device_id *matches,
+				  struct i2c_client *client)
+{
+	const char *name;
+
+	for (; matches->compatible[0]; matches++) {
+		name = strchr(matches->compatible, ',');
+		if (!name)
+			name = matches->compatible;
+		else
+			name++;
+
+		if (!strncasecmp(client->name, name, strlen(client->name)))
+			return matches;
+	}
+
+	return NULL;
+}
+
 #else
 static void of_i2c_register_devices(struct i2c_adapter *adap) { }
 #endif /* CONFIG_OF */
