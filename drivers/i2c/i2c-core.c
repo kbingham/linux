@@ -658,8 +658,6 @@ static int i2c_device_probe(struct device *dev)
 	}
 
 	driver = to_i2c_driver(dev->driver);
-	if (!driver->probe)
-		return -EINVAL;
 
 	/*
 	 * An I2C ID table is not mandatory, if and only if, a suitable Device
@@ -679,12 +677,20 @@ static int i2c_device_probe(struct device *dev)
 		return status;
 
 	status = dev_pm_domain_attach(&client->dev, true);
-	if (status != -EPROBE_DEFER) {
-		status = driver->probe(client, i2c_match_id(driver->id_table,
-					client));
-		if (status)
-			dev_pm_domain_detach(&client->dev, true);
-	}
+	if (status == -EPROBE_DEFER)
+		return status;
+
+	/* When there are no more users of probe(), rename probe2 to probe. */
+	if (driver->probe2)
+		status = driver->probe2(client);
+	else if (driver->probe)
+		status = driver->probe(client,
+					i2c_match_id(driver->id_table, client));
+	else
+		status = -EINVAL;
+
+	if (status)
+		dev_pm_domain_detach(&client->dev, true);
 
 	return status;
 }
