@@ -1,0 +1,63 @@
+// Remove all I2C Device Tables, when there is an OF table present
+
+/* No Checks
+// Ensure that we are in a driver with OF device mappings
+@ of_dt_present @
+@@
+#include <linux/of.h>
+
+@ of_dev_id_present @
+identifier arr;
+@@
+static const struct of_device_id arr[] = { ... };
+
+********** No Checks ATM */
+
+
+// Remove the i2c_device_id array
+
+@ dev_id @
+identifier arr;
+@@
+- static const struct i2c_device_id arr[] = { ... };
+
+
+// Remove the i2c_device_id reference
+@@
+identifier drv;
+identifier probefunc;
+identifier dev_id.arr;
+@@
+static struct i2c_driver drv = {
+	...,
+-	.id_table	= arr,
+	...,
+};
+
+
+// Temporarily rename the probe to our temp .probe2
+
+@ driver @
+identifier drv;
+identifier probefunc;
+@@
+static struct i2c_driver drv = {
+	...,
+-	.probe 		= probefunc,
++	.probe2 	= probefunc,
+	...,
+};
+
+
+// Convert the probe function
+
+@ depends on driver @
+identifier driver.probefunc;
+identifier client;
+identifier id;
+@@
+static int probefunc(
+	struct i2c_client *client,
+-	const struct i2c_device_id *id
+	)
+	{ ... }
