@@ -22,10 +22,18 @@ identifier arr;
 - static const struct i2c_device_id arr[] = { ... };
 
 
+// Now remove the MODULE_DEVICE_TABLE entry
+@@
+declarer name MODULE_DEVICE_TABLE;
+identifier i2c;
+identifier dev_id.arr;
+@@
+- MODULE_DEVICE_TABLE(i2c, arr);
+
+
 // Remove the i2c_device_id reference
 @@
 identifier drv;
-identifier probefunc;
 identifier dev_id.arr;
 @@
 static struct i2c_driver drv = {
