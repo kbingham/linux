@@ -158,8 +158,7 @@ static const struct of_device_id tps65217_of_match[] = {
 };
 MODULE_DEVICE_TABLE(of, tps65217_of_match);
 
-static int tps65217_probe(struct i2c_client *client,
-				const struct i2c_device_id *ids)
+static int tps65217_probe(struct i2c_client *client)
 {
 	struct tps65217 *tps;
 	unsigned int version;
@@ -240,19 +239,12 @@ static int tps65217_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id tps65217_id_table[] = {
-	{"tps65217", TPS65217},
-	{ /* sentinel */ }
-};
-MODULE_DEVICE_TABLE(i2c, tps65217_id_table);
-
 static struct i2c_driver tps65217_driver = {
 	.driver		= {
 		.name	= "tps65217",
 		.of_match_table = tps65217_of_match,
 	},
-	.id_table	= tps65217_id_table,
-	.probe		= tps65217_probe,
+	.probe2 = tps65217_probe,
 	.remove		= tps65217_remove,
 };
 

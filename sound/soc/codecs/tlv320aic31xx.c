@@ -1227,8 +1227,7 @@ static int aic31xx_device_init(struct aic31xx_priv *aic31xx)
 	return ret;
 }
 
-static int aic31xx_i2c_probe(struct i2c_client *i2c,
-			     const struct i2c_device_id *id)
+static int aic31xx_i2c_probe(struct i2c_client *i2c)
 {
 	struct aic31xx_priv *aic31xx;
 	int ret;
@@ -1269,25 +1268,13 @@ static int aic31xx_i2c_remove(struct i2c_client *i2c)
 	return 0;
 }
 
-static const struct i2c_device_id aic31xx_i2c_id[] = {
-	{ "tlv320aic310x", AIC3100 },
-	{ "tlv320aic311x", AIC3110 },
-	{ "tlv320aic3100", AIC3100 },
-	{ "tlv320aic3110", AIC3110 },
-	{ "tlv320aic3120", AIC3120 },
-	{ "tlv320aic3111", AIC3111 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, aic31xx_i2c_id);
-
 static struct i2c_driver aic31xx_i2c_driver = {
 	.driver = {
 		.name	= "tlv320aic31xx-codec",
 		.of_match_table = of_match_ptr(tlv320aic31xx_of_match),
 	},
-	.probe		= aic31xx_i2c_probe,
+	.probe2 = aic31xx_i2c_probe,
 	.remove		= aic31xx_i2c_remove,
-	.id_table	= aic31xx_i2c_id,
 };
 
 module_i2c_driver(aic31xx_i2c_driver);

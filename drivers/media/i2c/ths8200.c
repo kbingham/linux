@@ -436,8 +436,7 @@ static const struct v4l2_subdev_ops ths8200_ops = {
 	.pad = &ths8200_pad_ops,
 };
 
-static int ths8200_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int ths8200_probe(struct i2c_client *client)
 {
 	struct ths8200_state *state;
 	struct v4l2_subdev *sd;
@@ -483,12 +482,6 @@ static int ths8200_remove(struct i2c_client *client)
 	return 0;
 }
 
-static struct i2c_device_id ths8200_id[] = {
-	{ "ths8200", 0 },
-	{},
-};
-MODULE_DEVICE_TABLE(i2c, ths8200_id);
-
 #if IS_ENABLED(CONFIG_OF)
 static const struct of_device_id ths8200_of_match[] = {
 	{ .compatible = "ti,ths8200", },
@@ -503,9 +496,8 @@ static struct i2c_driver ths8200_driver = {
 		.name = "ths8200",
 		.of_match_table = of_match_ptr(ths8200_of_match),
 	},
-	.probe = ths8200_probe,
+	.probe2 = ths8200_probe,
 	.remove = ths8200_remove,
-	.id_table = ths8200_id,
 };
 
 module_i2c_driver(ths8200_driver);

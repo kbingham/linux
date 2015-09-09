@@ -145,7 +145,7 @@ static int mcu_gpiochip_remove(struct mcu *mcu)
 	return 0;
 }
 
-static int mcu_probe(struct i2c_client *client, const struct i2c_device_id *id)
+static int mcu_probe(struct i2c_client *client)
 {
 	struct mcu *mcu;
 	int ret;
@@ -208,12 +208,6 @@ static int mcu_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id mcu_ids[] = {
-	{ "mcu-mpc8349emitx", },
-	{},
-};
-MODULE_DEVICE_TABLE(i2c, mcu_ids);
-
 static const struct of_device_id mcu_of_match_table[] = {
 	{ .compatible = "fsl,mcu-mpc8349emitx", },
 	{ },
@@ -225,9 +219,8 @@ static struct i2c_driver mcu_driver = {
 		.owner = THIS_MODULE,
 		.of_match_table = mcu_of_match_table,
 	},
-	.probe = mcu_probe,
+	.probe2 = mcu_probe,
 	.remove	= mcu_remove,
-	.id_table = mcu_ids,
 };
 
 module_i2c_driver(mcu_driver);

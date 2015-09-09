@@ -1632,8 +1632,7 @@ static struct platform_driver unittest_i2c_bus_driver = {
 	},
 };
 
-static int unittest_i2c_dev_probe(struct i2c_client *client,
-		const struct i2c_device_id *id)
+static int unittest_i2c_dev_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device_node *np = client->dev.of_node;
@@ -1657,18 +1656,12 @@ static int unittest_i2c_dev_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id unittest_i2c_dev_id[] = {
-	{ .name = "unittest-i2c-dev" },
-	{ }
-};
-
 static struct i2c_driver unittest_i2c_dev_driver = {
 	.driver = {
 		.name = "unittest-i2c-dev",
 	},
-	.probe = unittest_i2c_dev_probe,
+	.probe2 = unittest_i2c_dev_probe,
 	.remove = unittest_i2c_dev_remove,
-	.id_table = unittest_i2c_dev_id,
 };
 
 #if IS_BUILTIN(CONFIG_I2C_MUX)
@@ -1684,8 +1677,7 @@ static int unittest_i2c_mux_select_chan(struct i2c_adapter *adap,
 	return 0;
 }
 
-static int unittest_i2c_mux_probe(struct i2c_client *client,
-		const struct i2c_device_id *id)
+static int unittest_i2c_mux_probe(struct i2c_client *client)
 {
 	int ret, i, nchans, size;
 	struct device *dev = &client->dev;
@@ -1751,18 +1743,12 @@ static int unittest_i2c_mux_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id unittest_i2c_mux_id[] = {
-	{ .name = "unittest-i2c-mux" },
-	{ }
-};
-
 static struct i2c_driver unittest_i2c_mux_driver = {
 	.driver = {
 		.name = "unittest-i2c-mux",
 	},
-	.probe = unittest_i2c_mux_probe,
+	.probe2 = unittest_i2c_mux_probe,
 	.remove = unittest_i2c_mux_remove,
-	.id_table = unittest_i2c_mux_id,
 };
 
 #endif

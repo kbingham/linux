@@ -303,8 +303,7 @@ static const struct iio_info max5821_info = {
 	.driver_module = THIS_MODULE,
 };
 
-static int max5821_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int max5821_probe(struct i2c_client *client)
 {
 	struct max5821_data *data;
 	struct iio_dev *indio_dev;
@@ -377,12 +376,6 @@ static int max5821_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id max5821_id[] = {
-	{ "max5821", ID_MAX5821 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, max5821_id);
-
 static const struct of_device_id max5821_of_match[] = {
 	{ .compatible = "maxim,max5821" },
 	{ }
@@ -393,9 +386,8 @@ static struct i2c_driver max5821_driver = {
 		.name	= "max5821",
 		.pm     = MAX5821_PM_OPS,
 	},
-	.probe		= max5821_probe,
+	.probe2 = max5821_probe,
 	.remove		= max5821_remove,
-	.id_table	= max5821_id,
 };
 module_i2c_driver(max5821_driver);
 

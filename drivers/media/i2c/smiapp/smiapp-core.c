@@ -3052,8 +3052,7 @@ out_err:
 	return NULL;
 }
 
-static int smiapp_probe(struct i2c_client *client,
-			const struct i2c_device_id *devid)
+static int smiapp_probe(struct i2c_client *client)
 {
 	struct smiapp_sensor *sensor;
 	struct smiapp_platform_data *pdata = smiapp_get_pdata(&client->dev);
@@ -3132,12 +3131,6 @@ static const struct of_device_id smiapp_of_table[] = {
 	{ },
 };
 
-static const struct i2c_device_id smiapp_id_table[] = {
-	{ SMIAPP_NAME, 0 },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, smiapp_id_table);
-
 static const struct dev_pm_ops smiapp_pm_ops = {
 	.suspend	= smiapp_suspend,
 	.resume		= smiapp_resume,
@@ -3149,9 +3142,8 @@ static struct i2c_driver smiapp_i2c_driver = {
 		.name = SMIAPP_NAME,
 		.pm = &smiapp_pm_ops,
 	},
-	.probe	= smiapp_probe,
+	.probe2 = smiapp_probe,
 	.remove	= smiapp_remove,
-	.id_table = smiapp_id_table,
 };
 
 module_i2c_driver(smiapp_i2c_driver);

@@ -209,8 +209,7 @@ static const struct of_device_id of_tlc591xx_leds_match[] = {
 MODULE_DEVICE_TABLE(of, of_tlc591xx_leds_match);
 
 static int
-tlc591xx_probe(struct i2c_client *client,
-	       const struct i2c_device_id *id)
+tlc591xx_probe(struct i2c_client *client)
 {
 	struct device_node *np = client->dev.of_node, *child;
 	struct device *dev = &client->dev;
@@ -272,21 +271,13 @@ tlc591xx_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id tlc591xx_id[] = {
-	{ "tlc59116" },
-	{ "tlc59108" },
-	{},
-};
-MODULE_DEVICE_TABLE(i2c, tlc591xx_id);
-
 static struct i2c_driver tlc591xx_driver = {
 	.driver = {
 		.name = "tlc591xx",
 		.of_match_table = of_match_ptr(of_tlc591xx_leds_match),
 	},
-	.probe = tlc591xx_probe,
+	.probe2 = tlc591xx_probe,
 	.remove = tlc591xx_remove,
-	.id_table = tlc591xx_id,
 };
 
 module_i2c_driver(tlc591xx_driver);

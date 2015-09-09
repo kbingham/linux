@@ -974,8 +974,7 @@ static const struct regmap_config alc5623_regmap = {
  *    low  = 0x1a
  *    high = 0x1b
  */
-static int alc5623_i2c_probe(struct i2c_client *client,
-			     const struct i2c_device_id *id)
+static int alc5623_i2c_probe(struct i2c_client *client)
 {
 	struct alc5623_platform_data *pdata;
 	struct alc5623_priv *alc5623;
@@ -1066,14 +1065,6 @@ static int alc5623_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id alc5623_i2c_table[] = {
-	{"alc5621", 0x21},
-	{"alc5622", 0x22},
-	{"alc5623", 0x23},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, alc5623_i2c_table);
-
 static const struct of_device_id alc5623_of_match[] = {
 	{ .compatible = "realtek,alc5623", },
 	{ }
@@ -1086,9 +1077,8 @@ static struct i2c_driver alc5623_i2c_driver = {
 		.name = "alc562x-codec",
 		.of_match_table = of_match_ptr(alc5623_of_match),
 	},
-	.probe = alc5623_i2c_probe,
+	.probe2 = alc5623_i2c_probe,
 	.remove =  alc5623_i2c_remove,
-	.id_table = alc5623_i2c_table,
 };
 
 module_i2c_driver(alc5623_i2c_driver);

@@ -2568,7 +2568,7 @@ mxt_get_platform_data(struct i2c_client *client)
 	return ERR_PTR(-EINVAL);
 }
 
-static int mxt_probe(struct i2c_client *client, const struct i2c_device_id *id)
+static int mxt_probe(struct i2c_client *client)
 {
 	struct mxt_data *data;
 	const struct mxt_platform_data *pdata;
@@ -2697,15 +2697,6 @@ static const struct acpi_device_id mxt_acpi_id[] = {
 MODULE_DEVICE_TABLE(acpi, mxt_acpi_id);
 #endif
 
-static const struct i2c_device_id mxt_id[] = {
-	{ "qt602240_ts", 0 },
-	{ "atmel_mxt_ts", 0 },
-	{ "atmel_mxt_tp", 0 },
-	{ "mXT224", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, mxt_id);
-
 static struct i2c_driver mxt_driver = {
 	.driver = {
 		.name	= "atmel_mxt_ts",
@@ -2713,9 +2704,8 @@ static struct i2c_driver mxt_driver = {
 		.acpi_match_table = ACPI_PTR(mxt_acpi_id),
 		.pm	= &mxt_pm_ops,
 	},
-	.probe		= mxt_probe,
+	.probe2 = mxt_probe,
 	.remove		= mxt_remove,
-	.id_table	= mxt_id,
 };
 
 module_i2c_driver(mxt_driver);

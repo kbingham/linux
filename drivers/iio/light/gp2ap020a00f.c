@@ -1492,8 +1492,7 @@ static const struct iio_trigger_ops gp2ap020a00f_trigger_ops = {
 	.owner = THIS_MODULE,
 };
 
-static int gp2ap020a00f_probe(struct i2c_client *client,
-				const struct i2c_device_id *id)
+static int gp2ap020a00f_probe(struct i2c_client *client)
 {
 	struct gp2ap020a00f_data *data;
 	struct iio_dev *indio_dev;
@@ -1622,13 +1621,6 @@ static int gp2ap020a00f_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id gp2ap020a00f_id[] = {
-	{ GP2A_I2C_NAME, 0 },
-	{ }
-};
-
-MODULE_DEVICE_TABLE(i2c, gp2ap020a00f_id);
-
 #ifdef CONFIG_OF
 static const struct of_device_id gp2ap020a00f_of_match[] = {
 	{ .compatible = "sharp,gp2ap020a00f" },
@@ -1642,9 +1634,8 @@ static struct i2c_driver gp2ap020a00f_driver = {
 		.name	= GP2A_I2C_NAME,
 		.of_match_table = of_match_ptr(gp2ap020a00f_of_match),
 	},
-	.probe		= gp2ap020a00f_probe,
+	.probe2 = gp2ap020a00f_probe,
 	.remove		= gp2ap020a00f_remove,
-	.id_table	= gp2ap020a00f_id,
 };
 
 module_i2c_driver(gp2ap020a00f_driver);

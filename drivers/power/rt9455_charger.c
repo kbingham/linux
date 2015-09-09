@@ -1590,8 +1590,7 @@ static const struct regmap_config rt9455_regmap_config = {
 	.cache_type	= REGCACHE_RBTREE,
 };
 
-static int rt9455_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int rt9455_probe(struct i2c_client *client)
 {
 	struct i2c_adapter *adapter = to_i2c_adapter(client->dev.parent);
 	struct device *dev = &client->dev;
@@ -1728,12 +1727,6 @@ static int rt9455_remove(struct i2c_client *client)
 	return ret;
 }
 
-static const struct i2c_device_id rt9455_i2c_id_table[] = {
-	{ RT9455_DRIVER_NAME, 0 },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, rt9455_i2c_id_table);
-
 static const struct of_device_id rt9455_of_match[] = {
 	{ .compatible = "richtek,rt9455", },
 	{ },
@@ -1747,9 +1740,8 @@ static const struct acpi_device_id rt9455_i2c_acpi_match[] = {
 MODULE_DEVICE_TABLE(acpi, rt9455_i2c_acpi_match);
 
 static struct i2c_driver rt9455_driver = {
-	.probe		= rt9455_probe,
+	.probe2 = rt9455_probe,
 	.remove		= rt9455_remove,
-	.id_table	= rt9455_i2c_id_table,
 	.driver = {
 		.name		= RT9455_DRIVER_NAME,
 		.of_match_table	= of_match_ptr(rt9455_of_match),

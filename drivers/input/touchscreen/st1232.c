@@ -151,8 +151,7 @@ static void st1232_ts_power(struct st1232_ts_data *ts, bool poweron)
 		gpio_direction_output(ts->reset_gpio, poweron);
 }
 
-static int st1232_ts_probe(struct i2c_client *client,
-					const struct i2c_device_id *id)
+static int st1232_ts_probe(struct i2c_client *client)
 {
 	struct st1232_ts_data *ts;
 	struct st1232_pdata *pdata = dev_get_platdata(&client->dev);
@@ -276,12 +275,6 @@ static int __maybe_unused st1232_ts_resume(struct device *dev)
 static SIMPLE_DEV_PM_OPS(st1232_ts_pm_ops,
 			 st1232_ts_suspend, st1232_ts_resume);
 
-static const struct i2c_device_id st1232_ts_id[] = {
-	{ ST1232_TS_NAME, 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, st1232_ts_id);
-
 #ifdef CONFIG_OF
 static const struct of_device_id st1232_ts_dt_ids[] = {
 	{ .compatible = "sitronix,st1232", },
@@ -291,9 +284,8 @@ MODULE_DEVICE_TABLE(of, st1232_ts_dt_ids);
 #endif
 
 static struct i2c_driver st1232_ts_driver = {
-	.probe		= st1232_ts_probe,
+	.probe2 = st1232_ts_probe,
 	.remove		= st1232_ts_remove,
-	.id_table	= st1232_ts_id,
 	.driver = {
 		.name	= ST1232_TS_NAME,
 		.of_match_table = of_match_ptr(st1232_ts_dt_ids),

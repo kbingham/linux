@@ -312,8 +312,7 @@ static struct mfd_cell da9150_devs[] = {
 	},
 };
 
-static int da9150_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int da9150_probe(struct i2c_client *client)
 {
 	struct da9150 *da9150;
 	struct da9150_pdata *pdata = dev_get_platdata(&client->dev);
@@ -383,12 +382,6 @@ static void da9150_shutdown(struct i2c_client *client)
 			DA9150_DISABLE_MASK, DA9150_DISABLE_MASK);
 }
 
-static const struct i2c_device_id da9150_i2c_id[] = {
-	{ "da9150", },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, da9150_i2c_id);
-
 static const struct of_device_id da9150_of_match[] = {
 	{ .compatible = "dlg,da9150", },
 	{ }
@@ -400,10 +393,9 @@ static struct i2c_driver da9150_driver = {
 		.name	= "da9150",
 		.of_match_table = of_match_ptr(da9150_of_match),
 	},
-	.probe		= da9150_probe,
+	.probe2 = da9150_probe,
 	.remove		= da9150_remove,
 	.shutdown	= da9150_shutdown,
-	.id_table	= da9150_i2c_id,
 };
 
 module_i2c_driver(da9150_driver);

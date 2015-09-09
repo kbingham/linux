@@ -1278,8 +1278,7 @@ static const struct regmap_config cs42l73_regmap = {
 	.cache_type = REGCACHE_RBTREE,
 };
 
-static int cs42l73_i2c_probe(struct i2c_client *i2c_client,
-			     const struct i2c_device_id *id)
+static int cs42l73_i2c_probe(struct i2c_client *i2c_client)
 {
 	struct cs42l73_private *cs42l73;
 	struct cs42l73_platform_data *pdata = dev_get_platdata(&i2c_client->dev);
@@ -1387,20 +1386,12 @@ static const struct of_device_id cs42l73_of_match[] = {
 };
 MODULE_DEVICE_TABLE(of, cs42l73_of_match);
 
-static const struct i2c_device_id cs42l73_id[] = {
-	{"cs42l73", 0},
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, cs42l73_id);
-
 static struct i2c_driver cs42l73_i2c_driver = {
 	.driver = {
 		   .name = "cs42l73",
 		   .of_match_table = cs42l73_of_match,
 		   },
-	.id_table = cs42l73_id,
-	.probe = cs42l73_i2c_probe,
+	.probe2 = cs42l73_i2c_probe,
 	.remove = cs42l73_i2c_remove,
 
 };

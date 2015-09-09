@@ -328,8 +328,7 @@ static const struct iio_info cm3232_info = {
 	.attrs			= &cm3232_attribute_group,
 };
 
-static int cm3232_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int cm3232_probe(struct i2c_client *client)
 {
 	struct cm3232_chip *chip;
 	struct iio_dev *indio_dev;
@@ -373,11 +372,6 @@ static int cm3232_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id cm3232_id[] = {
-	{"cm3232", 0},
-	{}
-};
-
 #ifdef CONFIG_PM_SLEEP
 static int cm3232_suspend(struct device *dev)
 {
@@ -411,8 +405,6 @@ static const struct dev_pm_ops cm3232_pm_ops = {
 	SET_SYSTEM_SLEEP_PM_OPS(cm3232_suspend, cm3232_resume)};
 #endif
 
-MODULE_DEVICE_TABLE(i2c, cm3232_id);
-
 static const struct of_device_id cm3232_of_match[] = {
 	{.compatible = "capella,cm3232"},
 	{}
@@ -427,8 +419,7 @@ static struct i2c_driver cm3232_driver = {
 		.pm	= &cm3232_pm_ops,
 #endif
 	},
-	.id_table	= cm3232_id,
-	.probe		= cm3232_probe,
+	.probe2 = cm3232_probe,
 	.remove		= cm3232_remove,
 };
 

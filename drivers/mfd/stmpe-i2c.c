@@ -66,7 +66,7 @@ static const struct of_device_id stmpe_of_match[] = {
 MODULE_DEVICE_TABLE(of, stmpe_of_match);
 
 static int
-stmpe_i2c_probe(struct i2c_client *i2c, const struct i2c_device_id *id)
+stmpe_i2c_probe(struct i2c_client *i2c)
 {
 	enum stmpe_partnum partnum;
 	const struct of_device_id *of_id;
@@ -96,17 +96,6 @@ static int stmpe_i2c_remove(struct i2c_client *i2c)
 
 	return stmpe_remove(stmpe);
 }
-
-static const struct i2c_device_id stmpe_i2c_id[] = {
-	{ "stmpe610", STMPE610 },
-	{ "stmpe801", STMPE801 },
-	{ "stmpe811", STMPE811 },
-	{ "stmpe1601", STMPE1601 },
-	{ "stmpe1801", STMPE1801 },
-	{ "stmpe2401", STMPE2401 },
-	{ "stmpe2403", STMPE2403 },
-	{ }
-};
 MODULE_DEVICE_TABLE(i2c, stmpe_id);
 
 static struct i2c_driver stmpe_i2c_driver = {
@@ -117,9 +106,8 @@ static struct i2c_driver stmpe_i2c_driver = {
 #endif
 		.of_match_table = stmpe_of_match,
 	},
-	.probe		= stmpe_i2c_probe,
+	.probe2 = stmpe_i2c_probe,
 	.remove		= stmpe_i2c_remove,
-	.id_table	= stmpe_i2c_id,
 };
 
 static int __init stmpe_init(void)

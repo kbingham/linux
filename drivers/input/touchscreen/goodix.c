@@ -364,8 +364,7 @@ static int goodix_request_input_dev(struct goodix_ts_data *ts, u16 version,
 	return 0;
 }
 
-static int goodix_ts_probe(struct i2c_client *client,
-			   const struct i2c_device_id *id)
+static int goodix_ts_probe(struct i2c_client *client)
 {
 	struct goodix_ts_data *ts;
 	unsigned long irq_flags;
@@ -416,12 +415,6 @@ static int goodix_ts_probe(struct i2c_client *client,
 	return 0;
 }
 
-static const struct i2c_device_id goodix_ts_id[] = {
-	{ "GDIX1001:00", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, goodix_ts_id);
-
 #ifdef CONFIG_ACPI
 static const struct acpi_device_id goodix_acpi_match[] = {
 	{ "GDIX1001", 0 },
@@ -445,8 +438,7 @@ MODULE_DEVICE_TABLE(of, goodix_of_match);
 #endif
 
 static struct i2c_driver goodix_ts_driver = {
-	.probe = goodix_ts_probe,
-	.id_table = goodix_ts_id,
+	.probe2 = goodix_ts_probe,
 	.driver = {
 		.name = "Goodix-TS",
 		.acpi_match_table = ACPI_PTR(goodix_acpi_match),

@@ -39,8 +39,7 @@ MODULE_DEVICE_TABLE(of, st_press_of_match);
 #define st_press_of_match NULL
 #endif
 
-static int st_press_i2c_probe(struct i2c_client *client,
-						const struct i2c_device_id *id)
+static int st_press_i2c_probe(struct i2c_client *client)
 {
 	struct iio_dev *indio_dev;
 	struct st_sensor_data *press_data;
@@ -69,22 +68,13 @@ static int st_press_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id st_press_id_table[] = {
-	{ LPS001WP_PRESS_DEV_NAME },
-	{ LPS25H_PRESS_DEV_NAME },
-	{ LPS331AP_PRESS_DEV_NAME },
-	{},
-};
-MODULE_DEVICE_TABLE(i2c, st_press_id_table);
-
 static struct i2c_driver st_press_driver = {
 	.driver = {
 		.name = "st-press-i2c",
 		.of_match_table = of_match_ptr(st_press_of_match),
 	},
-	.probe = st_press_i2c_probe,
+	.probe2 = st_press_i2c_probe,
 	.remove = st_press_i2c_remove,
-	.id_table = st_press_id_table,
 };
 module_i2c_driver(st_press_driver);
 

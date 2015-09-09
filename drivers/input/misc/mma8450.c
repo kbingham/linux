@@ -167,8 +167,7 @@ static void mma8450_close(struct input_polled_dev *dev)
 /*
  * I2C init/probing/exit functions
  */
-static int mma8450_probe(struct i2c_client *c,
-			 const struct i2c_device_id *id)
+static int mma8450_probe(struct i2c_client *c)
 {
 	struct input_polled_dev *idev;
 	struct mma8450 *m;
@@ -210,12 +209,6 @@ static int mma8450_probe(struct i2c_client *c,
 	return 0;
 }
 
-static const struct i2c_device_id mma8450_id[] = {
-	{ MMA8450_DRV_NAME, 0 },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, mma8450_id);
-
 static const struct of_device_id mma8450_dt_ids[] = {
 	{ .compatible = "fsl,mma8450", },
 	{ /* sentinel */ }
@@ -227,8 +220,7 @@ static struct i2c_driver mma8450_driver = {
 		.name	= MMA8450_DRV_NAME,
 		.of_match_table = mma8450_dt_ids,
 	},
-	.probe		= mma8450_probe,
-	.id_table	= mma8450_id,
+	.probe2 = mma8450_probe,
 };
 
 module_i2c_driver(mma8450_driver);

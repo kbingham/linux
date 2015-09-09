@@ -372,8 +372,7 @@ static void tsc2007_call_exit_platform_hw(void *data)
 	pdata->exit_platform_hw();
 }
 
-static int tsc2007_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int tsc2007_probe(struct i2c_client *client)
 {
 	const struct tsc2007_platform_data *pdata = dev_get_platdata(&client->dev);
 	struct tsc2007 *ts;
@@ -465,13 +464,6 @@ static int tsc2007_probe(struct i2c_client *client,
 	return 0;
 }
 
-static const struct i2c_device_id tsc2007_idtable[] = {
-	{ "tsc2007", 0 },
-	{ }
-};
-
-MODULE_DEVICE_TABLE(i2c, tsc2007_idtable);
-
 #ifdef CONFIG_OF
 static const struct of_device_id tsc2007_of_match[] = {
 	{ .compatible = "ti,tsc2007" },
@@ -485,8 +477,7 @@ static struct i2c_driver tsc2007_driver = {
 		.name	= "tsc2007",
 		.of_match_table = of_match_ptr(tsc2007_of_match),
 	},
-	.id_table	= tsc2007_idtable,
-	.probe		= tsc2007_probe,
+	.probe2 = tsc2007_probe,
 };
 
 module_i2c_driver(tsc2007_driver);

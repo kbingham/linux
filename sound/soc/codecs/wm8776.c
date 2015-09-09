@@ -497,8 +497,7 @@ static struct spi_driver wm8776_spi_driver = {
 #endif /* CONFIG_SPI_MASTER */
 
 #if IS_ENABLED(CONFIG_I2C)
-static int wm8776_i2c_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *id)
+static int wm8776_i2c_probe(struct i2c_client *i2c)
 {
 	struct wm8776_priv *wm8776;
 	int ret;
@@ -526,21 +525,13 @@ static int wm8776_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id wm8776_i2c_id[] = {
-	{ "wm8775", WM8775 },
-	{ "wm8776", WM8776 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, wm8776_i2c_id);
-
 static struct i2c_driver wm8776_i2c_driver = {
 	.driver = {
 		.name = "wm8776",
 		.of_match_table = wm8776_of_match,
 	},
-	.probe =    wm8776_i2c_probe,
+	.probe2 = wm8776_i2c_probe,
 	.remove =   wm8776_i2c_remove,
-	.id_table = wm8776_i2c_id,
 };
 #endif
 

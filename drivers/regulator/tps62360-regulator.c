@@ -339,8 +339,7 @@ static const struct of_device_id tps62360_of_match[] = {
 MODULE_DEVICE_TABLE(of, tps62360_of_match);
 #endif
 
-static int tps62360_probe(struct i2c_client *client,
-				     const struct i2c_device_id *id)
+static int tps62360_probe(struct i2c_client *client)
 {
 	struct regulator_config config = { };
 	struct tps62360_regulator_platform_data *pdata;
@@ -502,24 +501,13 @@ static void tps62360_shutdown(struct i2c_client *client)
 			__func__, REG_RAMPCTRL, st);
 }
 
-static const struct i2c_device_id tps62360_id[] = {
-	{.name = "tps62360", .driver_data = TPS62360},
-	{.name = "tps62361", .driver_data = TPS62361},
-	{.name = "tps62362", .driver_data = TPS62362},
-	{.name = "tps62363", .driver_data = TPS62363},
-	{},
-};
-
-MODULE_DEVICE_TABLE(i2c, tps62360_id);
-
 static struct i2c_driver tps62360_i2c_driver = {
 	.driver = {
 		.name = "tps62360",
 		.of_match_table = of_match_ptr(tps62360_of_match),
 	},
-	.probe = tps62360_probe,
+	.probe2 = tps62360_probe,
 	.shutdown = tps62360_shutdown,
-	.id_table = tps62360_id,
 };
 
 static int __init tps62360_init(void)

@@ -654,8 +654,7 @@ static const struct regmap_config cs4270_regmap = {
  * This function is called whenever the I2C subsystem finds a device that
  * matches the device ID given via a prior call to i2c_add_driver().
  */
-static int cs4270_i2c_probe(struct i2c_client *i2c_client,
-	const struct i2c_device_id *id)
+static int cs4270_i2c_probe(struct i2c_client *i2c_client)
 {
 	struct device_node *np = i2c_client->dev.of_node;
 	struct cs4270_private *cs4270;
@@ -734,15 +733,6 @@ static int cs4270_i2c_remove(struct i2c_client *i2c_client)
 }
 
 /*
- * cs4270_id - I2C device IDs supported by this driver
- */
-static const struct i2c_device_id cs4270_id[] = {
-	{"cs4270", 0},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, cs4270_id);
-
-/*
  * cs4270_i2c_driver - I2C device identification
  *
  * This structure tells the I2C subsystem how to identify and support a
@@ -753,8 +743,7 @@ static struct i2c_driver cs4270_i2c_driver = {
 		.name = "cs4270",
 		.of_match_table = cs4270_of_match,
 	},
-	.id_table = cs4270_id,
-	.probe = cs4270_i2c_probe,
+	.probe2 = cs4270_i2c_probe,
 	.remove = cs4270_i2c_remove,
 };
 

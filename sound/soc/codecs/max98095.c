@@ -2116,8 +2116,7 @@ static struct snd_soc_codec_driver soc_codec_dev_max98095 = {
 	.num_dapm_routes = ARRAY_SIZE(max98095_audio_map),
 };
 
-static int max98095_i2c_probe(struct i2c_client *i2c,
-			     const struct i2c_device_id *id)
+static int max98095_i2c_probe(struct i2c_client *i2c)
 {
 	struct max98095_priv *max98095;
 	int ret;
@@ -2151,12 +2150,6 @@ static int max98095_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id max98095_i2c_id[] = {
-	{ "max98095", MAX98095 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, max98095_i2c_id);
-
 static const struct of_device_id max98095_of_match[] = {
 	{ .compatible = "maxim,max98095", },
 	{ }
@@ -2168,9 +2161,8 @@ static struct i2c_driver max98095_i2c_driver = {
 		.name = "max98095",
 		.of_match_table = of_match_ptr(max98095_of_match),
 	},
-	.probe  = max98095_i2c_probe,
+	.probe2 = max98095_i2c_probe,
 	.remove = max98095_i2c_remove,
-	.id_table = max98095_i2c_id,
 };
 
 module_i2c_driver(max98095_i2c_driver);

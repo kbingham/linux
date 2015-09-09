@@ -1384,8 +1384,7 @@ done:
 	return pdata;
 }
 
-static int ov2659_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int ov2659_probe(struct i2c_client *client)
 {
 	const struct ov2659_platform_data *pdata = ov2659_get_pdata(client);
 	struct v4l2_subdev *sd;
@@ -1498,12 +1497,6 @@ static int ov2659_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id ov2659_id[] = {
-	{ "ov2659", 0 },
-	{ /* sentinel */ },
-};
-MODULE_DEVICE_TABLE(i2c, ov2659_id);
-
 #if IS_ENABLED(CONFIG_OF)
 static const struct of_device_id ov2659_of_match[] = {
 	{ .compatible = "ovti,ov2659", },
@@ -1517,9 +1510,8 @@ static struct i2c_driver ov2659_i2c_driver = {
 		.name	= DRIVER_NAME,
 		.of_match_table = of_match_ptr(ov2659_of_match),
 	},
-	.probe		= ov2659_probe,
+	.probe2 = ov2659_probe,
 	.remove		= ov2659_remove,
-	.id_table	= ov2659_id,
 };
 
 module_i2c_driver(ov2659_i2c_driver);

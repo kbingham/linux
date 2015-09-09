@@ -308,8 +308,7 @@ static int usb3503_probe(struct usb3503 *hub)
 	return 0;
 }
 
-static int usb3503_i2c_probe(struct i2c_client *i2c,
-			     const struct i2c_device_id *id)
+static int usb3503_i2c_probe(struct i2c_client *i2c)
 {
 	struct usb3503 *hub;
 	int err;
@@ -373,12 +372,6 @@ static int usb3503_i2c_resume(struct device *dev)
 static SIMPLE_DEV_PM_OPS(usb3503_i2c_pm_ops, usb3503_i2c_suspend,
 		usb3503_i2c_resume);
 
-static const struct i2c_device_id usb3503_id[] = {
-	{ USB3503_I2C_NAME, 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, usb3503_id);
-
 #ifdef CONFIG_OF
 static const struct of_device_id usb3503_of_match[] = {
 	{ .compatible = "smsc,usb3503", },
@@ -394,8 +387,7 @@ static struct i2c_driver usb3503_i2c_driver = {
 		.pm = &usb3503_i2c_pm_ops,
 		.of_match_table = of_match_ptr(usb3503_of_match),
 	},
-	.probe		= usb3503_i2c_probe,
-	.id_table	= usb3503_id,
+	.probe2 = usb3503_i2c_probe,
 };
 
 static struct platform_driver usb3503_platform_driver = {

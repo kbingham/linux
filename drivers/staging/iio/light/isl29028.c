@@ -475,8 +475,7 @@ static const struct regmap_config isl29028_regmap_config = {
 	.cache_type = REGCACHE_RBTREE,
 };
 
-static int isl29028_probe(struct i2c_client *client,
-	const struct i2c_device_id *id)
+static int isl29028_probe(struct i2c_client *client)
 {
 	struct isl29028_chip *chip;
 	struct iio_dev *indio_dev;
@@ -530,12 +529,6 @@ static int isl29028_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id isl29028_id[] = {
-	{"isl29028", 0},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, isl29028_id);
-
 static const struct of_device_id isl29028_of_match[] = {
 	{ .compatible = "isl,isl29028", }, /* for backward compat., don't use */
 	{ .compatible = "isil,isl29028", },
@@ -549,9 +542,8 @@ static struct i2c_driver isl29028_driver = {
 		.name = "isl29028",
 		.of_match_table = isl29028_of_match,
 	},
-	.probe	 = isl29028_probe,
+	.probe2 = isl29028_probe,
 	.remove  = isl29028_remove,
-	.id_table = isl29028_id,
 };
 
 module_i2c_driver(isl29028_driver);

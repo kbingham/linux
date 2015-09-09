@@ -1653,21 +1653,6 @@ static struct snd_soc_codec_driver soc_codec_dev_aic3x = {
 	.num_dapm_routes = ARRAY_SIZE(intercon),
 };
 
-/*
- * AIC3X 2 wire address can be up to 4 devices with device addresses
- * 0x18, 0x19, 0x1A, 0x1B
- */
-
-static const struct i2c_device_id aic3x_i2c_id[] = {
-	{ "tlv320aic3x", AIC3X_MODEL_3X },
-	{ "tlv320aic33", AIC3X_MODEL_33 },
-	{ "tlv320aic3007", AIC3X_MODEL_3007 },
-	{ "tlv320aic3106", AIC3X_MODEL_3X },
-	{ "tlv320aic3104", AIC3X_MODEL_3104 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, aic3x_i2c_id);
-
 static const struct reg_sequence aic3007_class_d[] = {
 	/* Class-D speaker driver init; datasheet p. 46 */
 	{ AIC3X_PAGE_SELECT, 0x0D },
@@ -1682,8 +1667,7 @@ static const struct reg_sequence aic3007_class_d[] = {
  * If the i2c layer weren't so broken, we could pass this kind of data
  * around
  */
-static int aic3x_i2c_probe(struct i2c_client *i2c,
-			   const struct i2c_device_id *id)
+static int aic3x_i2c_probe(struct i2c_client *i2c)
 {
 	struct aic3x_pdata *pdata = i2c->dev.platform_data;
 	struct aic3x_priv *aic3x;
@@ -1827,9 +1811,8 @@ static struct i2c_driver aic3x_i2c_driver = {
 		.name = "tlv320aic3x-codec",
 		.of_match_table = of_match_ptr(tlv320aic3x_of_match),
 	},
-	.probe	= aic3x_i2c_probe,
+	.probe2 = aic3x_i2c_probe,
 	.remove = aic3x_i2c_remove,
-	.id_table = aic3x_i2c_id,
 };
 
 module_i2c_driver(aic3x_i2c_driver);

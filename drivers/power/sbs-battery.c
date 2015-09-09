@@ -803,8 +803,7 @@ static const struct power_supply_desc sbs_default_desc = {
 	.external_power_changed = sbs_external_power_changed,
 };
 
-static int sbs_probe(struct i2c_client *client,
-	const struct i2c_device_id *id)
+static int sbs_probe(struct i2c_client *client)
 {
 	struct sbs_info *chip;
 	struct power_supply_desc *sbs_desc;
@@ -975,17 +974,9 @@ static SIMPLE_DEV_PM_OPS(sbs_pm_ops, sbs_suspend, NULL);
 #define SBS_PM_OPS NULL
 #endif
 
-static const struct i2c_device_id sbs_id[] = {
-	{ "bq20z75", 0 },
-	{ "sbs-battery", 1 },
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, sbs_id);
-
 static struct i2c_driver sbs_battery_driver = {
-	.probe		= sbs_probe,
+	.probe2 = sbs_probe,
 	.remove		= sbs_remove,
-	.id_table	= sbs_id,
 	.driver = {
 		.name	= "sbs-battery",
 		.of_match_table = of_match_ptr(sbs_dt_ids),

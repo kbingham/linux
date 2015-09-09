@@ -105,7 +105,7 @@ static const struct regmap_config lp3943_regmap_config = {
 	.max_register = LP3943_MAX_REGISTERS,
 };
 
-static int lp3943_probe(struct i2c_client *cl, const struct i2c_device_id *id)
+static int lp3943_probe(struct i2c_client *cl)
 {
 	struct lp3943 *lp3943;
 	struct device *dev = &cl->dev;
@@ -135,12 +135,6 @@ static int lp3943_remove(struct i2c_client *cl)
 	return 0;
 }
 
-static const struct i2c_device_id lp3943_ids[] = {
-	{ "lp3943", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, lp3943_ids);
-
 #ifdef CONFIG_OF
 static const struct of_device_id lp3943_of_match[] = {
 	{ .compatible = "ti,lp3943", },
@@ -150,13 +144,12 @@ MODULE_DEVICE_TABLE(of, lp3943_of_match);
 #endif
 
 static struct i2c_driver lp3943_driver = {
-	.probe = lp3943_probe,
+	.probe2 = lp3943_probe,
 	.remove = lp3943_remove,
 	.driver = {
 		.name = "lp3943",
 		.of_match_table = of_match_ptr(lp3943_of_match),
 	},
-	.id_table = lp3943_ids,
 };
 
 module_i2c_driver(lp3943_driver);

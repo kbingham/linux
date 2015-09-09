@@ -121,8 +121,7 @@ static const struct of_device_id as3711_of_match[] = {
 MODULE_DEVICE_TABLE(of, as3711_of_match);
 #endif
 
-static int as3711_i2c_probe(struct i2c_client *client,
-			    const struct i2c_device_id *id)
+static int as3711_i2c_probe(struct i2c_client *client)
 {
 	struct as3711 *as3711;
 	struct as3711_platform_data *pdata;
@@ -201,21 +200,13 @@ static int as3711_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id as3711_i2c_id[] = {
-	{.name = "as3711", .driver_data = 0},
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, as3711_i2c_id);
-
 static struct i2c_driver as3711_i2c_driver = {
 	.driver = {
 		   .name = "as3711",
 		   .of_match_table = of_match_ptr(as3711_of_match),
 	},
-	.probe = as3711_i2c_probe,
+	.probe2 = as3711_i2c_probe,
 	.remove = as3711_i2c_remove,
-	.id_table = as3711_i2c_id,
 };
 
 static int __init as3711_i2c_init(void)

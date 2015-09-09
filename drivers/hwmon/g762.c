@@ -57,13 +57,6 @@
 
 #define DRVNAME "g762"
 
-static const struct i2c_device_id g762_id[] = {
-	{ "g762", 0 },
-	{ "g763", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, g762_id);
-
 enum g762_regs {
 	G762_REG_SET_CNT  = 0x00,
 	G762_REG_ACT_CNT  = 0x01,
@@ -1050,7 +1043,7 @@ static inline int g762_fan_init(struct device *dev)
 					 data->fan_cmd1);
 }
 
-static int g762_probe(struct i2c_client *client, const struct i2c_device_id *id)
+static int g762_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct g762_data *data;
@@ -1115,9 +1108,8 @@ static struct i2c_driver g762_driver = {
 		.name = DRVNAME,
 		.of_match_table = of_match_ptr(g762_dt_match),
 	},
-	.probe	  = g762_probe,
+	.probe2 = g762_probe,
 	.remove	  = g762_remove,
-	.id_table = g762_id,
 };
 
 module_i2c_driver(g762_driver);

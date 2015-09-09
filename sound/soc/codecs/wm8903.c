@@ -1978,8 +1978,7 @@ static int wm8903_set_pdata_from_of(struct i2c_client *i2c,
 	return 0;
 }
 
-static int wm8903_i2c_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *id)
+static int wm8903_i2c_probe(struct i2c_client *i2c)
 {
 	struct wm8903_platform_data *pdata = dev_get_platdata(&i2c->dev);
 	struct wm8903_priv *wm8903;
@@ -2184,20 +2183,13 @@ static const struct of_device_id wm8903_of_match[] = {
 };
 MODULE_DEVICE_TABLE(of, wm8903_of_match);
 
-static const struct i2c_device_id wm8903_i2c_id[] = {
-	{ "wm8903", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, wm8903_i2c_id);
-
 static struct i2c_driver wm8903_i2c_driver = {
 	.driver = {
 		.name = "wm8903",
 		.of_match_table = wm8903_of_match,
 	},
-	.probe =    wm8903_i2c_probe,
+	.probe2 = wm8903_i2c_probe,
 	.remove =   wm8903_i2c_remove,
-	.id_table = wm8903_i2c_id,
 };
 
 module_i2c_driver(wm8903_i2c_driver);

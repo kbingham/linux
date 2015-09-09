@@ -339,8 +339,7 @@ static const struct of_device_id fan53555_dt_ids[] = {
 };
 MODULE_DEVICE_TABLE(of, fan53555_dt_ids);
 
-static int fan53555_regulator_probe(struct i2c_client *client,
-				const struct i2c_device_id *id)
+static int fan53555_regulator_probe(struct i2c_client *client)
 {
 	struct device_node *np = client->dev.of_node;
 	struct fan53555_device_info *di;
@@ -429,25 +428,12 @@ static int fan53555_regulator_probe(struct i2c_client *client,
 
 }
 
-static const struct i2c_device_id fan53555_id[] = {
-	{
-		.name = "fan53555",
-		.driver_data = FAN53555_VENDOR_FAIRCHILD
-	}, {
-		.name = "syr82x",
-		.driver_data = FAN53555_VENDOR_SILERGY
-	},
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, fan53555_id);
-
 static struct i2c_driver fan53555_regulator_driver = {
 	.driver = {
 		.name = "fan53555-regulator",
 		.of_match_table = of_match_ptr(fan53555_dt_ids),
 	},
-	.probe = fan53555_regulator_probe,
-	.id_table = fan53555_id,
+	.probe2 = fan53555_regulator_probe,
 };
 
 module_i2c_driver(fan53555_regulator_driver);

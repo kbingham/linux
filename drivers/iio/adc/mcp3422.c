@@ -325,8 +325,7 @@ static const struct iio_info mcp3422_info = {
 	.driver_module = THIS_MODULE,
 };
 
-static int mcp3422_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int mcp3422_probe(struct i2c_client *client)
 {
 	struct iio_dev *indio_dev;
 	struct mcp3422 *adc;
@@ -382,17 +381,6 @@ static int mcp3422_probe(struct i2c_client *client,
 	return 0;
 }
 
-static const struct i2c_device_id mcp3422_id[] = {
-	{ "mcp3422", 2 },
-	{ "mcp3423", 3 },
-	{ "mcp3424", 4 },
-	{ "mcp3426", 6 },
-	{ "mcp3427", 7 },
-	{ "mcp3428", 8 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, mcp3422_id);
-
 #ifdef CONFIG_OF
 static const struct of_device_id mcp3422_of_match[] = {
 	{ .compatible = "mcp3422" },
@@ -406,8 +394,7 @@ static struct i2c_driver mcp3422_driver = {
 		.name = "mcp3422",
 		.of_match_table = of_match_ptr(mcp3422_of_match),
 	},
-	.probe = mcp3422_probe,
-	.id_table = mcp3422_id,
+	.probe2 = mcp3422_probe,
 };
 module_i2c_driver(mcp3422_driver);
 

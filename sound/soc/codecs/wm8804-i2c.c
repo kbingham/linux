@@ -16,8 +16,7 @@
 
 #include "wm8804.h"
 
-static int wm8804_i2c_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *id)
+static int wm8804_i2c_probe(struct i2c_client *i2c)
 {
 	struct regmap *regmap;
 
@@ -34,12 +33,6 @@ static int wm8804_i2c_remove(struct i2c_client *i2c)
 	return 0;
 }
 
-static const struct i2c_device_id wm8804_i2c_id[] = {
-	{ "wm8804", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, wm8804_i2c_id);
-
 static const struct of_device_id wm8804_of_match[] = {
 	{ .compatible = "wlf,wm8804", },
 	{ }
@@ -52,9 +45,8 @@ static struct i2c_driver wm8804_i2c_driver = {
 		.pm = &wm8804_pm,
 		.of_match_table = wm8804_of_match,
 	},
-	.probe = wm8804_i2c_probe,
+	.probe2 = wm8804_i2c_probe,
 	.remove = wm8804_i2c_remove,
-	.id_table = wm8804_i2c_id
 };
 
 module_i2c_driver(wm8804_i2c_driver);

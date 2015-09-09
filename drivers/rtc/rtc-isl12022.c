@@ -250,8 +250,7 @@ static const struct rtc_class_ops isl12022_rtc_ops = {
 	.set_time	= isl12022_rtc_set_time,
 };
 
-static int isl12022_probe(struct i2c_client *client,
-			  const struct i2c_device_id *id)
+static int isl12022_probe(struct i2c_client *client)
 {
 	struct isl12022 *isl12022;
 
@@ -281,12 +280,6 @@ static const struct of_device_id isl12022_dt_match[] = {
 };
 #endif
 
-static const struct i2c_device_id isl12022_id[] = {
-	{ "isl12022", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, isl12022_id);
-
 static struct i2c_driver isl12022_driver = {
 	.driver		= {
 		.name	= "rtc-isl12022",
@@ -294,8 +287,7 @@ static struct i2c_driver isl12022_driver = {
 		.of_match_table = of_match_ptr(isl12022_dt_match),
 #endif
 	},
-	.probe		= isl12022_probe,
-	.id_table	= isl12022_id,
+	.probe2 = isl12022_probe,
 };
 
 module_i2c_driver(isl12022_driver);

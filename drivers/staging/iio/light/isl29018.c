@@ -706,8 +706,7 @@ static const char *isl29018_match_acpi_device(struct device *dev, int *data)
 	return dev_name(dev);
 }
 
-static int isl29018_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int isl29018_probe(struct i2c_client *client)
 {
 	struct isl29018_chip *chip;
 	struct iio_dev *indio_dev;
@@ -815,15 +814,6 @@ static const struct acpi_device_id isl29018_acpi_match[] = {
 };
 MODULE_DEVICE_TABLE(acpi, isl29018_acpi_match);
 
-static const struct i2c_device_id isl29018_id[] = {
-	{"isl29018", isl29018},
-	{"isl29023", isl29023},
-	{"isl29035", isl29035},
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, isl29018_id);
-
 static const struct of_device_id isl29018_of_match[] = {
 	{ .compatible = "isil,isl29018", },
 	{ .compatible = "isil,isl29023", },
@@ -840,8 +830,7 @@ static struct i2c_driver isl29018_driver = {
 			.pm = ISL29018_PM_OPS,
 			.of_match_table = isl29018_of_match,
 		    },
-	.probe	 = isl29018_probe,
-	.id_table = isl29018_id,
+	.probe2 = isl29018_probe,
 };
 module_i2c_driver(isl29018_driver);
 

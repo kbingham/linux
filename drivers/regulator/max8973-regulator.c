@@ -531,8 +531,7 @@ static const struct of_device_id of_max8973_match_tbl[] = {
 };
 MODULE_DEVICE_TABLE(of, of_max8973_match_tbl);
 
-static int max8973_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int max8973_probe(struct i2c_client *client)
 {
 	struct max8973_regulator_platform_data *pdata;
 	struct regulator_init_data *ridata;
@@ -721,20 +720,12 @@ static int max8973_probe(struct i2c_client *client,
 	return 0;
 }
 
-static const struct i2c_device_id max8973_id[] = {
-	{.name = "max8973", .driver_data = MAX8973},
-	{.name = "max77621", .driver_data = MAX77621},
-	{},
-};
-MODULE_DEVICE_TABLE(i2c, max8973_id);
-
 static struct i2c_driver max8973_i2c_driver = {
 	.driver = {
 		.name = "max8973",
 		.of_match_table = of_max8973_match_tbl,
 	},
-	.probe = max8973_probe,
-	.id_table = max8973_id,
+	.probe2 = max8973_probe,
 };
 
 static int __init max8973_init(void)

@@ -428,8 +428,7 @@ done:
 	return pdata;
 }
 
-static int adv7343_probe(struct i2c_client *client,
-				const struct i2c_device_id *id)
+static int adv7343_probe(struct i2c_client *client)
 {
 	struct adv7343_state *state;
 	int err;
@@ -504,13 +503,6 @@ static int adv7343_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id adv7343_id[] = {
-	{"adv7343", 0},
-	{},
-};
-
-MODULE_DEVICE_TABLE(i2c, adv7343_id);
-
 #if IS_ENABLED(CONFIG_OF)
 static const struct of_device_id adv7343_of_match[] = {
 	{.compatible = "adi,adv7343", },
@@ -524,9 +516,8 @@ static struct i2c_driver adv7343_driver = {
 		.of_match_table = of_match_ptr(adv7343_of_match),
 		.name	= "adv7343",
 	},
-	.probe		= adv7343_probe,
+	.probe2 = adv7343_probe,
 	.remove		= adv7343_remove,
-	.id_table	= adv7343_id,
 };
 
 module_i2c_driver(adv7343_driver);

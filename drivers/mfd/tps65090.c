@@ -175,8 +175,7 @@ static const struct of_device_id tps65090_of_match[] = {
 MODULE_DEVICE_TABLE(of, tps65090_of_match);
 #endif
 
-static int tps65090_i2c_probe(struct i2c_client *client,
-			      const struct i2c_device_id *id)
+static int tps65090_i2c_probe(struct i2c_client *client)
 {
 	struct tps65090_platform_data *pdata = dev_get_platdata(&client->dev);
 	int irq_base = 0;
@@ -250,20 +249,13 @@ static int tps65090_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id tps65090_id_table[] = {
-	{ "tps65090", 0 },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, tps65090_id_table);
-
 static struct i2c_driver tps65090_driver = {
 	.driver	= {
 		.name	= "tps65090",
 		.of_match_table = of_match_ptr(tps65090_of_match),
 	},
-	.probe		= tps65090_i2c_probe,
+	.probe2 = tps65090_i2c_probe,
 	.remove		= tps65090_i2c_remove,
-	.id_table	= tps65090_id_table,
 };
 
 static int __init tps65090_init(void)

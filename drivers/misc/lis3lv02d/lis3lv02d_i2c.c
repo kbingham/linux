@@ -113,8 +113,7 @@ static const struct of_device_id lis3lv02d_i2c_dt_ids[] = {
 MODULE_DEVICE_TABLE(of, lis3lv02d_i2c_dt_ids);
 #endif
 
-static int lis3lv02d_i2c_probe(struct i2c_client *client,
-					const struct i2c_device_id *id)
+static int lis3lv02d_i2c_probe(struct i2c_client *client)
 {
 	int ret = 0;
 	struct lis3lv02d_platform_data *pdata = client->dev.platform_data;
@@ -253,15 +252,7 @@ static int lis3_i2c_runtime_resume(struct device *dev)
 	lis3lv02d_poweron(lis3);
 	return 0;
 }
-#endif /* CONFIG_PM */
-
-static const struct i2c_device_id lis3lv02d_id[] = {
-	{"lis3lv02d", LIS3LV02D},
-	{"lis331dlh", LIS331DLH},
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, lis3lv02d_id);
+#endif
 
 static const struct dev_pm_ops lis3_pm_ops = {
 	SET_SYSTEM_SLEEP_PM_OPS(lis3lv02d_i2c_suspend,
@@ -277,9 +268,8 @@ static struct i2c_driver lis3lv02d_i2c_driver = {
 		.pm     = &lis3_pm_ops,
 		.of_match_table = of_match_ptr(lis3lv02d_i2c_dt_ids),
 	},
-	.probe	= lis3lv02d_i2c_probe,
+	.probe2 = lis3lv02d_i2c_probe,
 	.remove	= lis3lv02d_i2c_remove,
-	.id_table = lis3lv02d_id,
 };
 
 module_i2c_driver(lis3lv02d_i2c_driver);

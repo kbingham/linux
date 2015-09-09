@@ -403,15 +403,8 @@ out:
 
 enum chip { ds1775, adm1030 };
 
-static const struct i2c_device_id therm_windtunnel_id[] = {
-	{ "therm_ds1775", ds1775 },
-	{ "therm_adm1030", adm1030 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, therm_windtunnel_id);
-
 static int
-do_probe(struct i2c_client *cl, const struct i2c_device_id *id)
+do_probe(struct i2c_client *cl)
 {
 	struct i2c_adapter *adapter = cl->adapter;
 
@@ -433,9 +426,8 @@ static struct i2c_driver g4fan_driver = {
 		.name	= "therm_windtunnel",
 	},
 	.attach_adapter = do_attach,
-	.probe		= do_probe,
+	.probe2 = do_probe,
 	.remove		= do_remove,
-	.id_table	= therm_windtunnel_id,
 };
 
 

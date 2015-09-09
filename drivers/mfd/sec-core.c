@@ -302,8 +302,7 @@ static inline unsigned long sec_i2c_get_driver_data(struct i2c_client *i2c,
 	return id->driver_data;
 }
 
-static int sec_pmic_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *id)
+static int sec_pmic_probe(struct i2c_client *i2c)
 {
 	struct sec_platform_data *pdata = dev_get_platdata(&i2c->dev);
 	const struct regmap_config *regmap;
@@ -477,21 +476,14 @@ static int sec_pmic_resume(struct device *dev)
 
 static SIMPLE_DEV_PM_OPS(sec_pmic_pm_ops, sec_pmic_suspend, sec_pmic_resume);
 
-static const struct i2c_device_id sec_pmic_id[] = {
-	{ "sec_pmic", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, sec_pmic_id);
-
 static struct i2c_driver sec_pmic_driver = {
 	.driver = {
 		   .name = "sec_pmic",
 		   .pm = &sec_pmic_pm_ops,
 		   .of_match_table = of_match_ptr(sec_dt_match),
 	},
-	.probe = sec_pmic_probe,
+	.probe2 = sec_pmic_probe,
 	.remove = sec_pmic_remove,
-	.id_table = sec_pmic_id,
 };
 
 static int __init sec_pmic_init(void)

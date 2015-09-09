@@ -2137,14 +2137,6 @@ static const struct regmap_config rt5640_regmap = {
 	.num_ranges = ARRAY_SIZE(rt5640_ranges),
 };
 
-static const struct i2c_device_id rt5640_i2c_id[] = {
-	{ "rt5640", 0 },
-	{ "rt5639", 0 },
-	{ "rt5642", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, rt5640_i2c_id);
-
 #if defined(CONFIG_OF)
 static const struct of_device_id rt5640_of_match[] = {
 	{ .compatible = "realtek,rt5639", },
@@ -2186,8 +2178,7 @@ static int rt5640_parse_dt(struct rt5640_priv *rt5640, struct device_node *np)
 	return 0;
 }
 
-static int rt5640_i2c_probe(struct i2c_client *i2c,
-		    const struct i2c_device_id *id)
+static int rt5640_i2c_probe(struct i2c_client *i2c)
 {
 	struct rt5640_platform_data *pdata = dev_get_platdata(&i2c->dev);
 	struct rt5640_priv *rt5640;
@@ -2279,9 +2270,8 @@ static struct i2c_driver rt5640_i2c_driver = {
 		.acpi_match_table = ACPI_PTR(rt5640_acpi_match),
 		.of_match_table = of_match_ptr(rt5640_of_match),
 	},
-	.probe = rt5640_i2c_probe,
+	.probe2 = rt5640_i2c_probe,
 	.remove   = rt5640_i2c_remove,
-	.id_table = rt5640_i2c_id,
 };
 module_i2c_driver(rt5640_i2c_driver);
 

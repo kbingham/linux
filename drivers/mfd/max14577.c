@@ -368,8 +368,7 @@ static void max77836_remove(struct max14577 *max14577)
 	i2c_unregister_device(max14577->i2c_pmic);
 }
 
-static int max14577_i2c_probe(struct i2c_client *i2c,
-			      const struct i2c_device_id *id)
+static int max14577_i2c_probe(struct i2c_client *i2c)
 {
 	struct max14577 *max14577;
 	struct max14577_platform_data *pdata = dev_get_platdata(&i2c->dev);
@@ -485,13 +484,6 @@ static int max14577_i2c_remove(struct i2c_client *i2c)
 	return 0;
 }
 
-static const struct i2c_device_id max14577_i2c_id[] = {
-	{ "max14577", MAXIM_DEVICE_TYPE_MAX14577, },
-	{ "max77836", MAXIM_DEVICE_TYPE_MAX77836, },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, max14577_i2c_id);
-
 #ifdef CONFIG_PM_SLEEP
 static int max14577_suspend(struct device *dev)
 {
@@ -535,9 +527,8 @@ static struct i2c_driver max14577_i2c_driver = {
 		.pm = &max14577_pm,
 		.of_match_table = max14577_dt_match,
 	},
-	.probe = max14577_i2c_probe,
+	.probe2 = max14577_i2c_probe,
 	.remove = max14577_i2c_remove,
-	.id_table = max14577_i2c_id,
 };
 
 static int __init max14577_i2c_init(void)
