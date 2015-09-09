@@ -164,8 +164,7 @@ static int egalax_firmware_version(struct i2c_client *client)
 	return 0;
 }
 
-static int egalax_ts_probe(struct i2c_client *client,
-			   const struct i2c_device_id *id)
+static int egalax_ts_probe(struct i2c_client *client)
 {
 	struct egalax_ts *ts;
 	struct input_dev *input_dev;
@@ -233,12 +232,6 @@ static int egalax_ts_probe(struct i2c_client *client,
 	return 0;
 }
 
-static const struct i2c_device_id egalax_ts_id[] = {
-	{ "egalax_ts", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, egalax_ts_id);
-
 static int __maybe_unused egalax_ts_suspend(struct device *dev)
 {
 	static const u8 suspend_cmd[MAX_I2C_DATA_LEN] = {
@@ -272,8 +265,7 @@ static struct i2c_driver egalax_ts_driver = {
 		.pm	= &egalax_ts_pm_ops,
 		.of_match_table	= egalax_ts_dt_ids,
 	},
-	.id_table	= egalax_ts_id,
-	.probe		= egalax_ts_probe,
+	.probe2 = egalax_ts_probe,
 };
 
 module_i2c_driver(egalax_ts_driver);

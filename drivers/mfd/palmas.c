@@ -488,8 +488,7 @@ static const struct of_device_id of_palmas_match_tbl[] = {
 };
 MODULE_DEVICE_TABLE(of, of_palmas_match_tbl);
 
-static int palmas_i2c_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *id)
+static int palmas_i2c_probe(struct i2c_client *i2c)
 {
 	struct palmas *palmas;
 	struct palmas_platform_data *pdata;
@@ -706,23 +705,13 @@ static int palmas_i2c_remove(struct i2c_client *i2c)
 	return 0;
 }
 
-static const struct i2c_device_id palmas_i2c_id[] = {
-	{ "palmas", },
-	{ "twl6035", },
-	{ "twl6037", },
-	{ "tps65913", },
-	{ /* end */ }
-};
-MODULE_DEVICE_TABLE(i2c, palmas_i2c_id);
-
 static struct i2c_driver palmas_i2c_driver = {
 	.driver = {
 		   .name = "palmas",
 		   .of_match_table = of_palmas_match_tbl,
 	},
-	.probe = palmas_i2c_probe,
+	.probe2 = palmas_i2c_probe,
 	.remove = palmas_i2c_remove,
-	.id_table = palmas_i2c_id,
 };
 
 static int __init palmas_i2c_init(void)

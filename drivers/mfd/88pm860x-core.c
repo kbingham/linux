@@ -1238,12 +1238,6 @@ static int pm860x_resume(struct device *dev)
 
 static SIMPLE_DEV_PM_OPS(pm860x_pm_ops, pm860x_suspend, pm860x_resume);
 
-static const struct i2c_device_id pm860x_id_table[] = {
-	{ "88PM860x", 0 },
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, pm860x_id_table);
-
 static const struct of_device_id pm860x_dt_ids[] = {
 	{ .compatible = "marvell,88pm860x", },
 	{},
@@ -1258,7 +1252,6 @@ static struct i2c_driver pm860x_driver = {
 	},
 	.probe2		= pm860x_probe,
 	.remove		= pm860x_remove,
-	.id_table	= pm860x_id_table,
 };
 
 static int __init pm860x_i2c_init(void)

@@ -403,8 +403,7 @@ static const struct regmap_config si570_regmap_config = {
 	.volatile_reg = si570_regmap_is_volatile,
 };
 
-static int si570_probe(struct i2c_client *client,
-		const struct i2c_device_id *id)
+static int si570_probe(struct i2c_client *client)
 {
 	struct clk_si570 *data;
 	struct clk_init_data init;
@@ -497,15 +496,6 @@ static int si570_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id si570_id[] = {
-	{ "si570", si57x },
-	{ "si571", si57x },
-	{ "si598", si59x },
-	{ "si599", si59x },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, si570_id);
-
 static const struct of_device_id clk_si570_of_match[] = {
 	{ .compatible = "silabs,si570" },
 	{ .compatible = "silabs,si571" },
@@ -520,9 +510,8 @@ static struct i2c_driver si570_driver = {
 		.name = "si570",
 		.of_match_table = clk_si570_of_match,
 	},
-	.probe		= si570_probe,
+	.probe2 = si570_probe,
 	.remove		= si570_remove,
-	.id_table	= si570_id,
 };
 module_i2c_driver(si570_driver);
 

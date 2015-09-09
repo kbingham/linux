@@ -1947,8 +1947,7 @@ static int s5k5baf_configure_regulators(struct s5k5baf *state)
 	return ret;
 }
 
-static int s5k5baf_probe(struct i2c_client *c,
-			const struct i2c_device_id *id)
+static int s5k5baf_probe(struct i2c_client *c)
 {
 	struct s5k5baf *state;
 	int ret;
@@ -2030,12 +2029,6 @@ static int s5k5baf_remove(struct i2c_client *c)
 	return 0;
 }
 
-static const struct i2c_device_id s5k5baf_id[] = {
-	{ S5K5BAF_DRIVER_NAME, 0 },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, s5k5baf_id);
-
 static const struct of_device_id s5k5baf_of_match[] = {
 	{ .compatible = "samsung,s5k5baf" },
 	{ }
@@ -2047,9 +2040,8 @@ static struct i2c_driver s5k5baf_i2c_driver = {
 		.of_match_table = s5k5baf_of_match,
 		.name = S5K5BAF_DRIVER_NAME
 	},
-	.probe		= s5k5baf_probe,
+	.probe2 = s5k5baf_probe,
 	.remove		= s5k5baf_remove,
-	.id_table	= s5k5baf_id,
 };
 
 module_i2c_driver(s5k5baf_i2c_driver);

@@ -172,8 +172,7 @@ static const struct regmap_config stw481x_regmap_config = {
 	.val_bits = 8,
 };
 
-static int stw481x_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int stw481x_probe(struct i2c_client *client)
 {
 	struct stw481x			*stw481x;
 	int ret;
@@ -222,17 +221,6 @@ static int stw481x_remove(struct i2c_client *client)
 	return 0;
 }
 
-/*
- * This ID table is completely unused, as this is a pure
- * device-tree probed driver, but it has to be here due to
- * the structure of the I2C core.
- */
-static const struct i2c_device_id stw481x_id[] = {
-	{ "stw481x", 0 },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, stw481x_id);
-
 static const struct of_device_id stw481x_match[] = {
 	{ .compatible = "st,stw4810", },
 	{ .compatible = "st,stw4811", },
@@ -245,9 +233,8 @@ static struct i2c_driver stw481x_driver = {
 		.name	= "stw481x",
 		.of_match_table = stw481x_match,
 	},
-	.probe		= stw481x_probe,
+	.probe2 = stw481x_probe,
 	.remove		= stw481x_remove,
-	.id_table	= stw481x_id,
 };
 
 module_i2c_driver(stw481x_driver);

@@ -515,8 +515,7 @@ static int get_vid(struct i2c_client *client, u32 *res)
 	return 0;
 }
 
-static int i2c_nuvoton_probe(struct i2c_client *client,
-			     const struct i2c_device_id *id)
+static int i2c_nuvoton_probe(struct i2c_client *client)
 {
 	int rc;
 	struct tpm_chip *chip;
@@ -618,12 +617,6 @@ static int i2c_nuvoton_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id i2c_nuvoton_id[] = {
-	{I2C_DRIVER_NAME, 0},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, i2c_nuvoton_id);
-
 #ifdef CONFIG_OF
 static const struct of_device_id i2c_nuvoton_of_match[] = {
 	{.compatible = "nuvoton,npct501"},
@@ -636,8 +629,7 @@ MODULE_DEVICE_TABLE(of, i2c_nuvoton_of_match);
 static SIMPLE_DEV_PM_OPS(i2c_nuvoton_pm_ops, tpm_pm_suspend, tpm_pm_resume);
 
 static struct i2c_driver i2c_nuvoton_driver = {
-	.id_table = i2c_nuvoton_id,
-	.probe = i2c_nuvoton_probe,
+	.probe2 = i2c_nuvoton_probe,
 	.remove = i2c_nuvoton_remove,
 	.driver = {
 		.name = I2C_DRIVER_NAME,

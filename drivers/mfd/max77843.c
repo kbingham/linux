@@ -99,8 +99,7 @@ err_chg_i2c:
 	return ret;
 }
 
-static int max77843_probe(struct i2c_client *i2c,
-			  const struct i2c_device_id *id)
+static int max77843_probe(struct i2c_client *i2c)
 {
 	struct max77693_dev *max77843;
 	unsigned int reg_data;
@@ -189,12 +188,6 @@ static const struct of_device_id max77843_dt_match[] = {
 	{ },
 };
 
-static const struct i2c_device_id max77843_id[] = {
-	{ "max77843", TYPE_MAX77843, },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, max77843_id);
-
 static int __maybe_unused max77843_suspend(struct device *dev)
 {
 	struct i2c_client *i2c = container_of(dev, struct i2c_client, dev);
@@ -227,9 +220,8 @@ static struct i2c_driver max77843_i2c_driver = {
 		.pm = &max77843_pm,
 		.of_match_table = max77843_dt_match,
 	},
-	.probe = max77843_probe,
+	.probe2 = max77843_probe,
 	.remove = max77843_remove,
-	.id_table = max77843_id,
 };
 
 static int __init max77843_i2c_init(void)

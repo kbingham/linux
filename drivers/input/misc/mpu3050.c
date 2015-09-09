@@ -305,8 +305,7 @@ static int mpu3050_hw_init(struct mpu3050_sensor *sensor)
  *
  *	If present install the relevant sysfs interfaces and input device.
  */
-static int mpu3050_probe(struct i2c_client *client,
-				   const struct i2c_device_id *id)
+static int mpu3050_probe(struct i2c_client *client)
 {
 	struct mpu3050_sensor *sensor;
 	struct input_dev *idev;
@@ -451,12 +450,6 @@ static int mpu3050_resume(struct device *dev)
 
 static UNIVERSAL_DEV_PM_OPS(mpu3050_pm, mpu3050_suspend, mpu3050_resume, NULL);
 
-static const struct i2c_device_id mpu3050_ids[] = {
-	{ "mpu3050", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, mpu3050_ids);
-
 static const struct of_device_id mpu3050_of_match[] = {
 	{ .compatible = "invn,mpu3050", },
 	{ },
@@ -469,9 +462,8 @@ static struct i2c_driver mpu3050_i2c_driver = {
 		.pm	= &mpu3050_pm,
 		.of_match_table = mpu3050_of_match,
 	},
-	.probe		= mpu3050_probe,
+	.probe2 = mpu3050_probe,
 	.remove		= mpu3050_remove,
-	.id_table	= mpu3050_ids,
 };
 
 module_i2c_driver(mpu3050_i2c_driver);

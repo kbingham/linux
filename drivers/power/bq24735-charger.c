@@ -242,8 +242,7 @@ static struct bq24735_platform *bq24735_parse_dt_data(struct i2c_client *client)
 	return pdata;
 }
 
-static int bq24735_charger_probe(struct i2c_client *client,
-				 const struct i2c_device_id *id)
+static int bq24735_charger_probe(struct i2c_client *client)
 {
 	int ret;
 	struct bq24735 *charger;
@@ -370,12 +369,6 @@ static int bq24735_charger_probe(struct i2c_client *client,
 	return 0;
 }
 
-static const struct i2c_device_id bq24735_charger_id[] = {
-	{ "bq24735-charger", 0 },
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, bq24735_charger_id);
-
 static const struct of_device_id bq24735_match_ids[] = {
 	{ .compatible = "ti,bq24735", },
 	{ /* end */ }
@@ -387,8 +380,7 @@ static struct i2c_driver bq24735_charger_driver = {
 		.name = "bq24735-charger",
 		.of_match_table = bq24735_match_ids,
 	},
-	.probe = bq24735_charger_probe,
-	.id_table = bq24735_charger_id,
+	.probe2 = bq24735_charger_probe,
 };
 
 module_i2c_driver(bq24735_charger_driver);

@@ -886,8 +886,7 @@ static const struct regmap_config abb5zes3_rtc_regmap_config = {
 	.val_bits = 8,
 };
 
-static int abb5zes3_probe(struct i2c_client *client,
-			  const struct i2c_device_id *id)
+static int abb5zes3_probe(struct i2c_client *client)
 {
 	struct abb5zes3_rtc_data *data = NULL;
 	struct device *dev = &client->dev;
@@ -1012,21 +1011,14 @@ static const struct of_device_id abb5zes3_dt_match[] = {
 MODULE_DEVICE_TABLE(of, abb5zes3_dt_match);
 #endif
 
-static const struct i2c_device_id abb5zes3_id[] = {
-	{ "abb5zes3", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, abb5zes3_id);
-
 static struct i2c_driver abb5zes3_driver = {
 	.driver = {
 		.name = DRV_NAME,
 		.pm = &abb5zes3_rtc_pm_ops,
 		.of_match_table = of_match_ptr(abb5zes3_dt_match),
 	},
-	.probe	  = abb5zes3_probe,
+	.probe2 = abb5zes3_probe,
 	.remove	  = abb5zes3_remove,
-	.id_table = abb5zes3_id,
 };
 module_i2c_driver(abb5zes3_driver);
 

@@ -968,8 +968,7 @@ static void elan_remove_sysfs_groups(void *_data)
 	sysfs_remove_groups(&data->client->dev.kobj, elan_sysfs_groups);
 }
 
-static int elan_probe(struct i2c_client *client,
-		      const struct i2c_device_id *dev_id)
+static int elan_probe(struct i2c_client *client)
 {
 	const struct elan_transport_ops *transport_ops;
 	struct device *dev = &client->dev;
@@ -1171,12 +1170,6 @@ err:
 
 static SIMPLE_DEV_PM_OPS(elan_pm_ops, elan_suspend, elan_resume);
 
-static const struct i2c_device_id elan_id[] = {
-	{ DRIVER_NAME, 0 },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, elan_id);
-
 #ifdef CONFIG_ACPI
 static const struct acpi_device_id elan_acpi_id[] = {
 	{ "ELAN0000", 0 },
@@ -1204,8 +1197,7 @@ static struct i2c_driver elan_driver = {
 		.of_match_table = of_match_ptr(elan_of_match),
 		.probe_type = PROBE_PREFER_ASYNCHRONOUS,
 	},
-	.probe		= elan_probe,
-	.id_table	= elan_id,
+	.probe2 = elan_probe,
 };
 
 module_i2c_driver(elan_driver);

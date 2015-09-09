@@ -88,14 +88,6 @@ static const int pfuze3000_sw2hi[] = {
 	2500000, 2800000, 2850000, 3000000, 3100000, 3150000, 3200000, 3300000,
 };
 
-static const struct i2c_device_id pfuze_device_id[] = {
-	{.name = "pfuze100", .driver_data = PFUZE100},
-	{.name = "pfuze200", .driver_data = PFUZE200},
-	{.name = "pfuze3000", .driver_data = PFUZE3000},
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, pfuze_device_id);
-
 static const struct of_device_id pfuze_dt_ids[] = {
 	{ .compatible = "fsl,pfuze100", .data = (void *)PFUZE100},
 	{ .compatible = "fsl,pfuze200", .data = (void *)PFUZE200},
@@ -511,8 +503,7 @@ static const struct regmap_config pfuze_regmap_config = {
 	.cache_type = REGCACHE_RBTREE,
 };
 
-static int pfuze100_regulator_probe(struct i2c_client *client,
-				    const struct i2c_device_id *id)
+static int pfuze100_regulator_probe(struct i2c_client *client)
 {
 	struct pfuze_chip *pfuze_chip;
 	struct pfuze_regulator_platform_data *pdata =
@@ -640,12 +631,11 @@ static int pfuze100_regulator_probe(struct i2c_client *client,
 }
 
 static struct i2c_driver pfuze_driver = {
-	.id_table = pfuze_device_id,
 	.driver = {
 		.name = "pfuze100-regulator",
 		.of_match_table = pfuze_dt_ids,
 	},
-	.probe = pfuze100_regulator_probe,
+	.probe2 = pfuze100_regulator_probe,
 };
 module_i2c_driver(pfuze_driver);
 

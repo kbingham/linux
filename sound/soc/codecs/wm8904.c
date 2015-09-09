@@ -2124,8 +2124,7 @@ static const struct of_device_id wm8904_of_match[] = {
 MODULE_DEVICE_TABLE(of, wm8904_of_match);
 #endif
 
-static int wm8904_i2c_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *id)
+static int wm8904_i2c_probe(struct i2c_client *i2c)
 {
 	struct wm8904_priv *wm8904;
 	unsigned int val;
@@ -2283,22 +2282,13 @@ static int wm8904_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id wm8904_i2c_id[] = {
-	{ "wm8904", WM8904 },
-	{ "wm8912", WM8912 },
-	{ "wm8918", WM8904 },   /* Actually a subset, updates to follow */
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, wm8904_i2c_id);
-
 static struct i2c_driver wm8904_i2c_driver = {
 	.driver = {
 		.name = "wm8904",
 		.of_match_table = of_match_ptr(wm8904_of_match),
 	},
-	.probe =    wm8904_i2c_probe,
+	.probe2 = wm8904_i2c_probe,
 	.remove =   wm8904_i2c_remove,
-	.id_table = wm8904_i2c_id,
 };
 
 module_i2c_driver(wm8904_i2c_driver);

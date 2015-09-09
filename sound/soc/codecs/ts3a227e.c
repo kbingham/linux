@@ -284,8 +284,7 @@ static int ts3a227e_parse_device_property(struct ts3a227e *ts3a227e,
 	return 0;
 }
 
-static int ts3a227e_i2c_probe(struct i2c_client *i2c,
-			      const struct i2c_device_id *id)
+static int ts3a227e_i2c_probe(struct i2c_client *i2c)
 {
 	struct ts3a227e *ts3a227e;
 	struct device *dev = &i2c->dev;
@@ -362,12 +361,6 @@ static const struct dev_pm_ops ts3a227e_pm = {
 	SET_SYSTEM_SLEEP_PM_OPS(ts3a227e_suspend, ts3a227e_resume)
 };
 
-static const struct i2c_device_id ts3a227e_i2c_ids[] = {
-	{ "ts3a227e", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ts3a227e_i2c_ids);
-
 static const struct of_device_id ts3a227e_of_match[] = {
 	{ .compatible = "ti,ts3a227e", },
 	{ }
@@ -380,8 +373,7 @@ static struct i2c_driver ts3a227e_driver = {
 		.pm = &ts3a227e_pm,
 		.of_match_table = of_match_ptr(ts3a227e_of_match),
 	},
-	.probe = ts3a227e_i2c_probe,
-	.id_table = ts3a227e_i2c_ids,
+	.probe2 = ts3a227e_i2c_probe,
 };
 module_i2c_driver(ts3a227e_driver);
 

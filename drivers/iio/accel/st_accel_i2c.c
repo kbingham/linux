@@ -79,8 +79,7 @@ MODULE_DEVICE_TABLE(of, st_accel_of_match);
 #define st_accel_of_match NULL
 #endif
 
-static int st_accel_i2c_probe(struct i2c_client *client,
-						const struct i2c_device_id *id)
+static int st_accel_i2c_probe(struct i2c_client *client)
 {
 	struct iio_dev *indio_dev;
 	struct st_sensor_data *adata;
@@ -109,30 +108,13 @@ static int st_accel_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id st_accel_id_table[] = {
-	{ LSM303DLH_ACCEL_DEV_NAME },
-	{ LSM303DLHC_ACCEL_DEV_NAME },
-	{ LIS3DH_ACCEL_DEV_NAME },
-	{ LSM330D_ACCEL_DEV_NAME },
-	{ LSM330DL_ACCEL_DEV_NAME },
-	{ LSM330DLC_ACCEL_DEV_NAME },
-	{ LIS331DLH_ACCEL_DEV_NAME },
-	{ LSM303DL_ACCEL_DEV_NAME },
-	{ LSM303DLM_ACCEL_DEV_NAME },
-	{ LSM330_ACCEL_DEV_NAME },
-	{ LSM303AGR_ACCEL_DEV_NAME },
-	{},
-};
-MODULE_DEVICE_TABLE(i2c, st_accel_id_table);
-
 static struct i2c_driver st_accel_driver = {
 	.driver = {
 		.name = "st-accel-i2c",
 		.of_match_table = of_match_ptr(st_accel_of_match),
 	},
-	.probe = st_accel_i2c_probe,
+	.probe2 = st_accel_i2c_probe,
 	.remove = st_accel_i2c_remove,
-	.id_table = st_accel_id_table,
 };
 module_i2c_driver(st_accel_driver);
 

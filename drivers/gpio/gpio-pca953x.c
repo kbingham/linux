@@ -43,35 +43,6 @@
 #define PCA953X_TYPE		0x1000
 #define PCA957X_TYPE		0x2000
 
-static const struct i2c_device_id pca953x_id[] = {
-	{ "pca9505", 40 | PCA953X_TYPE | PCA_INT, },
-	{ "pca9534", 8  | PCA953X_TYPE | PCA_INT, },
-	{ "pca9535", 16 | PCA953X_TYPE | PCA_INT, },
-	{ "pca9536", 4  | PCA953X_TYPE, },
-	{ "pca9537", 4  | PCA953X_TYPE | PCA_INT, },
-	{ "pca9538", 8  | PCA953X_TYPE | PCA_INT, },
-	{ "pca9539", 16 | PCA953X_TYPE | PCA_INT, },
-	{ "pca9554", 8  | PCA953X_TYPE | PCA_INT, },
-	{ "pca9555", 16 | PCA953X_TYPE | PCA_INT, },
-	{ "pca9556", 8  | PCA953X_TYPE, },
-	{ "pca9557", 8  | PCA953X_TYPE, },
-	{ "pca9574", 8  | PCA957X_TYPE | PCA_INT, },
-	{ "pca9575", 16 | PCA957X_TYPE | PCA_INT, },
-	{ "pca9698", 40 | PCA953X_TYPE, },
-
-	{ "max7310", 8  | PCA953X_TYPE, },
-	{ "max7312", 16 | PCA953X_TYPE | PCA_INT, },
-	{ "max7313", 16 | PCA953X_TYPE | PCA_INT, },
-	{ "max7315", 8  | PCA953X_TYPE | PCA_INT, },
-	{ "pca6107", 8  | PCA953X_TYPE | PCA_INT, },
-	{ "tca6408", 8  | PCA953X_TYPE | PCA_INT, },
-	{ "tca6416", 16 | PCA953X_TYPE | PCA_INT, },
-	{ "tca6424", 24 | PCA953X_TYPE | PCA_INT, },
-	{ "xra1202", 8  | PCA953X_TYPE },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, pca953x_id);
-
 #define MAX_BANK 5
 #define BANK_SZ 8
 
@@ -646,8 +617,7 @@ out:
 	return ret;
 }
 
-static int pca953x_probe(struct i2c_client *client,
-				   const struct i2c_device_id *id)
+static int pca953x_probe(struct i2c_client *client)
 {
 	struct pca953x_platform_data *pdata;
 	struct pca953x_chip *chip;
@@ -766,9 +736,8 @@ static struct i2c_driver pca953x_driver = {
 		.name	= "pca953x",
 		.of_match_table = pca953x_dt_ids,
 	},
-	.probe		= pca953x_probe,
+	.probe2 = pca953x_probe,
 	.remove		= pca953x_remove,
-	.id_table	= pca953x_id,
 };
 
 static int __init pca953x_init(void)

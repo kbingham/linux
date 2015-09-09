@@ -1280,8 +1280,7 @@ static void wm8960_set_pdata_from_of(struct i2c_client *i2c,
 		pdata->shared_lrclk = true;
 }
 
-static int wm8960_i2c_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *id)
+static int wm8960_i2c_probe(struct i2c_client *i2c)
 {
 	struct wm8960_data *pdata = dev_get_platdata(&i2c->dev);
 	struct wm8960_priv *wm8960;
@@ -1349,12 +1348,6 @@ static int wm8960_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id wm8960_i2c_id[] = {
-	{ "wm8960", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, wm8960_i2c_id);
-
 static const struct of_device_id wm8960_of_match[] = {
        { .compatible = "wlf,wm8960", },
        { }
@@ -1366,9 +1359,8 @@ static struct i2c_driver wm8960_i2c_driver = {
 		.name = "wm8960",
 		.of_match_table = wm8960_of_match,
 	},
-	.probe =    wm8960_i2c_probe,
+	.probe2 = wm8960_i2c_probe,
 	.remove =   wm8960_i2c_remove,
-	.id_table = wm8960_i2c_id,
 };
 
 module_i2c_driver(wm8960_i2c_driver);

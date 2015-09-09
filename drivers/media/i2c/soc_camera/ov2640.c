@@ -1101,8 +1101,7 @@ static int ov2640_probe_dt(struct i2c_client *client,
 /*
  * i2c_driver functions
  */
-static int ov2640_probe(struct i2c_client *client,
-			const struct i2c_device_id *did)
+static int ov2640_probe(struct i2c_client *client)
 {
 	struct ov2640_priv	*priv;
 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
@@ -1180,12 +1179,6 @@ static int ov2640_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id ov2640_id[] = {
-	{ "ov2640", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ov2640_id);
-
 static const struct of_device_id ov2640_of_match[] = {
 	{.compatible = "ovti,ov2640", },
 	{},
@@ -1197,9 +1190,8 @@ static struct i2c_driver ov2640_i2c_driver = {
 		.name = "ov2640",
 		.of_match_table = of_match_ptr(ov2640_of_match),
 	},
-	.probe    = ov2640_probe,
+	.probe2 = ov2640_probe,
 	.remove   = ov2640_remove,
-	.id_table = ov2640_id,
 };
 
 module_i2c_driver(ov2640_i2c_driver);

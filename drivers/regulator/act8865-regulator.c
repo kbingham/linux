@@ -402,8 +402,7 @@ static void act8865_power_off(void)
 	while (1);
 }
 
-static int act8865_pmic_probe(struct i2c_client *client,
-			      const struct i2c_device_id *i2c_id)
+static int act8865_pmic_probe(struct i2c_client *client)
 {
 	static const struct regulator_desc *regulators;
 	struct act8865_platform_data pdata_of, *pdata;
@@ -519,20 +518,11 @@ static int act8865_pmic_probe(struct i2c_client *client,
 	return 0;
 }
 
-static const struct i2c_device_id act8865_ids[] = {
-	{ .name = "act8600", .driver_data = ACT8600 },
-	{ .name = "act8846", .driver_data = ACT8846 },
-	{ .name = "act8865", .driver_data = ACT8865 },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, act8865_ids);
-
 static struct i2c_driver act8865_pmic_driver = {
 	.driver	= {
 		.name	= "act8865",
 	},
-	.probe		= act8865_pmic_probe,
-	.id_table	= act8865_ids,
+	.probe2 = act8865_pmic_probe,
 };
 
 module_i2c_driver(act8865_pmic_driver);

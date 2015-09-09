@@ -145,8 +145,7 @@ static const struct attribute_group bh1780_attr_group = {
 	.attrs = bh1780_attributes,
 };
 
-static int bh1780_probe(struct i2c_client *client,
-						const struct i2c_device_id *id)
+static int bh1780_probe(struct i2c_client *client)
 {
 	int ret;
 	struct bh1780_data *ddata;
@@ -225,13 +224,6 @@ static int bh1780_resume(struct device *dev)
 
 static SIMPLE_DEV_PM_OPS(bh1780_pm, bh1780_suspend, bh1780_resume);
 
-static const struct i2c_device_id bh1780_id[] = {
-	{ "bh1780", 0 },
-	{ },
-};
-
-MODULE_DEVICE_TABLE(i2c, bh1780_id);
-
 #ifdef CONFIG_OF
 static const struct of_device_id of_bh1780_match[] = {
 	{ .compatible = "rohm,bh1780gli", },
@@ -242,9 +234,8 @@ MODULE_DEVICE_TABLE(of, of_bh1780_match);
 #endif
 
 static struct i2c_driver bh1780_driver = {
-	.probe		= bh1780_probe,
+	.probe2 = bh1780_probe,
 	.remove		= bh1780_remove,
-	.id_table	= bh1780_id,
 	.driver = {
 		.name = "bh1780",
 		.pm	= &bh1780_pm,

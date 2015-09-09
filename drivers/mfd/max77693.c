@@ -160,8 +160,7 @@ static const struct regmap_config max77693_regmap_haptic_config = {
 	.max_register = MAX77693_HAPTIC_REG_END,
 };
 
-static int max77693_i2c_probe(struct i2c_client *i2c,
-			      const struct i2c_device_id *id)
+static int max77693_i2c_probe(struct i2c_client *i2c)
 {
 	struct max77693_dev *max77693;
 	unsigned int reg_data;
@@ -326,12 +325,6 @@ static int max77693_i2c_remove(struct i2c_client *i2c)
 	return 0;
 }
 
-static const struct i2c_device_id max77693_i2c_id[] = {
-	{ "max77693", TYPE_MAX77693 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, max77693_i2c_id);
-
 static int max77693_suspend(struct device *dev)
 {
 	struct i2c_client *i2c = container_of(dev, struct i2c_client, dev);
@@ -376,9 +369,8 @@ static struct i2c_driver max77693_i2c_driver = {
 		   .pm = &max77693_pm,
 		   .of_match_table = of_match_ptr(max77693_dt_match),
 	},
-	.probe = max77693_i2c_probe,
+	.probe2 = max77693_i2c_probe,
 	.remove = max77693_i2c_remove,
-	.id_table = max77693_i2c_id,
 };
 
 static int __init max77693_i2c_init(void)

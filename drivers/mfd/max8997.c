@@ -175,8 +175,7 @@ static inline unsigned long max8997_i2c_get_driver_data(struct i2c_client *i2c,
 	return id->driver_data;
 }
 
-static int max8997_i2c_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *id)
+static int max8997_i2c_probe(struct i2c_client *i2c)
 {
 	struct max8997_dev *max8997;
 	struct max8997_platform_data *pdata = dev_get_platdata(&i2c->dev);
@@ -273,12 +272,6 @@ static int max8997_i2c_remove(struct i2c_client *i2c)
 
 	return 0;
 }
-
-static const struct i2c_device_id max8997_i2c_id[] = {
-	{ "max8997", TYPE_MAX8997 },
-	{ "max8966", TYPE_MAX8966 },
-	{ }
-};
 MODULE_DEVICE_TABLE(i2c, max8998_i2c_id);
 
 static u8 max8997_dumpaddr_pmic[] = {
@@ -511,9 +504,8 @@ static struct i2c_driver max8997_i2c_driver = {
 		   .pm = &max8997_pm,
 		   .of_match_table = of_match_ptr(max8997_pmic_dt_match),
 	},
-	.probe = max8997_i2c_probe,
+	.probe2 = max8997_i2c_probe,
 	.remove = max8997_i2c_remove,
-	.id_table = max8997_i2c_id,
 };
 
 static int __init max8997_i2c_init(void)

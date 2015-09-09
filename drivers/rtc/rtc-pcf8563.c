@@ -399,8 +399,7 @@ static const struct rtc_class_ops pcf8563_rtc_ops = {
 	.alarm_irq_enable = pcf8563_irq_enable,
 };
 
-static int pcf8563_probe(struct i2c_client *client,
-				const struct i2c_device_id *id)
+static int pcf8563_probe(struct i2c_client *client)
 {
 	struct pcf8563 *pcf8563;
 	int err;
@@ -465,13 +464,6 @@ static int pcf8563_probe(struct i2c_client *client,
 	return 0;
 }
 
-static const struct i2c_device_id pcf8563_id[] = {
-	{ "pcf8563", 0 },
-	{ "rtc8564", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, pcf8563_id);
-
 #ifdef CONFIG_OF
 static const struct of_device_id pcf8563_of_match[] = {
 	{ .compatible = "nxp,pcf8563" },
@@ -485,8 +477,7 @@ static struct i2c_driver pcf8563_driver = {
 		.name	= "rtc-pcf8563",
 		.of_match_table = of_match_ptr(pcf8563_of_match),
 	},
-	.probe		= pcf8563_probe,
-	.id_table	= pcf8563_id,
+	.probe2 = pcf8563_probe,
 };
 
 module_i2c_driver(pcf8563_driver);

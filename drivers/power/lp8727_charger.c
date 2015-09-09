@@ -546,7 +546,7 @@ static int lp8727_parse_dt(struct device *dev)
 }
 #endif
 
-static int lp8727_probe(struct i2c_client *cl, const struct i2c_device_id *id)
+static int lp8727_probe(struct i2c_client *cl)
 {
 	struct lp8727_chg *pchg;
 	int ret;
@@ -608,20 +608,13 @@ static const struct of_device_id lp8727_dt_ids[] = {
 };
 MODULE_DEVICE_TABLE(of, lp8727_dt_ids);
 
-static const struct i2c_device_id lp8727_ids[] = {
-	{"lp8727", 0},
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, lp8727_ids);
-
 static struct i2c_driver lp8727_driver = {
 	.driver = {
 		   .name = "lp8727",
 		   .of_match_table = of_match_ptr(lp8727_dt_ids),
 		   },
-	.probe = lp8727_probe,
+	.probe2 = lp8727_probe,
 	.remove = lp8727_remove,
-	.id_table = lp8727_ids,
 };
 module_i2c_driver(lp8727_driver);
 

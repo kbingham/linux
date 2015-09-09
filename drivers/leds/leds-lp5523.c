@@ -874,8 +874,7 @@ static struct lp55xx_device_config lp5523_cfg = {
 	.dev_attr_group     = &lp5523_group,
 };
 
-static int lp5523_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int lp5523_probe(struct i2c_client *client)
 {
 	int ret;
 	struct lp55xx_chip *chip;
@@ -950,14 +949,6 @@ static int lp5523_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id lp5523_id[] = {
-	{ "lp5523",  LP5523 },
-	{ "lp55231", LP55231 },
-	{ }
-};
-
-MODULE_DEVICE_TABLE(i2c, lp5523_id);
-
 #ifdef CONFIG_OF
 static const struct of_device_id of_lp5523_leds_match[] = {
 	{ .compatible = "national,lp5523", },
@@ -973,9 +964,8 @@ static struct i2c_driver lp5523_driver = {
 		.name	= "lp5523x",
 		.of_match_table = of_match_ptr(of_lp5523_leds_match),
 	},
-	.probe		= lp5523_probe,
+	.probe2 = lp5523_probe,
 	.remove		= lp5523_remove,
-	.id_table	= lp5523_id,
 };
 
 module_i2c_driver(lp5523_driver);

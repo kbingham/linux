@@ -547,8 +547,7 @@ static void rt8973a_init_dev_type(struct rt8973a_muic_info *info)
 	}
 }
 
-static int rt8973a_muic_i2c_probe(struct i2c_client *i2c,
-				 const struct i2c_device_id *id)
+static int rt8973a_muic_i2c_probe(struct i2c_client *i2c)
 {
 	struct device_node *np = i2c->dev.of_node;
 	struct rt8973a_muic_info *info;
@@ -684,21 +683,14 @@ static int rt8973a_muic_resume(struct device *dev)
 static SIMPLE_DEV_PM_OPS(rt8973a_muic_pm_ops,
 			 rt8973a_muic_suspend, rt8973a_muic_resume);
 
-static const struct i2c_device_id rt8973a_i2c_id[] = {
-	{ "rt8973a", TYPE_RT8973A },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, rt8973a_i2c_id);
-
 static struct i2c_driver rt8973a_muic_i2c_driver = {
 	.driver		= {
 		.name	= "rt8973a",
 		.pm	= &rt8973a_muic_pm_ops,
 		.of_match_table = rt8973a_dt_match,
 	},
-	.probe	= rt8973a_muic_i2c_probe,
+	.probe2 = rt8973a_muic_i2c_probe,
 	.remove	= rt8973a_muic_i2c_remove,
-	.id_table = rt8973a_i2c_id,
 };
 
 static int __init rt8973a_muic_i2c_init(void)

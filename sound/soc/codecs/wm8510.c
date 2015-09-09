@@ -653,8 +653,7 @@ static struct spi_driver wm8510_spi_driver = {
 #endif /* CONFIG_SPI_MASTER */
 
 #if IS_ENABLED(CONFIG_I2C)
-static int wm8510_i2c_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *id)
+static int wm8510_i2c_probe(struct i2c_client *i2c)
 {
 	struct wm8510_priv *wm8510;
 	int ret;
@@ -682,20 +681,13 @@ static int wm8510_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id wm8510_i2c_id[] = {
-	{ "wm8510", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, wm8510_i2c_id);
-
 static struct i2c_driver wm8510_i2c_driver = {
 	.driver = {
 		.name = "wm8510",
 		.of_match_table = wm8510_of_match,
 	},
-	.probe =    wm8510_i2c_probe,
+	.probe2 = wm8510_i2c_probe,
 	.remove =   wm8510_i2c_remove,
-	.id_table = wm8510_i2c_id,
 };
 #endif
 

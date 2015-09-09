@@ -20,19 +20,6 @@
 
 #include "mc13xxx.h"
 
-static const struct i2c_device_id mc13xxx_i2c_device_id[] = {
-	{
-		.name = "mc13892",
-		.driver_data = (kernel_ulong_t)&mc13xxx_variant_mc13892,
-	}, {
-		.name = "mc34708",
-		.driver_data = (kernel_ulong_t)&mc13xxx_variant_mc34708,
-	}, {
-		/* sentinel */
-	}
-};
-MODULE_DEVICE_TABLE(i2c, mc13xxx_i2c_device_id);
-
 static const struct of_device_id mc13xxx_dt_ids[] = {
 	{
 		.compatible = "fsl,mc13892",
@@ -55,8 +42,7 @@ static const struct regmap_config mc13xxx_regmap_i2c_config = {
 	.cache_type = REGCACHE_NONE,
 };
 
-static int mc13xxx_i2c_probe(struct i2c_client *client,
-		const struct i2c_device_id *id)
+static int mc13xxx_i2c_probe(struct i2c_client *client)
 {
 	struct mc13xxx *mc13xxx;
 	int ret;
@@ -94,12 +80,11 @@ static int mc13xxx_i2c_remove(struct i2c_client *client)
 }
 
 static struct i2c_driver mc13xxx_i2c_driver = {
-	.id_table = mc13xxx_i2c_device_id,
 	.driver = {
 		.name = "mc13xxx",
 		.of_match_table = mc13xxx_dt_ids,
 	},
-	.probe = mc13xxx_i2c_probe,
+	.probe2 = mc13xxx_i2c_probe,
 	.remove = mc13xxx_i2c_remove,
 };
 

@@ -144,14 +144,6 @@ static const struct sx150x_device_data sx150x_devices[] = {
 	},
 };
 
-static const struct i2c_device_id sx150x_id[] = {
-	{"sx1508q", 0},
-	{"sx1509q", 1},
-	{"sx1506q", 2},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, sx150x_id);
-
 static const struct of_device_id sx150x_of_match[] = {
 	{ .compatible = "semtech,sx1508q" },
 	{ .compatible = "semtech,sx1509q" },
@@ -624,8 +616,7 @@ static int sx150x_install_irq_chip(struct sx150x_chip *chip,
 	return err;
 }
 
-static int sx150x_probe(struct i2c_client *client,
-				const struct i2c_device_id *id)
+static int sx150x_probe(struct i2c_client *client)
 {
 	static const u32 i2c_funcs = I2C_FUNC_SMBUS_BYTE_DATA |
 				     I2C_FUNC_SMBUS_WRITE_WORD_DATA;
@@ -686,9 +677,8 @@ static struct i2c_driver sx150x_driver = {
 		.owner = THIS_MODULE,
 		.of_match_table = of_match_ptr(sx150x_of_match),
 	},
-	.probe    = sx150x_probe,
+	.probe2 = sx150x_probe,
 	.remove   = sx150x_remove,
-	.id_table = sx150x_id,
 };
 
 static int __init sx150x_init(void)

@@ -777,8 +777,7 @@ error_ldo:
 	return ret;
 }
 
-static int aic32x4_i2c_probe(struct i2c_client *i2c,
-			     const struct i2c_device_id *id)
+static int aic32x4_i2c_probe(struct i2c_client *i2c)
 {
 	struct aic32x4_pdata *pdata = i2c->dev.platform_data;
 	struct aic32x4_priv *aic32x4;
@@ -856,12 +855,6 @@ static int aic32x4_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id aic32x4_i2c_id[] = {
-	{ "tlv320aic32x4", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, aic32x4_i2c_id);
-
 static const struct of_device_id aic32x4_of_id[] = {
 	{ .compatible = "ti,tlv320aic32x4", },
 	{ /* senitel */ }
@@ -873,9 +866,8 @@ static struct i2c_driver aic32x4_i2c_driver = {
 		.name = "tlv320aic32x4",
 		.of_match_table = aic32x4_of_id,
 	},
-	.probe =    aic32x4_i2c_probe,
+	.probe2 = aic32x4_i2c_probe,
 	.remove =   aic32x4_i2c_remove,
-	.id_table = aic32x4_i2c_id,
 };
 
 module_i2c_driver(aic32x4_i2c_driver);

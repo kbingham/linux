@@ -132,12 +132,6 @@ static int em3027_probe(struct i2c_client *client,
 	return 0;
 }
 
-static struct i2c_device_id em3027_id[] = {
-	{ "em3027", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, em3027_id);
-
 #ifdef CONFIG_OF
 static const struct of_device_id em3027_of_match[] = {
 	{ .compatible = "emmicro,em3027", },
@@ -152,7 +146,6 @@ static struct i2c_driver em3027_driver = {
 		   .of_match_table = of_match_ptr(em3027_of_match),
 	},
 	.probe = &em3027_probe,
-	.id_table = em3027_id,
 };
 
 module_i2c_driver(em3027_driver);

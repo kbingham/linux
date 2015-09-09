@@ -420,8 +420,7 @@ static inline struct mms114_platform_data *mms114_parse_dt(struct device *dev)
 }
 #endif
 
-static int mms114_probe(struct i2c_client *client,
-				  const struct i2c_device_id *id)
+static int mms114_probe(struct i2c_client *client)
 {
 	const struct mms114_platform_data *pdata;
 	struct mms114_data *data;
@@ -561,12 +560,6 @@ static int __maybe_unused mms114_resume(struct device *dev)
 
 static SIMPLE_DEV_PM_OPS(mms114_pm_ops, mms114_suspend, mms114_resume);
 
-static const struct i2c_device_id mms114_id[] = {
-	{ "mms114", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, mms114_id);
-
 #ifdef CONFIG_OF
 static const struct of_device_id mms114_dt_match[] = {
 	{ .compatible = "melfas,mms114" },
@@ -581,8 +574,7 @@ static struct i2c_driver mms114_driver = {
 		.pm	= &mms114_pm_ops,
 		.of_match_table = of_match_ptr(mms114_dt_match),
 	},
-	.probe		= mms114_probe,
-	.id_table	= mms114_id,
+	.probe2 = mms114_probe,
 };
 
 module_i2c_driver(mms114_driver);

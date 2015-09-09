@@ -370,14 +370,6 @@ static const struct of_device_id axp20x_of_match[] = {
 };
 MODULE_DEVICE_TABLE(of, axp20x_of_match);
 
-/*
- * This is useless for OF-enabled devices, but it is needed by I2C subsystem
- */
-static const struct i2c_device_id axp20x_i2c_id[] = {
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, axp20x_i2c_id);
-
 static const struct acpi_device_id axp20x_acpi_match[] = {
 	{
 		.id = "INT33F4",
@@ -643,8 +635,7 @@ static int axp20x_match_device(struct axp20x_dev *axp20x, struct device *dev)
 	return 0;
 }
 
-static int axp20x_i2c_probe(struct i2c_client *i2c,
-			 const struct i2c_device_id *id)
+static int axp20x_i2c_probe(struct i2c_client *i2c)
 {
 	struct axp20x_dev *axp20x;
 	int ret;
@@ -717,9 +708,8 @@ static struct i2c_driver axp20x_i2c_driver = {
 		.of_match_table	= of_match_ptr(axp20x_of_match),
 		.acpi_match_table = ACPI_PTR(axp20x_acpi_match),
 	},
-	.probe		= axp20x_i2c_probe,
+	.probe2 = axp20x_i2c_probe,
 	.remove		= axp20x_i2c_remove,
-	.id_table	= axp20x_i2c_id,
 };
 
 module_i2c_driver(axp20x_i2c_driver);

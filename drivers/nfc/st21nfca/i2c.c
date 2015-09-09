@@ -60,13 +60,6 @@
 
 #define ST21NFCA_HCI_I2C_DRIVER_NAME "st21nfca_hci_i2c"
 
-static struct i2c_device_id st21nfca_hci_i2c_id_table[] = {
-	{ST21NFCA_HCI_DRIVER_NAME, 0},
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, st21nfca_hci_i2c_id_table);
-
 struct st21nfca_i2c_phy {
 	struct i2c_client *i2c_dev;
 	struct nfc_hci_dev *hdev;
@@ -584,8 +577,7 @@ static int st21nfca_hci_i2c_request_resources(struct i2c_client *client)
 	return 0;
 }
 
-static int st21nfca_hci_i2c_probe(struct i2c_client *client,
-				  const struct i2c_device_id *id)
+static int st21nfca_hci_i2c_probe(struct i2c_client *client)
 {
 	struct st21nfca_i2c_phy *phy;
 	struct st21nfca_nfc_platform_data *pdata;
@@ -684,8 +676,7 @@ static struct i2c_driver st21nfca_hci_i2c_driver = {
 		.name = ST21NFCA_HCI_I2C_DRIVER_NAME,
 		.of_match_table = of_match_ptr(of_st21nfca_i2c_match),
 	},
-	.probe = st21nfca_hci_i2c_probe,
-	.id_table = st21nfca_hci_i2c_id_table,
+	.probe2 = st21nfca_hci_i2c_probe,
 	.remove = st21nfca_hci_i2c_remove,
 };
 

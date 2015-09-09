@@ -260,8 +260,7 @@ static int tca8418_configure(struct tca8418_keypad *keypad_data,
 	return error;
 }
 
-static int tca8418_keypad_probe(struct i2c_client *client,
-					  const struct i2c_device_id *id)
+static int tca8418_keypad_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	const struct tca8418_keypad_platform_data *pdata =
@@ -380,12 +379,6 @@ static int tca8418_keypad_probe(struct i2c_client *client,
 	return 0;
 }
 
-static const struct i2c_device_id tca8418_id[] = {
-	{ TCA8418_NAME, 8418, },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, tca8418_id);
-
 #ifdef CONFIG_OF
 static const struct of_device_id tca8418_dt_ids[] = {
 	{ .compatible = "ti,tca8418", },
@@ -406,8 +399,7 @@ static struct i2c_driver tca8418_keypad_driver = {
 		.name	= TCA8418_NAME,
 		.of_match_table = of_match_ptr(tca8418_dt_ids),
 	},
-	.probe		= tca8418_keypad_probe,
-	.id_table	= tca8418_id,
+	.probe2 = tca8418_keypad_probe,
 };
 
 static int __init tca8418_keypad_init(void)

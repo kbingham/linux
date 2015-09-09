@@ -205,8 +205,7 @@ static const struct of_device_id max77686_pmic_dt_match[] = {
 	{ },
 };
 
-static int max77686_i2c_probe(struct i2c_client *i2c,
-			      const struct i2c_device_id *id)
+static int max77686_i2c_probe(struct i2c_client *i2c)
 {
 	struct max77686_dev *max77686 = NULL;
 	const struct of_device_id *match;
@@ -343,12 +342,6 @@ static int max77686_i2c_remove(struct i2c_client *i2c)
 	return 0;
 }
 
-static const struct i2c_device_id max77686_i2c_id[] = {
-	{ "max77686", TYPE_MAX77686 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, max77686_i2c_id);
-
 #ifdef CONFIG_PM_SLEEP
 static int max77686_suspend(struct device *dev)
 {
@@ -394,9 +387,8 @@ static struct i2c_driver max77686_i2c_driver = {
 		   .pm = &max77686_pm,
 		   .of_match_table = of_match_ptr(max77686_pmic_dt_match),
 	},
-	.probe = max77686_i2c_probe,
+	.probe2 = max77686_i2c_probe,
 	.remove = max77686_i2c_remove,
-	.id_table = max77686_i2c_id,
 };
 
 static int __init max77686_i2c_init(void)

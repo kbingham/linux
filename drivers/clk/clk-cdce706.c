@@ -622,8 +622,7 @@ static int cdce706_register_clkouts(struct cdce706_dev_data *cdce)
 	return ret;
 }
 
-static int cdce706_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int cdce706_probe(struct i2c_client *client)
 {
 	struct i2c_adapter *adapter = to_i2c_adapter(client->dev.parent);
 	struct cdce706_dev_data *cdce;
@@ -680,20 +679,13 @@ static const struct of_device_id cdce706_dt_match[] = {
 MODULE_DEVICE_TABLE(of, cdce706_dt_match);
 #endif
 
-static const struct i2c_device_id cdce706_id[] = {
-	{ "cdce706", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, cdce706_id);
-
 static struct i2c_driver cdce706_i2c_driver = {
 	.driver	= {
 		.name	= "cdce706",
 		.of_match_table = of_match_ptr(cdce706_dt_match),
 	},
-	.probe		= cdce706_probe,
+	.probe2 = cdce706_probe,
 	.remove		= cdce706_remove,
-	.id_table	= cdce706_id,
 };
 module_i2c_driver(cdce706_i2c_driver);
 

@@ -47,8 +47,7 @@ MODULE_DEVICE_TABLE(of, st_magn_of_match);
 #define st_magn_of_match NULL
 #endif
 
-static int st_magn_i2c_probe(struct i2c_client *client,
-						const struct i2c_device_id *id)
+static int st_magn_i2c_probe(struct i2c_client *client)
 {
 	struct iio_dev *indio_dev;
 	struct st_sensor_data *mdata;
@@ -78,24 +77,13 @@ static int st_magn_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id st_magn_id_table[] = {
-	{ LSM303DLH_MAGN_DEV_NAME },
-	{ LSM303DLHC_MAGN_DEV_NAME },
-	{ LSM303DLM_MAGN_DEV_NAME },
-	{ LIS3MDL_MAGN_DEV_NAME },
-	{ LSM303AGR_MAGN_DEV_NAME },
-	{},
-};
-MODULE_DEVICE_TABLE(i2c, st_magn_id_table);
-
 static struct i2c_driver st_magn_driver = {
 	.driver = {
 		.name = "st-magn-i2c",
 		.of_match_table = of_match_ptr(st_magn_of_match),
 	},
-	.probe = st_magn_i2c_probe,
+	.probe2 = st_magn_i2c_probe,
 	.remove = st_magn_i2c_remove,
-	.id_table = st_magn_id_table,
 };
 module_i2c_driver(st_magn_driver);
 

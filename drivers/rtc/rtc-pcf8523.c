@@ -286,8 +286,7 @@ static const struct rtc_class_ops pcf8523_rtc_ops = {
 	.ioctl = pcf8523_rtc_ioctl,
 };
 
-static int pcf8523_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int pcf8523_probe(struct i2c_client *client)
 {
 	struct pcf8523 *pcf;
 	int err;
@@ -317,12 +316,6 @@ static int pcf8523_probe(struct i2c_client *client,
 	return 0;
 }
 
-static const struct i2c_device_id pcf8523_id[] = {
-	{ "pcf8523", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, pcf8523_id);
-
 #ifdef CONFIG_OF
 static const struct of_device_id pcf8523_of_match[] = {
 	{ .compatible = "nxp,pcf8523" },
@@ -336,8 +329,7 @@ static struct i2c_driver pcf8523_driver = {
 		.name = DRIVER_NAME,
 		.of_match_table = of_match_ptr(pcf8523_of_match),
 	},
-	.probe = pcf8523_probe,
-	.id_table = pcf8523_id,
+	.probe2 = pcf8523_probe,
 };
 module_i2c_driver(pcf8523_driver);
 

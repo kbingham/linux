@@ -32,8 +32,7 @@ static const struct regmap_config sky81452_config = {
 	.val_bits = 8,
 };
 
-static int sky81452_probe(struct i2c_client *client,
-				const struct i2c_device_id *id)
+static int sky81452_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	const struct sky81452_platform_data *pdata = dev_get_platdata(dev);
@@ -77,12 +76,6 @@ static int sky81452_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id sky81452_ids[] = {
-	{ "sky81452" },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, sky81452_ids);
-
 #ifdef CONFIG_OF
 static const struct of_device_id sky81452_of_match[] = {
 	{ .compatible = "skyworks,sky81452", },
@@ -96,9 +89,8 @@ static struct i2c_driver sky81452_driver = {
 		.name = "sky81452",
 		.of_match_table = of_match_ptr(sky81452_of_match),
 	},
-	.probe = sky81452_probe,
+	.probe2 = sky81452_probe,
 	.remove = sky81452_remove,
-	.id_table = sky81452_ids,
 };
 
 module_i2c_driver(sky81452_driver);

@@ -510,8 +510,7 @@ static inline int drv260x_parse_dt(struct device *dev,
 }
 #endif
 
-static int drv260x_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int drv260x_probe(struct i2c_client *client)
 {
 	const struct drv260x_platform_data *pdata = dev_get_platdata(&client->dev);
 	struct drv260x_data *haptics;
@@ -699,12 +698,6 @@ out:
 
 static SIMPLE_DEV_PM_OPS(drv260x_pm_ops, drv260x_suspend, drv260x_resume);
 
-static const struct i2c_device_id drv260x_id[] = {
-	{ "drv2605l", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, drv260x_id);
-
 #ifdef CONFIG_OF
 static const struct of_device_id drv260x_of_match[] = {
 	{ .compatible = "ti,drv2604", },
@@ -717,13 +710,12 @@ MODULE_DEVICE_TABLE(of, drv260x_of_match);
 #endif
 
 static struct i2c_driver drv260x_driver = {
-	.probe		= drv260x_probe,
+	.probe2 = drv260x_probe,
 	.driver		= {
 		.name	= "drv260x-haptics",
 		.of_match_table = of_match_ptr(drv260x_of_match),
 		.pm	= &drv260x_pm_ops,
 	},
-	.id_table = drv260x_id,
 };
 module_i2c_driver(drv260x_driver);
 

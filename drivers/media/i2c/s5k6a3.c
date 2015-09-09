@@ -276,8 +276,7 @@ static struct v4l2_subdev_ops s5k6a3_subdev_ops = {
 	.pad = &s5k6a3_pad_ops,
 };
 
-static int s5k6a3_probe(struct i2c_client *client,
-				const struct i2c_device_id *id)
+static int s5k6a3_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct s5k6a3 *sensor;
@@ -360,11 +359,6 @@ static int s5k6a3_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id s5k6a3_ids[] = {
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, s5k6a3_ids);
-
 #ifdef CONFIG_OF
 static const struct of_device_id s5k6a3_of_match[] = {
 	{ .compatible = "samsung,s5k6a3" },
@@ -379,9 +373,8 @@ static struct i2c_driver s5k6a3_driver = {
 		.name		= S5K6A3_DRV_NAME,
 		.owner		= THIS_MODULE,
 	},
-	.probe		= s5k6a3_probe,
+	.probe2 = s5k6a3_probe,
 	.remove		= s5k6a3_remove,
-	.id_table	= s5k6a3_ids,
 };
 
 module_i2c_driver(s5k6a3_driver);

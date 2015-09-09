@@ -1129,8 +1129,7 @@ static void elants_i2c_power_off(void *_data)
 	}
 }
 
-static int elants_i2c_probe(struct i2c_client *client,
-			    const struct i2c_device_id *id)
+static int elants_i2c_probe(struct i2c_client *client)
 {
 	union i2c_smbus_data dummy;
 	struct elants_data *ts;
@@ -1372,12 +1371,6 @@ static int __maybe_unused elants_i2c_resume(struct device *dev)
 static SIMPLE_DEV_PM_OPS(elants_i2c_pm_ops,
 			 elants_i2c_suspend, elants_i2c_resume);
 
-static const struct i2c_device_id elants_i2c_id[] = {
-	{ DEVICE_NAME, 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, elants_i2c_id);
-
 #ifdef CONFIG_ACPI
 static const struct acpi_device_id elants_acpi_id[] = {
 	{ "ELAN0001", 0 },
@@ -1395,8 +1388,7 @@ MODULE_DEVICE_TABLE(of, elants_of_match);
 #endif
 
 static struct i2c_driver elants_i2c_driver = {
-	.probe = elants_i2c_probe,
-	.id_table = elants_i2c_id,
+	.probe2 = elants_i2c_probe,
 	.driver = {
 		.name = DEVICE_NAME,
 		.pm = &elants_i2c_pm_ops,

@@ -218,8 +218,7 @@ static const struct of_device_id max1586_of_match[] = {
 };
 MODULE_DEVICE_TABLE(of, max1586_of_match);
 
-static int max1586_pmic_probe(struct i2c_client *client,
-					const struct i2c_device_id *i2c_id)
+static int max1586_pmic_probe(struct i2c_client *client)
 {
 	struct max1586_platform_data *pdata, pdata_of;
 	struct regulator_config config = { };
@@ -294,19 +293,12 @@ static int max1586_pmic_probe(struct i2c_client *client,
 	return 0;
 }
 
-static const struct i2c_device_id max1586_id[] = {
-	{ "max1586", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, max1586_id);
-
 static struct i2c_driver max1586_pmic_driver = {
-	.probe = max1586_pmic_probe,
+	.probe2 = max1586_pmic_probe,
 	.driver		= {
 		.name	= "max1586",
 		.of_match_table = of_match_ptr(max1586_of_match),
 	},
-	.id_table	= max1586_id,
 };
 
 static int __init max1586_pmic_init(void)

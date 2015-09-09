@@ -1599,12 +1599,6 @@ static const struct of_device_id tda998x_dt_ids[] = {
 MODULE_DEVICE_TABLE(of, tda998x_dt_ids);
 #endif
 
-static struct i2c_device_id tda998x_ids[] = {
-	{ "tda998x", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, tda998x_ids);
-
 static struct drm_i2c_encoder_driver tda998x_driver = {
 	.i2c_driver = {
 		.probe = tda998x_probe,

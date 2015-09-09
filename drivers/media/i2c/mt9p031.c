@@ -1030,8 +1030,7 @@ done:
 	return pdata;
 }
 
-static int mt9p031_probe(struct i2c_client *client,
-			 const struct i2c_device_id *did)
+static int mt9p031_probe(struct i2c_client *client)
 {
 	struct mt9p031_platform_data *pdata = mt9p031_get_pdata(client);
 	struct i2c_adapter *adapter = to_i2c_adapter(client->dev.parent);
@@ -1165,13 +1164,6 @@ static int mt9p031_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id mt9p031_id[] = {
-	{ "mt9p031", MT9P031_MODEL_COLOR },
-	{ "mt9p031m", MT9P031_MODEL_MONOCHROME },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, mt9p031_id);
-
 #if IS_ENABLED(CONFIG_OF)
 static const struct of_device_id mt9p031_of_match[] = {
 	{ .compatible = "aptina,mt9p031", },
@@ -1186,9 +1178,8 @@ static struct i2c_driver mt9p031_i2c_driver = {
 		.of_match_table = of_match_ptr(mt9p031_of_match),
 		.name = "mt9p031",
 	},
-	.probe          = mt9p031_probe,
+	.probe2 = mt9p031_probe,
 	.remove         = mt9p031_remove,
-	.id_table       = mt9p031_id,
 };
 
 module_i2c_driver(mt9p031_i2c_driver);

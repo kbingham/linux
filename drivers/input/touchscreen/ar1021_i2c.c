@@ -72,8 +72,7 @@ static void ar1021_i2c_close(struct input_dev *dev)
 	disable_irq(client->irq);
 }
 
-static int ar1021_i2c_probe(struct i2c_client *client,
-				     const struct i2c_device_id *id)
+static int ar1021_i2c_probe(struct i2c_client *client)
 {
 	struct ar1021_i2c *ar1021;
 	struct input_dev *input;
@@ -151,12 +150,6 @@ static int __maybe_unused ar1021_i2c_resume(struct device *dev)
 
 static SIMPLE_DEV_PM_OPS(ar1021_i2c_pm, ar1021_i2c_suspend, ar1021_i2c_resume);
 
-static const struct i2c_device_id ar1021_i2c_id[] = {
-	{ "MICROCHIP_AR1021_I2C", 0 },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, ar1021_i2c_id);
-
 static const struct of_device_id ar1021_i2c_of_match[] = {
 	{ .compatible = "microchip,ar1021-i2c", },
 	{ }
@@ -170,8 +163,7 @@ static struct i2c_driver ar1021_i2c_driver = {
 		.of_match_table = ar1021_i2c_of_match,
 	},
 
-	.probe		= ar1021_i2c_probe,
-	.id_table	= ar1021_i2c_id,
+	.probe2 = ar1021_i2c_probe,
 };
 module_i2c_driver(ar1021_i2c_driver);
 

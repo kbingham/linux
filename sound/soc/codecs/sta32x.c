@@ -1071,8 +1071,7 @@ static int sta32x_probe_dt(struct device *dev, struct sta32x_priv *sta32x)
 }
 #endif
 
-static int sta32x_i2c_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *id)
+static int sta32x_i2c_probe(struct i2c_client *i2c)
 {
 	struct device *dev = &i2c->dev;
 	struct sta32x_priv *sta32x;
@@ -1133,22 +1132,13 @@ static int sta32x_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id sta32x_i2c_id[] = {
-	{ "sta326", 0 },
-	{ "sta328", 0 },
-	{ "sta329", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, sta32x_i2c_id);
-
 static struct i2c_driver sta32x_i2c_driver = {
 	.driver = {
 		.name = "sta32x",
 		.of_match_table = of_match_ptr(st32x_dt_ids),
 	},
-	.probe =    sta32x_i2c_probe,
+	.probe2 = sta32x_i2c_probe,
 	.remove =   sta32x_i2c_remove,
-	.id_table = sta32x_i2c_id,
 };
 
 module_i2c_driver(sta32x_i2c_driver);

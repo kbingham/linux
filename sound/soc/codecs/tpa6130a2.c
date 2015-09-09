@@ -366,8 +366,7 @@ int tpa6130a2_add_controls(struct snd_soc_codec *codec)
 }
 EXPORT_SYMBOL_GPL(tpa6130a2_add_controls);
 
-static int tpa6130a2_probe(struct i2c_client *client,
-			   const struct i2c_device_id *id)
+static int tpa6130a2_probe(struct i2c_client *client)
 {
 	struct device *dev;
 	struct tpa6130a2_data *data;
@@ -467,13 +466,6 @@ static int tpa6130a2_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id tpa6130a2_id[] = {
-	{ "tpa6130a2", TPA6130A2 },
-	{ "tpa6140a2", TPA6140A2 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, tpa6130a2_id);
-
 #if IS_ENABLED(CONFIG_OF)
 static const struct of_device_id tpa6130a2_of_match[] = {
 	{ .compatible = "ti,tpa6130a2", },
@@ -488,9 +480,8 @@ static struct i2c_driver tpa6130a2_i2c_driver = {
 		.name = "tpa6130a2",
 		.of_match_table = of_match_ptr(tpa6130a2_of_match),
 	},
-	.probe = tpa6130a2_probe,
+	.probe2 = tpa6130a2_probe,
 	.remove = tpa6130a2_remove,
-	.id_table = tpa6130a2_id,
 };
 
 module_i2c_driver(tpa6130a2_i2c_driver);

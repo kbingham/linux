@@ -128,13 +128,6 @@ out:
 }
 EXPORT_SYMBOL(max8925_set_bits);
 
-
-static const struct i2c_device_id max8925_id_table[] = {
-	{ "max8925", 0 },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, max8925_id_table);
-
 static int max8925_dt_init(struct device_node *np, struct device *dev,
 			   struct max8925_platform_data *pdata)
 {
@@ -148,8 +141,7 @@ static int max8925_dt_init(struct device_node *np, struct device *dev,
 	return 0;
 }
 
-static int max8925_probe(struct i2c_client *client,
-				   const struct i2c_device_id *id)
+static int max8925_probe(struct i2c_client *client)
 {
 	struct max8925_platform_data *pdata = dev_get_platdata(&client->dev);
 	static struct max8925_chip *chip;
@@ -248,9 +240,8 @@ static struct i2c_driver max8925_driver = {
 		.pm     = &max8925_pm_ops,
 		.of_match_table = max8925_dt_ids,
 	},
-	.probe		= max8925_probe,
+	.probe2 = max8925_probe,
 	.remove		= max8925_remove,
-	.id_table	= max8925_id_table,
 };
 
 static int __init max8925_i2c_init(void)

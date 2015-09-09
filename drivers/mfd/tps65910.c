@@ -452,8 +452,7 @@ static void tps65910_power_off(void)
 			DEVCTRL_DEV_ON_MASK);
 }
 
-static int tps65910_i2c_probe(struct i2c_client *i2c,
-			      const struct i2c_device_id *id)
+static int tps65910_i2c_probe(struct i2c_client *i2c)
 {
 	struct tps65910 *tps65910;
 	struct tps65910_board *pmic_plat_data;
@@ -533,22 +532,14 @@ static int tps65910_i2c_remove(struct i2c_client *i2c)
 	return 0;
 }
 
-static const struct i2c_device_id tps65910_i2c_id[] = {
-       { "tps65910", TPS65910 },
-       { "tps65911", TPS65911 },
-       { }
-};
-MODULE_DEVICE_TABLE(i2c, tps65910_i2c_id);
-
 
 static struct i2c_driver tps65910_i2c_driver = {
 	.driver = {
 		   .name = "tps65910",
 		   .of_match_table = of_match_ptr(tps65910_of_match),
 	},
-	.probe = tps65910_i2c_probe,
+	.probe2 = tps65910_i2c_probe,
 	.remove = tps65910_i2c_remove,
-	.id_table = tps65910_i2c_id,
 };
 
 static int __init tps65910_i2c_init(void)
