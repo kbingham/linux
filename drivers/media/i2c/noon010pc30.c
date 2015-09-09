@@ -698,8 +698,7 @@ static int noon010_detect(struct i2c_client *client, struct noon010_info *info)
 	return ret == NOON010PC30_ID ? 0 : -ENODEV;
 }
 
-static int noon010_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int noon010_probe(struct i2c_client *client)
 {
 	struct noon010_info *info;
 	struct v4l2_subdev *sd;
@@ -806,20 +805,13 @@ static int noon010_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id noon010_id[] = {
-	{ MODULE_NAME, 0 },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, noon010_id);
-
 
 static struct i2c_driver noon010_i2c_driver = {
 	.driver = {
 		.name = MODULE_NAME
 	},
-	.probe		= noon010_probe,
+	.probe2 = noon010_probe,
 	.remove		= noon010_remove,
-	.id_table	= noon010_id,
 };
 
 module_i2c_driver(noon010_i2c_driver);

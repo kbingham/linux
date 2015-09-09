@@ -71,8 +71,7 @@ err:
 	return ret;
 }
 
-static int a8293_probe(struct i2c_client *client,
-		       const struct i2c_device_id *id)
+static int a8293_probe(struct i2c_client *client)
 {
 	struct a8293_dev *dev;
 	struct a8293_platform_data *pdata = client->dev.platform_data;
@@ -117,20 +116,13 @@ static int a8293_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id a8293_id_table[] = {
-	{"a8293", 0},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, a8293_id_table);
-
 static struct i2c_driver a8293_driver = {
 	.driver = {
 		.name	= "a8293",
 		.suppress_bind_attrs = true,
 	},
-	.probe		= a8293_probe,
+	.probe2 = a8293_probe,
 	.remove		= a8293_remove,
-	.id_table	= a8293_id_table,
 };
 
 module_i2c_driver(a8293_driver);

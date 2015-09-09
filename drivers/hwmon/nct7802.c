@@ -1095,8 +1095,7 @@ static int nct7802_init_chip(struct nct7802_data *data)
 	return regmap_update_bits(data->regmap, REG_VMON_ENABLE, 0x03, 0x03);
 }
 
-static int nct7802_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int nct7802_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct nct7802_data *data;
@@ -1127,20 +1126,13 @@ static const unsigned short nct7802_address_list[] = {
 	0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, I2C_CLIENT_END
 };
 
-static const struct i2c_device_id nct7802_idtable[] = {
-	{ "nct7802", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, nct7802_idtable);
-
 static struct i2c_driver nct7802_driver = {
 	.class = I2C_CLASS_HWMON,
 	.driver = {
 		.name = DRVNAME,
 	},
 	.detect = nct7802_detect,
-	.probe = nct7802_probe,
-	.id_table = nct7802_idtable,
+	.probe2 = nct7802_probe,
 	.address_list = nct7802_address_list,
 };
 

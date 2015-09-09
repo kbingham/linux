@@ -108,18 +108,7 @@ static int ucd9000_read_byte_data(struct i2c_client *client, int page, int reg)
 	return ret;
 }
 
-static const struct i2c_device_id ucd9000_id[] = {
-	{"ucd9000", ucd9000},
-	{"ucd90120", ucd90120},
-	{"ucd90124", ucd90124},
-	{"ucd9090", ucd9090},
-	{"ucd90910", ucd90910},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, ucd9000_id);
-
-static int ucd9000_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int ucd9000_probe(struct i2c_client *client)
 {
 	u8 block_buffer[I2C_SMBUS_BLOCK_MAX + 1];
 	struct ucd9000_data *data;
@@ -234,9 +223,8 @@ static struct i2c_driver ucd9000_driver = {
 	.driver = {
 		.name = "ucd9000",
 	},
-	.probe = ucd9000_probe,
+	.probe2 = ucd9000_probe,
 	.remove = pmbus_do_remove,
-	.id_table = ucd9000_id,
 };
 
 module_i2c_driver(ucd9000_driver);

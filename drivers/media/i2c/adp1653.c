@@ -479,8 +479,7 @@ err:
 }
 
 
-static int adp1653_probe(struct i2c_client *client,
-			 const struct i2c_device_id *devid)
+static int adp1653_probe(struct i2c_client *client)
 {
 	struct adp1653_flash *flash;
 	int ret;
@@ -538,12 +537,6 @@ static int adp1653_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id adp1653_id_table[] = {
-	{ ADP1653_NAME, 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, adp1653_id_table);
-
 static const struct dev_pm_ops adp1653_pm_ops = {
 	.suspend	= adp1653_suspend,
 	.resume		= adp1653_resume,
@@ -554,9 +547,8 @@ static struct i2c_driver adp1653_i2c_driver = {
 		.name	= ADP1653_NAME,
 		.pm	= &adp1653_pm_ops,
 	},
-	.probe		= adp1653_probe,
+	.probe2 = adp1653_probe,
 	.remove		= adp1653_remove,
-	.id_table	= adp1653_id_table,
 };
 
 module_i2c_driver(adp1653_i2c_driver);

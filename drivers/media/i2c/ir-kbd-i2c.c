@@ -285,7 +285,7 @@ static void ir_work(struct work_struct *work)
 
 /* ----------------------------------------------------------------------- */
 
-static int ir_probe(struct i2c_client *client, const struct i2c_device_id *id)
+static int ir_probe(struct i2c_client *client)
 {
 	char *ir_codes = NULL;
 	const char *name = NULL;
@@ -470,23 +470,12 @@ static int ir_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id ir_kbd_id[] = {
-	/* Generic entry for any IR receiver */
-	{ "ir_video", 0 },
-	/* IR device specific entries should be added here */
-	{ "ir_rx_z8f0811_haup", 0 },
-	{ "ir_rx_z8f0811_hdpvr", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ir_kbd_id);
-
 static struct i2c_driver ir_kbd_driver = {
 	.driver = {
 		.name   = "ir-kbd-i2c",
 	},
-	.probe          = ir_probe,
+	.probe2 = ir_probe,
 	.remove         = ir_remove,
-	.id_table       = ir_kbd_id,
 };
 
 module_i2c_driver(ir_kbd_driver);

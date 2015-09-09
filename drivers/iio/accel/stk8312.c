@@ -528,8 +528,7 @@ static int stk8312_gpio_probe(struct i2c_client *client)
 	return ret;
 }
 
-static int stk8312_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int stk8312_probe(struct i2c_client *client)
 {
 	int ret;
 	struct iio_dev *indio_dev;
@@ -672,12 +671,6 @@ static SIMPLE_DEV_PM_OPS(stk8312_pm_ops, stk8312_suspend, stk8312_resume);
 #define STK8312_PM_OPS NULL
 #endif
 
-static const struct i2c_device_id stk8312_i2c_id[] = {
-	{"STK8312", 0},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, stk8312_i2c_id);
-
 static const struct acpi_device_id stk8312_acpi_id[] = {
 	{"STK8312", 0},
 	{}
@@ -691,9 +684,8 @@ static struct i2c_driver stk8312_driver = {
 		.pm = STK8312_PM_OPS,
 		.acpi_match_table = ACPI_PTR(stk8312_acpi_id),
 	},
-	.probe =            stk8312_probe,
+	.probe2 = stk8312_probe,
 	.remove =           stk8312_remove,
-	.id_table =         stk8312_i2c_id,
 };
 
 module_i2c_driver(stk8312_driver);

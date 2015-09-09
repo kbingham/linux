@@ -276,8 +276,7 @@ static struct attribute *max6642_attrs[] = {
 };
 ATTRIBUTE_GROUPS(max6642);
 
-static int max6642_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int max6642_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct max6642_data *data;
@@ -299,23 +298,12 @@ static int max6642_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-/*
- * Driver data (common to all clients)
- */
-
-static const struct i2c_device_id max6642_id[] = {
-	{ "max6642", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, max6642_id);
-
 static struct i2c_driver max6642_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver = {
 		.name	= "max6642",
 	},
-	.probe		= max6642_probe,
-	.id_table	= max6642_id,
+	.probe2 = max6642_probe,
 	.detect		= max6642_detect,
 	.address_list	= normal_i2c,
 };

@@ -102,26 +102,18 @@ struct ics932s401_data {
 	u8			regs[NUM_REGS];
 };
 
-static int ics932s401_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id);
+static int ics932s401_probe(struct i2c_client *client);
 static int ics932s401_detect(struct i2c_client *client,
 			  struct i2c_board_info *info);
 static int ics932s401_remove(struct i2c_client *client);
-
-static const struct i2c_device_id ics932s401_id[] = {
-	{ "ics932s401", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ics932s401_id);
 
 static struct i2c_driver ics932s401_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver = {
 		.name	= "ics932s401",
 	},
-	.probe		= ics932s401_probe,
+	.probe2 = ics932s401_probe,
 	.remove		= ics932s401_remove,
-	.id_table	= ics932s401_id,
 	.detect		= ics932s401_detect,
 	.address_list	= normal_i2c,
 };
@@ -440,8 +432,7 @@ static int ics932s401_detect(struct i2c_client *client,
 	return 0;
 }
 
-static int ics932s401_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int ics932s401_probe(struct i2c_client *client)
 {
 	struct ics932s401_data *data;
 	int err;

@@ -1031,8 +1031,7 @@ static const char *bmg160_match_acpi_device(struct device *dev)
 	return dev_name(dev);
 }
 
-static int bmg160_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int bmg160_probe(struct i2c_client *client)
 {
 	struct bmg160_data *data;
 	struct iio_dev *indio_dev;
@@ -1249,23 +1248,14 @@ static const struct acpi_device_id bmg160_acpi_match[] = {
 
 MODULE_DEVICE_TABLE(acpi, bmg160_acpi_match);
 
-static const struct i2c_device_id bmg160_id[] = {
-	{"bmg160", 0},
-	{"bmi055_gyro", 0},
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, bmg160_id);
-
 static struct i2c_driver bmg160_driver = {
 	.driver = {
 		.name	= BMG160_DRV_NAME,
 		.acpi_match_table = ACPI_PTR(bmg160_acpi_match),
 		.pm	= &bmg160_pm_ops,
 	},
-	.probe		= bmg160_probe,
+	.probe2 = bmg160_probe,
 	.remove		= bmg160_remove,
-	.id_table	= bmg160_id,
 };
 module_i2c_driver(bmg160_driver);
 

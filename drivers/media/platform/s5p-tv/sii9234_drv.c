@@ -314,8 +314,7 @@ static const struct v4l2_subdev_ops sii9234_ops = {
 	.video = &sii9234_video_ops,
 };
 
-static int sii9234_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int sii9234_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct sii9234_platform_data *pdata = dev->platform_data;
@@ -386,22 +385,13 @@ static int sii9234_remove(struct i2c_client *client)
 
 	return 0;
 }
-
-
-static const struct i2c_device_id sii9234_id[] = {
-	{ "SII9234", 0 },
-	{ },
-};
-
-MODULE_DEVICE_TABLE(i2c, sii9234_id);
 static struct i2c_driver sii9234_driver = {
 	.driver = {
 		.name	= "sii9234",
 		.pm = &sii9234_pm_ops,
 	},
-	.probe		= sii9234_probe,
+	.probe2 = sii9234_probe,
 	.remove		= sii9234_remove,
-	.id_table = sii9234_id,
 };
 
 module_i2c_driver(sii9234_driver);

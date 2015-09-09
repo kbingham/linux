@@ -236,8 +236,7 @@ static int sc18is602_setup(struct spi_device *spi)
 	return 0;
 }
 
-static int sc18is602_probe(struct i2c_client *client,
-			   const struct i2c_device_id *id)
+static int sc18is602_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device_node *np = dev->of_node;
@@ -306,20 +305,11 @@ error_reg:
 	return error;
 }
 
-static const struct i2c_device_id sc18is602_id[] = {
-	{ "sc18is602", sc18is602 },
-	{ "sc18is602b", sc18is602b },
-	{ "sc18is603", sc18is603 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, sc18is602_id);
-
 static struct i2c_driver sc18is602_driver = {
 	.driver = {
 		.name = "sc18is602",
 	},
-	.probe = sc18is602_probe,
-	.id_table = sc18is602_id,
+	.probe2 = sc18is602_probe,
 };
 
 module_i2c_driver(sc18is602_driver);

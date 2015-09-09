@@ -107,8 +107,7 @@ static const struct iio_info si7020_info = {
 	.driver_module = THIS_MODULE,
 };
 
-static int si7020_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int si7020_probe(struct i2c_client *client)
 {
 	struct iio_dev *indio_dev;
 	struct i2c_client **data;
@@ -143,16 +142,9 @@ static int si7020_probe(struct i2c_client *client,
 	return devm_iio_device_register(&client->dev, indio_dev);
 }
 
-static const struct i2c_device_id si7020_id[] = {
-	{ "si7020", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, si7020_id);
-
 static struct i2c_driver si7020_driver = {
 	.driver.name	= "si7020",
-	.probe		= si7020_probe,
-	.id_table	= si7020_id,
+	.probe2 = si7020_probe,
 };
 
 module_i2c_driver(si7020_driver);

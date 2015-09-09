@@ -1051,8 +1051,7 @@ static struct v4l2_subdev_ops ov772x_subdev_ops = {
  * i2c_driver function
  */
 
-static int ov772x_probe(struct i2c_client *client,
-			const struct i2c_device_id *did)
+static int ov772x_probe(struct i2c_client *client)
 {
 	struct ov772x_priv	*priv;
 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
@@ -1118,19 +1117,12 @@ static int ov772x_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id ov772x_id[] = {
-	{ "ov772x", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ov772x_id);
-
 static struct i2c_driver ov772x_i2c_driver = {
 	.driver = {
 		.name = "ov772x",
 	},
-	.probe    = ov772x_probe,
+	.probe2 = ov772x_probe,
 	.remove   = ov772x_remove,
-	.id_table = ov772x_id,
 };
 
 module_i2c_driver(ov772x_i2c_driver);

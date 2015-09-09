@@ -200,8 +200,7 @@ static void ad7418_init_client(struct i2c_client *client)
 	}
 }
 
-static int ad7418_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int ad7418_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct i2c_adapter *adapter = client->adapter;
@@ -251,20 +250,11 @@ static int ad7418_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id ad7418_id[] = {
-	{ "ad7416", ad7416 },
-	{ "ad7417", ad7417 },
-	{ "ad7418", ad7418 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ad7418_id);
-
 static struct i2c_driver ad7418_driver = {
 	.driver = {
 		.name	= "ad7418",
 	},
-	.probe		= ad7418_probe,
-	.id_table	= ad7418_id,
+	.probe2 = ad7418_probe,
 };
 
 module_i2c_driver(ad7418_driver);

@@ -275,8 +275,7 @@ static const struct v4l2_subdev_ops hdmiphy_ops = {
 	.pad = &hdmiphy_pad_ops,
 };
 
-static int hdmiphy_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int hdmiphy_probe(struct i2c_client *client)
 {
 	struct hdmiphy_ctx *ctx;
 
@@ -302,23 +301,12 @@ static int hdmiphy_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id hdmiphy_id[] = {
-	{ "hdmiphy", (unsigned long)hdmiphy_conf_exynos4210 },
-	{ "hdmiphy-s5pv210", (unsigned long)hdmiphy_conf_s5pv210 },
-	{ "hdmiphy-exynos4210", (unsigned long)hdmiphy_conf_exynos4210 },
-	{ "hdmiphy-exynos4212", (unsigned long)hdmiphy_conf_exynos4212 },
-	{ "hdmiphy-exynos4412", (unsigned long)hdmiphy_conf_exynos4412 },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, hdmiphy_id);
-
 static struct i2c_driver hdmiphy_driver = {
 	.driver = {
 		.name	= "s5p-hdmiphy",
 	},
-	.probe		= hdmiphy_probe,
+	.probe2 = hdmiphy_probe,
 	.remove		= hdmiphy_remove,
-	.id_table = hdmiphy_id,
 };
 
 module_i2c_driver(hdmiphy_driver);

@@ -629,8 +629,7 @@ static int tc35876x_get_panel_info(struct drm_device *dev, int pipe,
 	return 0;
 }
 
-static int tc35876x_bridge_probe(struct i2c_client *client,
-				const struct i2c_device_id *id)
+static int tc35876x_bridge_probe(struct i2c_client *client)
 {
 	struct tc35876x_platform_data *pdata;
 
@@ -688,24 +687,16 @@ static int tc35876x_bridge_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id tc35876x_bridge_id[] = {
-	{ "i2c_disp_brig", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, tc35876x_bridge_id);
-
 static struct i2c_driver tc35876x_bridge_i2c_driver = {
 	.driver = {
 		.name = "i2c_disp_brig",
 	},
-	.id_table = tc35876x_bridge_id,
-	.probe = tc35876x_bridge_probe,
+	.probe2 = tc35876x_bridge_probe,
 	.remove = tc35876x_bridge_remove,
 };
 
 /* LCD panel I2C */
-static int cmi_lcd_i2c_probe(struct i2c_client *client,
-			     const struct i2c_device_id *id)
+static int cmi_lcd_i2c_probe(struct i2c_client *client)
 {
 	dev_info(&client->dev, "%s\n", __func__);
 
@@ -729,18 +720,11 @@ static int cmi_lcd_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id cmi_lcd_i2c_id[] = {
-	{ "cmi-lcd", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, cmi_lcd_i2c_id);
-
 static struct i2c_driver cmi_lcd_i2c_driver = {
 	.driver = {
 		.name = "cmi-lcd",
 	},
-	.id_table = cmi_lcd_i2c_id,
-	.probe = cmi_lcd_i2c_probe,
+	.probe2 = cmi_lcd_i2c_probe,
 	.remove = cmi_lcd_i2c_remove,
 };
 

@@ -363,8 +363,7 @@ static const struct regmap_config lm3630a_regmap = {
 	.max_register = REG_MAX,
 };
 
-static int lm3630a_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int lm3630a_probe(struct i2c_client *client)
 {
 	struct lm3630a_platform_data *pdata = dev_get_platdata(&client->dev);
 	struct lm3630a_chip *pchip;
@@ -459,20 +458,12 @@ static int lm3630a_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id lm3630a_id[] = {
-	{LM3630A_NAME, 0},
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, lm3630a_id);
-
 static struct i2c_driver lm3630a_i2c_driver = {
 	.driver = {
 		   .name = LM3630A_NAME,
 		   },
-	.probe = lm3630a_probe,
+	.probe2 = lm3630a_probe,
 	.remove = lm3630a_remove,
-	.id_table = lm3630a_id,
 };
 
 module_i2c_driver(lm3630a_i2c_driver);

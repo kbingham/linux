@@ -403,8 +403,7 @@ static struct snd_soc_codec_driver soc_codec_dev_ak4535 = {
 	.num_dapm_routes = ARRAY_SIZE(ak4535_audio_map),
 };
 
-static int ak4535_i2c_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *id)
+static int ak4535_i2c_probe(struct i2c_client *i2c)
 {
 	struct ak4535_priv *ak4535;
 	int ret;
@@ -435,19 +434,12 @@ static int ak4535_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id ak4535_i2c_id[] = {
-	{ "ak4535", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ak4535_i2c_id);
-
 static struct i2c_driver ak4535_i2c_driver = {
 	.driver = {
 		.name = "ak4535",
 	},
-	.probe =    ak4535_i2c_probe,
+	.probe2 = ak4535_i2c_probe,
 	.remove =   ak4535_i2c_remove,
-	.id_table = ak4535_i2c_id,
 };
 
 module_i2c_driver(ak4535_i2c_driver);

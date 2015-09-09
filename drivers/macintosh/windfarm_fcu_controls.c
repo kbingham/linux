@@ -517,8 +517,7 @@ static int wf_fcu_init_chip(struct wf_fcu_priv *pv)
 	return 0;
 }
 
-static int wf_fcu_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int wf_fcu_probe(struct i2c_client *client)
 {
 	struct wf_fcu_priv *pv;
 
@@ -577,19 +576,12 @@ static int wf_fcu_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id wf_fcu_id[] = {
-	{ "MAC,fcu", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, wf_fcu_id);
-
 static struct i2c_driver wf_fcu_driver = {
 	.driver = {
 		.name	= "wf_fcu",
 	},
-	.probe		= wf_fcu_probe,
+	.probe2 = wf_fcu_probe,
 	.remove		= wf_fcu_remove,
-	.id_table	= wf_fcu_id,
 };
 
 module_i2c_driver(wf_fcu_driver);

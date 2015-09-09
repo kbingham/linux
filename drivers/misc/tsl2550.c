@@ -346,8 +346,7 @@ static int tsl2550_init_client(struct i2c_client *client)
  */
 
 static struct i2c_driver tsl2550_driver;
-static int tsl2550_probe(struct i2c_client *client,
-				   const struct i2c_device_id *id)
+static int tsl2550_probe(struct i2c_client *client)
 {
 	struct i2c_adapter *adapter = to_i2c_adapter(client->dev.parent);
 	struct tsl2550_data *data;
@@ -435,22 +434,15 @@ static SIMPLE_DEV_PM_OPS(tsl2550_pm_ops, tsl2550_suspend, tsl2550_resume);
 
 #define TSL2550_PM_OPS NULL
 
-#endif /* CONFIG_PM_SLEEP */
-
-static const struct i2c_device_id tsl2550_id[] = {
-	{ "tsl2550", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, tsl2550_id);
+#endif
 
 static struct i2c_driver tsl2550_driver = {
 	.driver = {
 		.name	= TSL2550_DRV_NAME,
 		.pm	= TSL2550_PM_OPS,
 	},
-	.probe	= tsl2550_probe,
+	.probe2 = tsl2550_probe,
 	.remove	= tsl2550_remove,
-	.id_table = tsl2550_id,
 };
 
 module_i2c_driver(tsl2550_driver);

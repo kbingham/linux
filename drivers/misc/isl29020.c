@@ -162,8 +162,7 @@ static int als_set_default_config(struct i2c_client *client)
 	return 0;
 }
 
-static int  isl29020_probe(struct i2c_client *client,
-					const struct i2c_device_id *id)
+static int  isl29020_probe(struct i2c_client *client)
 {
 	int res;
 
@@ -187,13 +186,6 @@ static int isl29020_remove(struct i2c_client *client)
 	sysfs_remove_group(&client->dev.kobj, &m_als_gr);
 	return 0;
 }
-
-static struct i2c_device_id isl29020_id[] = {
-	{ "isl29020", 0 },
-	{ }
-};
-
-MODULE_DEVICE_TABLE(i2c, isl29020_id);
 
 #ifdef CONFIG_PM
 
@@ -226,9 +218,8 @@ static struct i2c_driver isl29020_driver = {
 		.name = "isl29020",
 		.pm = ISL29020_PM_OPS,
 	},
-	.probe = isl29020_probe,
+	.probe2 = isl29020_probe,
 	.remove = isl29020_remove,
-	.id_table = isl29020_id,
 };
 
 module_i2c_driver(isl29020_driver);

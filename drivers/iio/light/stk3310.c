@@ -571,8 +571,7 @@ static irqreturn_t stk3310_irq_event_handler(int irq, void *private)
 	return IRQ_HANDLED;
 }
 
-static int stk3310_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int stk3310_probe(struct i2c_client *client)
 {
 	int ret;
 	struct iio_dev *indio_dev;
@@ -667,13 +666,6 @@ static SIMPLE_DEV_PM_OPS(stk3310_pm_ops, stk3310_suspend, stk3310_resume);
 #define STK3310_PM_OPS NULL
 #endif
 
-static const struct i2c_device_id stk3310_i2c_id[] = {
-	{"STK3310", 0},
-	{"STK3311", 0},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, stk3310_i2c_id);
-
 static const struct acpi_device_id stk3310_acpi_id[] = {
 	{"STK3310", 0},
 	{"STK3311", 0},
@@ -688,9 +680,8 @@ static struct i2c_driver stk3310_driver = {
 		.pm = STK3310_PM_OPS,
 		.acpi_match_table = ACPI_PTR(stk3310_acpi_id),
 	},
-	.probe =            stk3310_probe,
+	.probe2 = stk3310_probe,
 	.remove =           stk3310_remove,
-	.id_table =         stk3310_i2c_id,
 };
 
 module_i2c_driver(stk3310_driver);

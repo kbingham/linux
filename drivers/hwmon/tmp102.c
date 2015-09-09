@@ -162,8 +162,7 @@ static const struct thermal_zone_of_device_ops tmp102_of_thermal_ops = {
 	.get_temp = tmp102_read_temp,
 };
 
-static int tmp102_probe(struct i2c_client *client,
-				  const struct i2c_device_id *id)
+static int tmp102_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device *hwmon_dev;
@@ -283,18 +282,11 @@ static int tmp102_resume(struct device *dev)
 
 static SIMPLE_DEV_PM_OPS(tmp102_dev_pm_ops, tmp102_suspend, tmp102_resume);
 
-static const struct i2c_device_id tmp102_id[] = {
-	{ "tmp102", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, tmp102_id);
-
 static struct i2c_driver tmp102_driver = {
 	.driver.name	= DRIVER_NAME,
 	.driver.pm	= &tmp102_dev_pm_ops,
-	.probe		= tmp102_probe,
+	.probe2 = tmp102_probe,
 	.remove		= tmp102_remove,
-	.id_table	= tmp102_id,
 };
 
 module_i2c_driver(tmp102_driver);

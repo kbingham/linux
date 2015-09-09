@@ -1735,14 +1735,7 @@ static const struct regmap_config rt5651_regmap = {
 	.num_ranges = ARRAY_SIZE(rt5651_ranges),
 };
 
-static const struct i2c_device_id rt5651_i2c_id[] = {
-	{ "rt5651", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, rt5651_i2c_id);
-
-static int rt5651_i2c_probe(struct i2c_client *i2c,
-		    const struct i2c_device_id *id)
+static int rt5651_i2c_probe(struct i2c_client *i2c)
 {
 	struct rt5651_platform_data *pdata = dev_get_platdata(&i2c->dev);
 	struct rt5651_priv *rt5651;
@@ -1807,9 +1800,8 @@ static struct i2c_driver rt5651_i2c_driver = {
 	.driver = {
 		.name = "rt5651",
 	},
-	.probe = rt5651_i2c_probe,
+	.probe2 = rt5651_i2c_probe,
 	.remove   = rt5651_i2c_remove,
-	.id_table = rt5651_i2c_id,
 };
 module_i2c_driver(rt5651_i2c_driver);
 

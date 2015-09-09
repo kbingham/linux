@@ -403,8 +403,7 @@ static int adc128_init_client(struct adc128_data *data)
 	return 0;
 }
 
-static int adc128_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int adc128_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct regulator *regulator;
@@ -467,20 +466,13 @@ static int adc128_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id adc128_id[] = {
-	{ "adc128d818", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, adc128_id);
-
 static struct i2c_driver adc128_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver = {
 		.name	= "adc128d818",
 	},
-	.probe		= adc128_probe,
+	.probe2 = adc128_probe,
 	.remove		= adc128_remove,
-	.id_table	= adc128_id,
 	.detect		= adc128_detect,
 	.address_list	= normal_i2c,
 };

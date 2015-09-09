@@ -336,8 +336,7 @@ static int lm3646_init_device(struct lm3646_flash *flash)
 	return regmap_read(flash->regmap, REG_FLAG, &reg_val);
 }
 
-static int lm3646_probe(struct i2c_client *client,
-			const struct i2c_device_id *devid)
+static int lm3646_probe(struct i2c_client *client)
 {
 	struct lm3646_flash *flash;
 	struct lm3646_platform_data *pdata = dev_get_platdata(&client->dev);
@@ -390,20 +389,12 @@ static int lm3646_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id lm3646_id_table[] = {
-	{LM3646_NAME, 0},
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, lm3646_id_table);
-
 static struct i2c_driver lm3646_i2c_driver = {
 	.driver = {
 		   .name = LM3646_NAME,
 		   },
-	.probe = lm3646_probe,
+	.probe2 = lm3646_probe,
 	.remove = lm3646_remove,
-	.id_table = lm3646_id_table,
 };
 
 module_i2c_driver(lm3646_i2c_driver);

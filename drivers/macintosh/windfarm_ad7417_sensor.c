@@ -230,8 +230,7 @@ static void wf_ad7417_init_chip(struct wf_ad7417_priv *pv)
 	pv->config = config;
 }
 
-static int wf_ad7417_probe(struct i2c_client *client,
-			   const struct i2c_device_id *id)
+static int wf_ad7417_probe(struct i2c_client *client)
 {
 	struct wf_ad7417_priv *pv;
 	const struct mpu_data *mpu;
@@ -307,19 +306,12 @@ static int wf_ad7417_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id wf_ad7417_id[] = {
-	{ "MAC,ad7417", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, wf_ad7417_id);
-
 static struct i2c_driver wf_ad7417_driver = {
 	.driver = {
 		.name	= "wf_ad7417",
 	},
-	.probe		= wf_ad7417_probe,
+	.probe2 = wf_ad7417_probe,
 	.remove		= wf_ad7417_remove,
-	.id_table	= wf_ad7417_id,
 };
 
 static int wf_ad7417_init(void)

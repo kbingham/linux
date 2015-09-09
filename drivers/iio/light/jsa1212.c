@@ -317,8 +317,7 @@ static const struct regmap_config jsa1212_regmap_config = {
 	.volatile_reg = jsa1212_is_volatile_reg,
 };
 
-static int jsa1212_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int jsa1212_probe(struct i2c_client *client)
 {
 	struct jsa1212_data *data;
 	struct iio_dev *indio_dev;
@@ -447,21 +446,14 @@ static const struct acpi_device_id jsa1212_acpi_match[] = {
 };
 MODULE_DEVICE_TABLE(acpi, jsa1212_acpi_match);
 
-static const struct i2c_device_id jsa1212_id[] = {
-	{ JSA1212_DRIVER_NAME, 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, jsa1212_id);
-
 static struct i2c_driver jsa1212_driver = {
 	.driver = {
 		.name	= JSA1212_DRIVER_NAME,
 		.pm	= JSA1212_PM_OPS,
 		.acpi_match_table = ACPI_PTR(jsa1212_acpi_match),
 	},
-	.probe		= jsa1212_probe,
+	.probe2 = jsa1212_probe,
 	.remove		= jsa1212_remove,
-	.id_table	= jsa1212_id,
 };
 module_i2c_driver(jsa1212_driver);
 

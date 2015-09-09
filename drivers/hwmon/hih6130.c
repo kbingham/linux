@@ -219,8 +219,7 @@ static struct attribute *hih6130_attrs[] = {
 
 ATTRIBUTE_GROUPS(hih6130);
 
-static int hih6130_probe(struct i2c_client *client,
-				   const struct i2c_device_id *id)
+static int hih6130_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct hih6130 *hih6130;
@@ -247,17 +246,9 @@ static int hih6130_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-/* Device ID table */
-static const struct i2c_device_id hih6130_id[] = {
-	{ "hih6130", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, hih6130_id);
-
 static struct i2c_driver hih6130_driver = {
 	.driver.name = "hih6130",
-	.probe       = hih6130_probe,
-	.id_table    = hih6130_id,
+	.probe2 = hih6130_probe,
 };
 
 module_i2c_driver(hih6130_driver);

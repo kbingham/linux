@@ -163,8 +163,7 @@ abort:
 	return ret;
 }
 
-static int pmbus_probe(struct i2c_client *client,
-		       const struct i2c_device_id *id)
+static int pmbus_probe(struct i2c_client *client)
 {
 	struct pmbus_driver_info *info;
 
@@ -179,39 +178,13 @@ static int pmbus_probe(struct i2c_client *client,
 	return pmbus_do_probe(client, id, info);
 }
 
-/*
- * Use driver_data to set the number of pages supported by the chip.
- */
-static const struct i2c_device_id pmbus_id[] = {
-	{"adp4000", 1},
-	{"bmr453", 1},
-	{"bmr454", 1},
-	{"mdt040", 1},
-	{"ncp4200", 1},
-	{"ncp4208", 1},
-	{"pdt003", 1},
-	{"pdt006", 1},
-	{"pdt012", 1},
-	{"pmbus", 0},
-	{"tps40400", 1},
-	{"tps544b20", 1},
-	{"tps544b25", 1},
-	{"tps544c20", 1},
-	{"tps544c25", 1},
-	{"udt020", 1},
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, pmbus_id);
-
 /* This is the driver that will be inserted */
 static struct i2c_driver pmbus_driver = {
 	.driver = {
 		   .name = "pmbus",
 		   },
-	.probe = pmbus_probe,
+	.probe2 = pmbus_probe,
 	.remove = pmbus_do_remove,
-	.id_table = pmbus_id,
 };
 
 module_i2c_driver(pmbus_driver);

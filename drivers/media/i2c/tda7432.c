@@ -343,8 +343,7 @@ static const struct v4l2_subdev_ops tda7432_ops = {
  * i2c interface functions *
  * *********************** */
 
-static int tda7432_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int tda7432_probe(struct i2c_client *client)
 {
 	struct tda7432 *t;
 	struct v4l2_subdev *sd;
@@ -401,19 +400,12 @@ static int tda7432_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id tda7432_id[] = {
-	{ "tda7432", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, tda7432_id);
-
 static struct i2c_driver tda7432_driver = {
 	.driver = {
 		.name	= "tda7432",
 	},
-	.probe		= tda7432_probe,
+	.probe2 = tda7432_probe,
 	.remove		= tda7432_remove,
-	.id_table	= tda7432_id,
 };
 
 module_i2c_driver(tda7432_driver);

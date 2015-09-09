@@ -49,8 +49,7 @@ static int write_regs(struct i2c_client *client, const u8 *regs)
 
 static const struct v4l2_subdev_ops ov7640_ops;
 
-static int ov7640_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int ov7640_probe(struct i2c_client *client)
 {
 	struct i2c_adapter *adapter = client->adapter;
 	struct v4l2_subdev *sd;
@@ -86,18 +85,11 @@ static int ov7640_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id ov7640_id[] = {
-	{ "ov7640", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ov7640_id);
-
 static struct i2c_driver ov7640_driver = {
 	.driver = {
 		.name	= "ov7640",
 	},
-	.probe = ov7640_probe,
+	.probe2 = ov7640_probe,
 	.remove = ov7640_remove,
-	.id_table = ov7640_id,
 };
 module_i2c_driver(ov7640_driver);

@@ -285,8 +285,7 @@ done:
 	return ret;
 }
 
-static int cros_ec_i2c_probe(struct i2c_client *client,
-			     const struct i2c_device_id *dev_id)
+static int cros_ec_i2c_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct cros_ec_device *ec_dev = NULL;
@@ -344,20 +343,13 @@ static int cros_ec_i2c_resume(struct device *dev)
 static SIMPLE_DEV_PM_OPS(cros_ec_i2c_pm_ops, cros_ec_i2c_suspend,
 			  cros_ec_i2c_resume);
 
-static const struct i2c_device_id cros_ec_i2c_id[] = {
-	{ "cros-ec-i2c", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, cros_ec_i2c_id);
-
 static struct i2c_driver cros_ec_driver = {
 	.driver	= {
 		.name	= "cros-ec-i2c",
 		.pm	= &cros_ec_i2c_pm_ops,
 	},
-	.probe		= cros_ec_i2c_probe,
+	.probe2 = cros_ec_i2c_probe,
 	.remove		= cros_ec_i2c_remove,
-	.id_table	= cros_ec_i2c_id,
 };
 
 module_i2c_driver(cros_ec_driver);

@@ -174,8 +174,7 @@ static const struct iio_info al3320a_info = {
 	.attrs		= &al3320a_attribute_group,
 };
 
-static int al3320a_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int al3320a_probe(struct i2c_client *client)
 {
 	struct al3320a_data *data;
 	struct iio_dev *indio_dev;
@@ -210,19 +209,12 @@ static int al3320a_remove(struct i2c_client *client)
 					 AL3320A_CONFIG_DISABLE);
 }
 
-static const struct i2c_device_id al3320a_id[] = {
-	{"al3320a", 0},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, al3320a_id);
-
 static struct i2c_driver al3320a_driver = {
 	.driver = {
 		.name = AL3320A_DRV_NAME,
 	},
-	.probe		= al3320a_probe,
+	.probe2 = al3320a_probe,
 	.remove		= al3320a_remove,
-	.id_table	= al3320a_id,
 };
 
 module_i2c_driver(al3320a_driver);

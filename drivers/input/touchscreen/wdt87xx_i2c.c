@@ -1064,8 +1064,7 @@ static int wdt87xx_ts_create_input_device(struct wdt87xx_data *wdt)
 	return 0;
 }
 
-static int wdt87xx_ts_probe(struct i2c_client *client,
-			    const struct i2c_device_id *id)
+static int wdt87xx_ts_probe(struct i2c_client *client)
 {
 	struct wdt87xx_data *wdt;
 	int error;
@@ -1164,12 +1163,6 @@ static int __maybe_unused wdt87xx_resume(struct device *dev)
 
 static SIMPLE_DEV_PM_OPS(wdt87xx_pm_ops, wdt87xx_suspend, wdt87xx_resume);
 
-static const struct i2c_device_id wdt87xx_dev_id[] = {
-	{ WDT87XX_NAME, 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, wdt87xx_dev_id);
-
 static const struct acpi_device_id wdt87xx_acpi_id[] = {
 	{ "WDHT0001", 0 },
 	{ }
@@ -1177,9 +1170,8 @@ static const struct acpi_device_id wdt87xx_acpi_id[] = {
 MODULE_DEVICE_TABLE(acpi, wdt87xx_acpi_id);
 
 static struct i2c_driver wdt87xx_driver = {
-	.probe		= wdt87xx_ts_probe,
+	.probe2 = wdt87xx_ts_probe,
 	.remove		= wdt87xx_ts_remove,
-	.id_table	= wdt87xx_dev_id,
 	.driver	= {
 		.name	= WDT87XX_NAME,
 		.pm     = &wdt87xx_pm_ops,

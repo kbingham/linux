@@ -474,8 +474,7 @@ static const struct iio_chan_spec ad7152_channels[] = {
  * device probe and remove
  */
 
-static int ad7152_probe(struct i2c_client *client,
-		const struct i2c_device_id *id)
+static int ad7152_probe(struct i2c_client *client)
 {
 	int ret = 0;
 	struct ad7152_chip_info *chip;
@@ -520,21 +519,12 @@ static int ad7152_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id ad7152_id[] = {
-	{ "ad7152", 0 },
-	{ "ad7153", 1 },
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, ad7152_id);
-
 static struct i2c_driver ad7152_driver = {
 	.driver = {
 		.name = KBUILD_MODNAME,
 	},
-	.probe = ad7152_probe,
+	.probe2 = ad7152_probe,
 	.remove = ad7152_remove,
-	.id_table = ad7152_id,
 };
 module_i2c_driver(ad7152_driver);
 

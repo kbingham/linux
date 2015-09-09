@@ -719,7 +719,7 @@ static void w83l786ng_init_client(struct i2c_client *client)
 }
 
 static int
-w83l786ng_probe(struct i2c_client *client, const struct i2c_device_id *id)
+w83l786ng_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct w83l786ng_data *data;
@@ -754,19 +754,12 @@ w83l786ng_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id w83l786ng_id[] = {
-	{ "w83l786ng", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, w83l786ng_id);
-
 static struct i2c_driver w83l786ng_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver = {
 		   .name = "w83l786ng",
 	},
-	.probe		= w83l786ng_probe,
-	.id_table	= w83l786ng_id,
+	.probe2 = w83l786ng_probe,
 	.detect		= w83l786ng_detect,
 	.address_list	= normal_i2c,
 };

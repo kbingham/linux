@@ -1361,8 +1361,7 @@ static const char *ltr501_match_acpi_device(struct device *dev, int *chip_idx)
 	return dev_name(dev);
 }
 
-static int ltr501_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int ltr501_probe(struct i2c_client *client)
 {
 	struct ltr501_data *data;
 	struct iio_dev *indio_dev;
@@ -1538,23 +1537,14 @@ static const struct acpi_device_id ltr_acpi_match[] = {
 };
 MODULE_DEVICE_TABLE(acpi, ltr_acpi_match);
 
-static const struct i2c_device_id ltr501_id[] = {
-	{ "ltr501", ltr501},
-	{ "ltr559", ltr559},
-	{ "ltr301", ltr301},
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ltr501_id);
-
 static struct i2c_driver ltr501_driver = {
 	.driver = {
 		.name   = LTR501_DRV_NAME,
 		.pm	= &ltr501_pm_ops,
 		.acpi_match_table = ACPI_PTR(ltr_acpi_match),
 	},
-	.probe  = ltr501_probe,
+	.probe2 = ltr501_probe,
 	.remove	= ltr501_remove,
-	.id_table = ltr501_id,
 };
 
 module_i2c_driver(ltr501_driver);

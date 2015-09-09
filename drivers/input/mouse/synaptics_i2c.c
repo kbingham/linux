@@ -535,8 +535,7 @@ static struct synaptics_i2c *synaptics_i2c_touch_create(struct i2c_client *clien
 	return touch;
 }
 
-static int synaptics_i2c_probe(struct i2c_client *client,
-			       const struct i2c_device_id *dev_id)
+static int synaptics_i2c_probe(struct i2c_client *client)
 {
 	int ret;
 	struct synaptics_i2c *touch;
@@ -646,22 +645,14 @@ static int __maybe_unused synaptics_i2c_resume(struct device *dev)
 static SIMPLE_DEV_PM_OPS(synaptics_i2c_pm, synaptics_i2c_suspend,
 			 synaptics_i2c_resume);
 
-static const struct i2c_device_id synaptics_i2c_id_table[] = {
-	{ "synaptics_i2c", 0 },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, synaptics_i2c_id_table);
-
 static struct i2c_driver synaptics_i2c_driver = {
 	.driver = {
 		.name	= DRIVER_NAME,
 		.pm	= &synaptics_i2c_pm,
 	},
 
-	.probe		= synaptics_i2c_probe,
+	.probe2 = synaptics_i2c_probe,
 	.remove		= synaptics_i2c_remove,
-
-	.id_table	= synaptics_i2c_id_table,
 };
 
 module_i2c_driver(synaptics_i2c_driver);

@@ -694,8 +694,7 @@ static void ad5933_work(struct work_struct *work)
 	mutex_unlock(&indio_dev->mlock);
 }
 
-static int ad5933_probe(struct i2c_client *client,
-				   const struct i2c_device_id *id)
+static int ad5933_probe(struct i2c_client *client)
 {
 	int ret, voltage_uv = 0;
 	struct ad5933_platform_data *pdata = client->dev.platform_data;
@@ -781,21 +780,12 @@ static int ad5933_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id ad5933_id[] = {
-	{ "ad5933", 0 },
-	{ "ad5934", 0 },
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, ad5933_id);
-
 static struct i2c_driver ad5933_driver = {
 	.driver = {
 		.name = "ad5933",
 	},
-	.probe = ad5933_probe,
+	.probe2 = ad5933_probe,
 	.remove = ad5933_remove,
-	.id_table = ad5933_id,
 };
 module_i2c_driver(ad5933_driver);
 

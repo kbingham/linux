@@ -278,8 +278,7 @@ static const struct rtc_class_ops pcf8583_rtc_ops = {
 	.set_time	= pcf8583_rtc_set_time,
 };
 
-static int pcf8583_probe(struct i2c_client *client,
-				const struct i2c_device_id *id)
+static int pcf8583_probe(struct i2c_client *client)
 {
 	struct pcf8583 *pcf8583;
 
@@ -300,19 +299,12 @@ static int pcf8583_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(pcf8583->rtc);
 }
 
-static const struct i2c_device_id pcf8583_id[] = {
-	{ "pcf8583", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, pcf8583_id);
-
 static struct i2c_driver pcf8583_driver = {
 	.driver = {
 		.name	= "pcf8583",
 		.owner	= THIS_MODULE,
 	},
-	.probe		= pcf8583_probe,
-	.id_table	= pcf8583_id,
+	.probe2 = pcf8583_probe,
 };
 
 module_i2c_driver(pcf8583_driver);

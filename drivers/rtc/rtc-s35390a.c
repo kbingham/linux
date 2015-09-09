@@ -47,12 +47,6 @@
 #define S35390A_INT2_MODE_ALARM		0x40
 #define S35390A_INT2_MODE_PMIN_EDG	0x20
 
-static const struct i2c_device_id s35390a_id[] = {
-	{ "s35390a", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, s35390a_id);
-
 struct s35390a {
 	struct i2c_client *client[8];
 	struct rtc_device *rtc;
@@ -324,8 +318,7 @@ static const struct rtc_class_ops s35390a_rtc_ops = {
 
 static struct i2c_driver s35390a_driver;
 
-static int s35390a_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int s35390a_probe(struct i2c_client *client)
 {
 	int err;
 	unsigned int i;
@@ -422,9 +415,8 @@ static struct i2c_driver s35390a_driver = {
 	.driver		= {
 		.name	= "rtc-s35390a",
 	},
-	.probe		= s35390a_probe,
+	.probe2 = s35390a_probe,
 	.remove		= s35390a_remove,
-	.id_table	= s35390a_id,
 };
 
 module_i2c_driver(s35390a_driver);

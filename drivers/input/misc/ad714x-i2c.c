@@ -70,8 +70,7 @@ static int ad714x_i2c_read(struct ad714x_chip *chip,
 	return 0;
 }
 
-static int ad714x_i2c_probe(struct i2c_client *client,
-					const struct i2c_device_id *id)
+static int ad714x_i2c_probe(struct i2c_client *client)
 {
 	struct ad714x_chip *chip;
 
@@ -94,24 +93,13 @@ static int ad714x_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id ad714x_id[] = {
-	{ "ad7142_captouch", 0 },
-	{ "ad7143_captouch", 0 },
-	{ "ad7147_captouch", 0 },
-	{ "ad7147a_captouch", 0 },
-	{ "ad7148_captouch", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ad714x_id);
-
 static struct i2c_driver ad714x_i2c_driver = {
 	.driver = {
 		.name = "ad714x_captouch",
 		.pm   = &ad714x_i2c_pm,
 	},
-	.probe    = ad714x_i2c_probe,
+	.probe2 = ad714x_i2c_probe,
 	.remove   = ad714x_i2c_remove,
-	.id_table = ad714x_id,
 };
 
 module_i2c_driver(ad714x_i2c_driver);

@@ -416,8 +416,7 @@ done:
 	return ret;
 }
 
-static int imx074_probe(struct i2c_client *client,
-			const struct i2c_device_id *did)
+static int imx074_probe(struct i2c_client *client)
 {
 	struct imx074 *priv;
 	struct i2c_adapter *adapter = to_i2c_adapter(client->dev.parent);
@@ -481,19 +480,12 @@ static int imx074_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id imx074_id[] = {
-	{ "imx074", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, imx074_id);
-
 static struct i2c_driver imx074_i2c_driver = {
 	.driver = {
 		.name = "imx074",
 	},
-	.probe		= imx074_probe,
+	.probe2 = imx074_probe,
 	.remove		= imx074_remove,
-	.id_table	= imx074_id,
 };
 
 module_i2c_driver(imx074_i2c_driver);

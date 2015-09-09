@@ -663,7 +663,7 @@ static const struct v4l2_subdev_ops ks0127_ops = {
 /* ----------------------------------------------------------------------- */
 
 
-static int ks0127_probe(struct i2c_client *client, const struct i2c_device_id *id)
+static int ks0127_probe(struct i2c_client *client)
 {
 	struct ks0127 *ks;
 	struct v4l2_subdev *sd;
@@ -698,21 +698,12 @@ static int ks0127_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id ks0127_id[] = {
-	{ "ks0127", 0 },
-	{ "ks0127b", 0 },
-	{ "ks0122s", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ks0127_id);
-
 static struct i2c_driver ks0127_driver = {
 	.driver = {
 		.name	= "ks0127",
 	},
-	.probe		= ks0127_probe,
+	.probe2 = ks0127_probe,
 	.remove		= ks0127_remove,
-	.id_table	= ks0127_id,
 };
 
 module_i2c_driver(ks0127_driver);

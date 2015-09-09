@@ -374,8 +374,7 @@ static bool qt2160_identify(struct i2c_client *client)
 	return true;
 }
 
-static int qt2160_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int qt2160_probe(struct i2c_client *client)
 {
 	struct qt2160_data *qt2160;
 	struct input_dev *input;
@@ -487,20 +486,12 @@ static int qt2160_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id qt2160_idtable[] = {
-	{ "qt2160", 0, },
-	{ }
-};
-
-MODULE_DEVICE_TABLE(i2c, qt2160_idtable);
-
 static struct i2c_driver qt2160_driver = {
 	.driver = {
 		.name	= "qt2160",
 	},
 
-	.id_table	= qt2160_idtable,
-	.probe		= qt2160_probe,
+	.probe2 = qt2160_probe,
 	.remove		= qt2160_remove,
 };
 

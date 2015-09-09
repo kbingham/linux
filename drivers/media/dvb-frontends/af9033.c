@@ -1253,8 +1253,7 @@ static struct dvb_frontend_ops af9033_ops = {
 	.i2c_gate_ctrl = af9033_i2c_gate_ctrl,
 };
 
-static int af9033_probe(struct i2c_client *client,
-		const struct i2c_device_id *id)
+static int af9033_probe(struct i2c_client *client)
 {
 	struct af9033_config *cfg = client->dev.platform_data;
 	struct af9033_dev *dev;
@@ -1379,19 +1378,12 @@ static int af9033_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id af9033_id_table[] = {
-	{"af9033", 0},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, af9033_id_table);
-
 static struct i2c_driver af9033_driver = {
 	.driver = {
 		.name	= "af9033",
 	},
-	.probe		= af9033_probe,
+	.probe2 = af9033_probe,
 	.remove		= af9033_remove,
-	.id_table	= af9033_id_table,
 };
 
 module_i2c_driver(af9033_driver);

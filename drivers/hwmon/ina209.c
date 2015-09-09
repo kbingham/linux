@@ -555,8 +555,7 @@ static int ina209_init_client(struct i2c_client *client,
 	return 0;
 }
 
-static int ina209_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int ina209_probe(struct i2c_client *client)
 {
 	struct i2c_adapter *adapter = client->adapter;
 	struct ina209_data *data;
@@ -602,21 +601,14 @@ static int ina209_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id ina209_id[] = {
-	{ "ina209", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ina209_id);
-
 /* This is the driver that will be inserted */
 static struct i2c_driver ina209_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver = {
 		.name	= "ina209",
 	},
-	.probe		= ina209_probe,
+	.probe2 = ina209_probe,
 	.remove		= ina209_remove,
-	.id_table	= ina209_id,
 };
 
 module_i2c_driver(ina209_driver);

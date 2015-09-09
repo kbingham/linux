@@ -78,13 +78,6 @@ struct pca9541 {
 	unsigned long arb_timeout;
 };
 
-static const struct i2c_device_id pca9541_id[] = {
-	{"pca9541", 0},
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, pca9541_id);
-
 /*
  * Write to chip register. Don't use i2c_transfer()/i2c_smbus_xfer()
  * as they will try to lock the adapter a second time.
@@ -319,8 +312,7 @@ static int pca9541_release_chan(struct i2c_adapter *adap,
 /*
  * I2C init/probing/exit functions
  */
-static int pca9541_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int pca9541_probe(struct i2c_client *client)
 {
 	struct i2c_adapter *adap = client->adapter;
 	struct pca954x_platform_data *pdata = dev_get_platdata(&client->dev);
@@ -388,9 +380,8 @@ static struct i2c_driver pca9541_driver = {
 		   .name = "pca9541",
 		   .owner = THIS_MODULE,
 		   },
-	.probe = pca9541_probe,
+	.probe2 = pca9541_probe,
 	.remove = pca9541_remove,
-	.id_table = pca9541_id,
 };
 
 module_i2c_driver(pca9541_driver);

@@ -175,8 +175,7 @@ static irqreturn_t cy8ctmg110_irq_thread(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-static int cy8ctmg110_probe(struct i2c_client *client,
-					const struct i2c_device_id *id)
+static int cy8ctmg110_probe(struct i2c_client *client)
 {
 	const struct cy8ctmg110_pdata *pdata = dev_get_platdata(&client->dev);
 	struct cy8ctmg110 *ts;
@@ -338,20 +337,12 @@ static int cy8ctmg110_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id cy8ctmg110_idtable[] = {
-	{ CY8CTMG110_DRIVER_NAME, 1 },
-	{ }
-};
-
-MODULE_DEVICE_TABLE(i2c, cy8ctmg110_idtable);
-
 static struct i2c_driver cy8ctmg110_driver = {
 	.driver		= {
 		.name	= CY8CTMG110_DRIVER_NAME,
 		.pm	= &cy8ctmg110_pm,
 	},
-	.id_table	= cy8ctmg110_idtable,
-	.probe		= cy8ctmg110_probe,
+	.probe2 = cy8ctmg110_probe,
 	.remove		= cy8ctmg110_remove,
 };
 

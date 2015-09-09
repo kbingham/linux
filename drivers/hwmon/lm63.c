@@ -1101,8 +1101,7 @@ static void lm63_init_client(struct lm63_data *data)
 		(data->config_fan & 0x20) ? "manual" : "auto");
 }
 
-static int lm63_probe(struct i2c_client *client,
-		      const struct i2c_device_id *id)
+static int lm63_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device *hwmon_dev;
@@ -1139,25 +1138,12 @@ static int lm63_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-/*
- * Driver data (common to all clients)
- */
-
-static const struct i2c_device_id lm63_id[] = {
-	{ "lm63", lm63 },
-	{ "lm64", lm64 },
-	{ "lm96163", lm96163 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, lm63_id);
-
 static struct i2c_driver lm63_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver = {
 		.name	= "lm63",
 	},
-	.probe		= lm63_probe,
-	.id_table	= lm63_id,
+	.probe2 = lm63_probe,
 	.detect		= lm63_detect,
 	.address_list	= normal_i2c,
 };

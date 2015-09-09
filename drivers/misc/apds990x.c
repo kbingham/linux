@@ -1055,8 +1055,7 @@ static struct attribute_group apds990x_attribute_group[] = {
 	{.attrs = sysfs_attrs_ctrl },
 };
 
-static int apds990x_probe(struct i2c_client *client,
-				const struct i2c_device_id *id)
+static int apds990x_probe(struct i2c_client *client)
 {
 	struct apds990x_chip *chip;
 	int err;
@@ -1258,13 +1257,6 @@ static int apds990x_runtime_resume(struct device *dev)
 
 #endif
 
-static const struct i2c_device_id apds990x_id[] = {
-	{"apds990x", 0 },
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, apds990x_id);
-
 static const struct dev_pm_ops apds990x_pm_ops = {
 	SET_SYSTEM_SLEEP_PM_OPS(apds990x_suspend, apds990x_resume)
 	SET_RUNTIME_PM_OPS(apds990x_runtime_suspend,
@@ -1277,9 +1269,8 @@ static struct i2c_driver apds990x_driver = {
 		.name	= "apds990x",
 		.pm	= &apds990x_pm_ops,
 	},
-	.probe	  = apds990x_probe,
+	.probe2 = apds990x_probe,
 	.remove	  = apds990x_remove,
-	.id_table = apds990x_id,
 };
 
 module_i2c_driver(apds990x_driver);

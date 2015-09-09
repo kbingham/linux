@@ -368,8 +368,7 @@ static const struct file_operations fops = {
 	.llseek = default_llseek,
 };
 
-static int bfin_adv7393_fb_probe(struct i2c_client *client,
-				 const struct i2c_device_id *id)
+static int bfin_adv7393_fb_probe(struct i2c_client *client)
 {
 	int ret = 0;
 	struct proc_dir_entry *entry;
@@ -774,13 +773,6 @@ static const struct dev_pm_ops bfin_adv7393_dev_pm_ops = {
 };
 #endif
 
-static const struct i2c_device_id bfin_adv7393_id[] = {
-	{DRIVER_NAME, 0},
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, bfin_adv7393_id);
-
 static struct i2c_driver bfin_adv7393_fb_driver = {
 	.driver = {
 		.name = DRIVER_NAME,
@@ -788,9 +780,8 @@ static struct i2c_driver bfin_adv7393_fb_driver = {
 		.pm   = &bfin_adv7393_dev_pm_ops,
 #endif
 	},
-	.probe = bfin_adv7393_fb_probe,
+	.probe2 = bfin_adv7393_fb_probe,
 	.remove = bfin_adv7393_fb_remove,
-	.id_table = bfin_adv7393_id,
 };
 
 static int __init bfin_adv7393_fb_driver_init(void)

@@ -185,8 +185,7 @@ static const struct v4l2_subdev_ops bt866_ops = {
 	.video = &bt866_video_ops,
 };
 
-static int bt866_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int bt866_probe(struct i2c_client *client)
 {
 	struct bt866 *encoder;
 	struct v4l2_subdev *sd;
@@ -210,19 +209,12 @@ static int bt866_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id bt866_id[] = {
-	{ "bt866", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, bt866_id);
-
 static struct i2c_driver bt866_driver = {
 	.driver = {
 		.name	= "bt866",
 	},
-	.probe		= bt866_probe,
+	.probe2 = bt866_probe,
 	.remove		= bt866_remove,
-	.id_table	= bt866_id,
 };
 
 module_i2c_driver(bt866_driver);

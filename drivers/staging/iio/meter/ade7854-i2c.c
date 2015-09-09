@@ -202,8 +202,7 @@ out:
 	return ret;
 }
 
-static int ade7854_i2c_probe(struct i2c_client *client,
-			     const struct i2c_device_id *id)
+static int ade7854_i2c_probe(struct i2c_client *client)
 {
 	struct ade7854_state *st;
 	struct iio_dev *indio_dev;
@@ -232,22 +231,12 @@ static int ade7854_i2c_remove(struct i2c_client *client)
 	return ade7854_remove(i2c_get_clientdata(client));
 }
 
-static const struct i2c_device_id ade7854_id[] = {
-	{ "ade7854", 0 },
-	{ "ade7858", 0 },
-	{ "ade7868", 0 },
-	{ "ade7878", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ade7854_id);
-
 static struct i2c_driver ade7854_i2c_driver = {
 	.driver = {
 		.name = "ade7854",
 	},
-	.probe    = ade7854_i2c_probe,
+	.probe2 = ade7854_i2c_probe,
 	.remove   = ade7854_i2c_remove,
-	.id_table = ade7854_id,
 };
 module_i2c_driver(ade7854_i2c_driver);
 

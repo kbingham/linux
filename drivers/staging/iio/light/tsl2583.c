@@ -800,8 +800,7 @@ static const struct iio_info tsl2583_info = {
  * Client probe function - When a valid device is found, the driver's device
  * data structure is updated, and initialization completes successfully.
  */
-static int taos_probe(struct i2c_client *clientp,
-		      const struct i2c_device_id *idp)
+static int taos_probe(struct i2c_client *clientp)
 {
 	int i, ret;
 	unsigned char buf[TSL258X_MAX_DEVICE_REGS];
@@ -924,22 +923,13 @@ static int taos_remove(struct i2c_client *client)
 	return 0;
 }
 
-static struct i2c_device_id taos_idtable[] = {
-	{ "tsl2580", 0 },
-	{ "tsl2581", 1 },
-	{ "tsl2583", 2 },
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, taos_idtable);
-
 /* Driver definition */
 static struct i2c_driver taos_driver = {
 	.driver = {
 		.name = "tsl2583",
 		.pm = TAOS_PM_OPS,
 	},
-	.id_table = taos_idtable,
-	.probe = taos_probe,
+	.probe2 = taos_probe,
 	.remove = taos_remove,
 };
 module_i2c_driver(taos_driver);

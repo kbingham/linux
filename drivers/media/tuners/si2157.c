@@ -397,8 +397,7 @@ err:
 	dev_dbg(&client->dev, "failed=%d\n", ret);
 }
 
-static int si2157_probe(struct i2c_client *client,
-		const struct i2c_device_id *id)
+static int si2157_probe(struct i2c_client *client)
 {
 	struct si2157_config *cfg = client->dev.platform_data;
 	struct dvb_frontend *fe = cfg->fe;
@@ -460,20 +459,12 @@ static int si2157_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id si2157_id_table[] = {
-	{"si2157", SI2157_CHIPTYPE_SI2157},
-	{"si2146", SI2157_CHIPTYPE_SI2146},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, si2157_id_table);
-
 static struct i2c_driver si2157_driver = {
 	.driver = {
 		.name	= "si2157",
 	},
-	.probe		= si2157_probe,
+	.probe2 = si2157_probe,
 	.remove		= si2157_remove,
-	.id_table	= si2157_id_table,
 };
 
 module_i2c_driver(si2157_driver);

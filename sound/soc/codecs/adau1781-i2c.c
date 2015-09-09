@@ -15,8 +15,7 @@
 
 #include "adau1781.h"
 
-static int adau1781_i2c_probe(struct i2c_client *client,
-	const struct i2c_device_id *id)
+static int adau1781_i2c_probe(struct i2c_client *client)
 {
 	struct regmap_config config;
 
@@ -35,20 +34,12 @@ static int adau1781_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id adau1781_i2c_ids[] = {
-	{ "adau1381", ADAU1381 },
-	{ "adau1781", ADAU1781 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, adau1781_i2c_ids);
-
 static struct i2c_driver adau1781_i2c_driver = {
 	.driver = {
 		.name = "adau1781",
 	},
-	.probe = adau1781_i2c_probe,
+	.probe2 = adau1781_i2c_probe,
 	.remove = adau1781_i2c_remove,
-	.id_table = adau1781_i2c_ids,
 };
 module_i2c_driver(adau1781_i2c_driver);
 

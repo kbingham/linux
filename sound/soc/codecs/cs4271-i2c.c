@@ -20,8 +20,7 @@
 #include <sound/soc.h>
 #include "cs4271.h"
 
-static int cs4271_i2c_probe(struct i2c_client *client,
-			     const struct i2c_device_id *id)
+static int cs4271_i2c_probe(struct i2c_client *client)
 {
 	struct regmap_config config;
 
@@ -39,20 +38,13 @@ static int cs4271_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id cs4271_i2c_id[] = {
-	{ "cs4271", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, cs4271_i2c_id);
-
 static struct i2c_driver cs4271_i2c_driver = {
 	.driver = {
 		.name = "cs4271",
 		.of_match_table = of_match_ptr(cs4271_dt_ids),
 	},
-	.probe = cs4271_i2c_probe,
+	.probe2 = cs4271_i2c_probe,
 	.remove = cs4271_i2c_remove,
-	.id_table = cs4271_i2c_id,
 };
 module_i2c_driver(cs4271_i2c_driver);
 

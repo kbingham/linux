@@ -677,7 +677,7 @@ static const struct v4l2_subdev_ops msp_ops = {
 
 /* ----------------------------------------------------------------------- */
 
-static int msp_probe(struct i2c_client *client, const struct i2c_device_id *id)
+static int msp_probe(struct i2c_client *client)
 {
 	struct msp_state *state;
 	struct v4l2_subdev *sd;
@@ -886,20 +886,13 @@ static const struct dev_pm_ops msp3400_pm_ops = {
 	SET_SYSTEM_SLEEP_PM_OPS(msp_suspend, msp_resume)
 };
 
-static const struct i2c_device_id msp_id[] = {
-	{ "msp3400", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, msp_id);
-
 static struct i2c_driver msp_driver = {
 	.driver = {
 		.name	= "msp3400",
 		.pm	= &msp3400_pm_ops,
 	},
-	.probe		= msp_probe,
+	.probe2 = msp_probe,
 	.remove		= msp_remove,
-	.id_table	= msp_id,
 };
 
 module_i2c_driver(msp_driver);

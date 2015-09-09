@@ -333,8 +333,7 @@ static const struct regmap_config sta529_regmap = {
 	.num_reg_defaults = ARRAY_SIZE(sta529_reg_defaults),
 };
 
-static int sta529_i2c_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *id)
+static int sta529_i2c_probe(struct i2c_client *i2c)
 {
 	struct sta529 *sta529;
 	int ret;
@@ -367,19 +366,12 @@ static int sta529_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id sta529_i2c_id[] = {
-	{ "sta529", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, sta529_i2c_id);
-
 static struct i2c_driver sta529_i2c_driver = {
 	.driver = {
 		.name = "sta529",
 	},
-	.probe		= sta529_i2c_probe,
+	.probe2 = sta529_i2c_probe,
 	.remove		= sta529_i2c_remove,
-	.id_table	= sta529_i2c_id,
 };
 
 module_i2c_driver(sta529_i2c_driver);

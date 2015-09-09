@@ -1095,13 +1095,6 @@ static const struct regmap_config rt286_regmap = {
 	.num_reg_defaults = ARRAY_SIZE(rt286_reg),
 };
 
-static const struct i2c_device_id rt286_i2c_id[] = {
-	{"rt286", 0},
-	{"rt288", 0},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, rt286_i2c_id);
-
 static const struct acpi_device_id rt286_acpi_match[] = {
 	{ "INT343A", 0 },
 	{},
@@ -1129,8 +1122,7 @@ static const struct dmi_system_id dmi_dell_dino[] = {
 	{ }
 };
 
-static int rt286_i2c_probe(struct i2c_client *i2c,
-			   const struct i2c_device_id *id)
+static int rt286_i2c_probe(struct i2c_client *i2c)
 {
 	struct rt286_platform_data *pdata = dev_get_platdata(&i2c->dev);
 	struct rt286_priv *rt286;
@@ -1261,9 +1253,8 @@ static struct i2c_driver rt286_i2c_driver = {
 		   .name = "rt286",
 		   .acpi_match_table = ACPI_PTR(rt286_acpi_match),
 		   },
-	.probe = rt286_i2c_probe,
+	.probe2 = rt286_i2c_probe,
 	.remove = rt286_i2c_remove,
-	.id_table = rt286_i2c_id,
 };
 
 module_i2c_driver(rt286_i2c_driver);

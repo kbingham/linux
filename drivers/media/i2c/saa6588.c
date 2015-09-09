@@ -460,8 +460,7 @@ static const struct v4l2_subdev_ops saa6588_ops = {
 
 /* ---------------------------------------------------------------------- */
 
-static int saa6588_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int saa6588_probe(struct i2c_client *client)
 {
 	struct saa6588 *s;
 	struct v4l2_subdev *sd;
@@ -508,21 +507,12 @@ static int saa6588_remove(struct i2c_client *client)
 	return 0;
 }
 
-/* ----------------------------------------------------------------------- */
-
-static const struct i2c_device_id saa6588_id[] = {
-	{ "saa6588", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, saa6588_id);
-
 static struct i2c_driver saa6588_driver = {
 	.driver = {
 		.name	= "saa6588",
 	},
-	.probe		= saa6588_probe,
+	.probe2 = saa6588_probe,
 	.remove		= saa6588_remove,
-	.id_table	= saa6588_id,
 };
 
 module_i2c_driver(saa6588_driver);

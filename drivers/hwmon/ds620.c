@@ -226,8 +226,7 @@ static struct attribute *ds620_attrs[] = {
 
 ATTRIBUTE_GROUPS(ds620);
 
-static int ds620_probe(struct i2c_client *client,
-		       const struct i2c_device_id *id)
+static int ds620_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device *hwmon_dev;
@@ -248,21 +247,13 @@ static int ds620_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id ds620_id[] = {
-	{"ds620", 0},
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, ds620_id);
-
 /* This is the driver that will be inserted */
 static struct i2c_driver ds620_driver = {
 	.class = I2C_CLASS_HWMON,
 	.driver = {
 		   .name = "ds620",
 	},
-	.probe = ds620_probe,
-	.id_table = ds620_id,
+	.probe2 = ds620_probe,
 };
 
 module_i2c_driver(ds620_driver);

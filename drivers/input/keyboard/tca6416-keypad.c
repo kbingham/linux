@@ -27,13 +27,6 @@
 #define TCA6416_INVERT         2
 #define TCA6416_DIRECTION      3
 
-static const struct i2c_device_id tca6416_id[] = {
-	{ "tca6416-keys", 16, },
-	{ "tca6408-keys", 8, },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, tca6416_id);
-
 struct tca6416_drv_data {
 	struct input_dev *input;
 	struct tca6416_button data[0];
@@ -197,8 +190,7 @@ static int tca6416_setup_registers(struct tca6416_keypad_chip *chip)
 	return 0;
 }
 
-static int tca6416_keypad_probe(struct i2c_client *client,
-				   const struct i2c_device_id *id)
+static int tca6416_keypad_probe(struct i2c_client *client)
 {
 	struct tca6416_keys_platform_data *pdata;
 	struct tca6416_keypad_chip *chip;
@@ -360,9 +352,8 @@ static struct i2c_driver tca6416_keypad_driver = {
 		.name	= "tca6416-keypad",
 		.pm	= &tca6416_keypad_dev_pm_ops,
 	},
-	.probe		= tca6416_keypad_probe,
+	.probe2 = tca6416_keypad_probe,
 	.remove		= tca6416_keypad_remove,
-	.id_table	= tca6416_id,
 };
 
 static int __init tca6416_keypad_init(void)

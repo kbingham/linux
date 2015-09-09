@@ -394,8 +394,7 @@ static struct pmbus_driver_info max34440_info[] = {
 	},
 };
 
-static int max34440_probe(struct i2c_client *client,
-			  const struct i2c_device_id *id)
+static int max34440_probe(struct i2c_client *client)
 {
 	struct max34440_data *data;
 
@@ -409,24 +408,13 @@ static int max34440_probe(struct i2c_client *client,
 	return pmbus_do_probe(client, id, &data->info);
 }
 
-static const struct i2c_device_id max34440_id[] = {
-	{"max34440", max34440},
-	{"max34441", max34441},
-	{"max34446", max34446},
-	{"max34460", max34460},
-	{"max34461", max34461},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, max34440_id);
-
 /* This is the driver that will be inserted */
 static struct i2c_driver max34440_driver = {
 	.driver = {
 		   .name = "max34440",
 		   },
-	.probe = max34440_probe,
+	.probe2 = max34440_probe,
 	.remove = pmbus_do_remove,
-	.id_table = max34440_id,
 };
 
 module_i2c_driver(max34440_driver);

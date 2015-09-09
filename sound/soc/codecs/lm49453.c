@@ -1410,8 +1410,7 @@ static const struct regmap_config lm49453_regmap_config = {
 	.cache_type = REGCACHE_RBTREE,
 };
 
-static int lm49453_i2c_probe(struct i2c_client *i2c,
-			     const struct i2c_device_id *id)
+static int lm49453_i2c_probe(struct i2c_client *i2c)
 {
 	struct lm49453_priv *lm49453;
 	int ret = 0;
@@ -1447,19 +1446,12 @@ static int lm49453_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id lm49453_i2c_id[] = {
-	{ "lm49453", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, lm49453_i2c_id);
-
 static struct i2c_driver lm49453_i2c_driver = {
 	.driver = {
 		.name = "lm49453",
 	},
-	.probe = lm49453_i2c_probe,
+	.probe2 = lm49453_i2c_probe,
 	.remove = lm49453_i2c_remove,
-	.id_table = lm49453_i2c_id,
 };
 
 module_i2c_driver(lm49453_i2c_driver);

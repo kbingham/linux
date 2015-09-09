@@ -404,8 +404,7 @@ static int max1668_detect(struct i2c_client *client,
 	return 0;
 }
 
-static int max1668_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int max1668_probe(struct i2c_client *client)
 {
 	struct i2c_adapter *adapter = client->adapter;
 	struct device *dev = &client->dev;
@@ -433,22 +432,13 @@ static int max1668_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id max1668_id[] = {
-	{ "max1668", max1668 },
-	{ "max1805", max1805 },
-	{ "max1989", max1989 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, max1668_id);
-
 /* This is the driver that will be inserted */
 static struct i2c_driver max1668_driver = {
 	.class = I2C_CLASS_HWMON,
 	.driver = {
 		  .name	= "max1668",
 		  },
-	.probe = max1668_probe,
-	.id_table = max1668_id,
+	.probe2 = max1668_probe,
 	.detect	= max1668_detect,
 	.address_list = max1668_addr_list,
 };

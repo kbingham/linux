@@ -483,8 +483,7 @@ static int emc6w201_detect(struct i2c_client *client,
 	return 0;
 }
 
-static int emc6w201_probe(struct i2c_client *client,
-			  const struct i2c_device_id *id)
+static int emc6w201_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct emc6w201_data *data;
@@ -503,19 +502,12 @@ static int emc6w201_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id emc6w201_id[] = {
-	{ "emc6w201", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, emc6w201_id);
-
 static struct i2c_driver emc6w201_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver = {
 		.name	= "emc6w201",
 	},
-	.probe		= emc6w201_probe,
-	.id_table	= emc6w201_id,
+	.probe2 = emc6w201_probe,
 	.detect		= emc6w201_detect,
 	.address_list	= normal_i2c,
 };

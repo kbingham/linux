@@ -391,8 +391,7 @@ static void thmc50_init_client(struct thmc50_data *data)
 	i2c_smbus_write_byte_data(client, THMC50_REG_CONF, config);
 }
 
-static int thmc50_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int thmc50_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct thmc50_data *data;
@@ -421,20 +420,12 @@ static int thmc50_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id thmc50_id[] = {
-	{ "adm1022", adm1022 },
-	{ "thmc50", thmc50 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, thmc50_id);
-
 static struct i2c_driver thmc50_driver = {
 	.class = I2C_CLASS_HWMON,
 	.driver = {
 		.name = "thmc50",
 	},
-	.probe = thmc50_probe,
-	.id_table = thmc50_id,
+	.probe2 = thmc50_probe,
 	.detect = thmc50_detect,
 	.address_list = normal_i2c,
 };

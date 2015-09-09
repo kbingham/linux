@@ -2721,8 +2721,7 @@ static int lm93_detect(struct i2c_client *client, struct i2c_board_info *info)
 	return 0;
 }
 
-static int lm93_probe(struct i2c_client *client,
-		      const struct i2c_device_id *id)
+static int lm93_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct lm93_data *data;
@@ -2762,20 +2761,12 @@ static int lm93_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id lm93_id[] = {
-	{ "lm93", 0 },
-	{ "lm94", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, lm93_id);
-
 static struct i2c_driver lm93_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver = {
 		.name	= "lm93",
 	},
-	.probe		= lm93_probe,
-	.id_table	= lm93_id,
+	.probe2 = lm93_probe,
 	.detect		= lm93_detect,
 	.address_list	= normal_i2c,
 };

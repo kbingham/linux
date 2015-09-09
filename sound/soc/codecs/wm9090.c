@@ -570,8 +570,7 @@ static const struct regmap_config wm9090_regmap = {
 };
 
 
-static int wm9090_i2c_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *id)
+static int wm9090_i2c_probe(struct i2c_client *i2c)
 {
 	struct wm9090_priv *wm9090;
 	unsigned int reg;
@@ -623,20 +622,12 @@ static int wm9090_i2c_remove(struct i2c_client *i2c)
 	return 0;
 }
 
-static const struct i2c_device_id wm9090_id[] = {
-	{ "wm9090", 0 },
-	{ "wm9093", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, wm9090_id);
-
 static struct i2c_driver wm9090_i2c_driver = {
 	.driver = {
 		.name = "wm9090",
 	},
-	.probe = wm9090_i2c_probe,
+	.probe2 = wm9090_i2c_probe,
 	.remove = wm9090_i2c_remove,
-	.id_table = wm9090_id,
 };
 
 module_i2c_driver(wm9090_i2c_driver);

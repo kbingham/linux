@@ -245,8 +245,7 @@ static const struct iio_buffer_setup_ops isl29125_buffer_setup_ops = {
 	.predisable = isl29125_buffer_predisable,
 };
 
-static int isl29125_probe(struct i2c_client *client,
-			   const struct i2c_device_id *id)
+static int isl29125_probe(struct i2c_client *client)
 {
 	struct isl29125_data *data;
 	struct iio_dev *indio_dev;
@@ -336,20 +335,13 @@ static int isl29125_resume(struct device *dev)
 
 static SIMPLE_DEV_PM_OPS(isl29125_pm_ops, isl29125_suspend, isl29125_resume);
 
-static const struct i2c_device_id isl29125_id[] = {
-	{ "isl29125", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, isl29125_id);
-
 static struct i2c_driver isl29125_driver = {
 	.driver = {
 		.name	= ISL29125_DRV_NAME,
 		.pm	= &isl29125_pm_ops,
 	},
-	.probe		= isl29125_probe,
+	.probe2 = isl29125_probe,
 	.remove		= isl29125_remove,
-	.id_table	= isl29125_id,
 };
 module_i2c_driver(isl29125_driver);
 

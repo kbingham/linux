@@ -672,8 +672,7 @@ static const struct regmap_config wm8971_regmap = {
 	.cache_type = REGCACHE_RBTREE,
 };
 
-static int wm8971_i2c_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *id)
+static int wm8971_i2c_probe(struct i2c_client *i2c)
 {
 	struct wm8971_priv *wm8971;
 	int ret;
@@ -701,19 +700,12 @@ static int wm8971_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id wm8971_i2c_id[] = {
-	{ "wm8971", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, wm8971_i2c_id);
-
 static struct i2c_driver wm8971_i2c_driver = {
 	.driver = {
 		.name = "wm8971",
 	},
-	.probe =    wm8971_i2c_probe,
+	.probe2 = wm8971_i2c_probe,
 	.remove =   wm8971_i2c_remove,
-	.id_table = wm8971_i2c_id,
 };
 
 module_i2c_driver(wm8971_i2c_driver);

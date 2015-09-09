@@ -88,8 +88,7 @@ static struct wf_sensor_ops wf_lm75_ops = {
 	.owner		= THIS_MODULE,
 };
 
-static int wf_lm75_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int wf_lm75_probe(struct i2c_client *client)
 {	
 	struct wf_lm75_sensor *lm;
 	int rc, ds1775 = id->driver_data;
@@ -158,20 +157,12 @@ static int wf_lm75_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id wf_lm75_id[] = {
-	{ "MAC,lm75", 0 },
-	{ "MAC,ds1775", 1 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, wf_lm75_id);
-
 static struct i2c_driver wf_lm75_driver = {
 	.driver = {
 		.name	= "wf_lm75",
 	},
-	.probe		= wf_lm75_probe,
+	.probe2 = wf_lm75_probe,
 	.remove		= wf_lm75_remove,
-	.id_table	= wf_lm75_id,
 };
 
 module_i2c_driver(wf_lm75_driver);

@@ -355,8 +355,7 @@ static const struct v4l2_subdev_ops tw2804_ops = {
 	.video = &tw2804_video_ops,
 };
 
-static int tw2804_probe(struct i2c_client *client,
-			    const struct i2c_device_id *id)
+static int tw2804_probe(struct i2c_client *client)
 {
 	struct i2c_adapter *adapter = client->adapter;
 	struct tw2804 *state;
@@ -427,19 +426,12 @@ static int tw2804_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id tw2804_id[] = {
-	{ "tw2804", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, tw2804_id);
-
 static struct i2c_driver tw2804_driver = {
 	.driver = {
 		.name	= "tw2804",
 	},
-	.probe		= tw2804_probe,
+	.probe2 = tw2804_probe,
 	.remove		= tw2804_remove,
-	.id_table	= tw2804_id,
 };
 
 module_i2c_driver(tw2804_driver);

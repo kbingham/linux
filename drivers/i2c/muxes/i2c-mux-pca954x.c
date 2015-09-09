@@ -105,19 +105,6 @@ static const struct chip_desc chips[] = {
 	},
 };
 
-static const struct i2c_device_id pca954x_id[] = {
-	{ "pca9540", pca_9540 },
-	{ "pca9542", pca_9540 },
-	{ "pca9543", pca_9543 },
-	{ "pca9544", pca_9544 },
-	{ "pca9545", pca_9545 },
-	{ "pca9546", pca_9545 },
-	{ "pca9547", pca_9547 },
-	{ "pca9548", pca_9548 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, pca954x_id);
-
 /* Write to mux register. Don't use i2c_transfer()/i2c_smbus_xfer()
    for this as they will try to lock adapter a second time */
 static int pca954x_reg_write(struct i2c_adapter *adap,
@@ -182,8 +169,7 @@ static int pca954x_deselect_mux(struct i2c_adapter *adap,
 /*
  * I2C init/probing/exit functions
  */
-static int pca954x_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int pca954x_probe(struct i2c_client *client)
 {
 	struct i2c_adapter *adap = to_i2c_adapter(client->dev.parent);
 	struct pca954x_platform_data *pdata = dev_get_platdata(&client->dev);
@@ -302,9 +288,8 @@ static struct i2c_driver pca954x_driver = {
 		.pm	= &pca954x_pm,
 		.owner	= THIS_MODULE,
 	},
-	.probe		= pca954x_probe,
+	.probe2 = pca954x_probe,
 	.remove		= pca954x_remove,
-	.id_table	= pca954x_id,
 };
 
 module_i2c_driver(pca954x_driver);

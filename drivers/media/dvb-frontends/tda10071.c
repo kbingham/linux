@@ -1157,8 +1157,7 @@ static struct dvb_frontend *tda10071_get_dvb_frontend(struct i2c_client *client)
 	return &dev->fe;
 }
 
-static int tda10071_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int tda10071_probe(struct i2c_client *client)
 {
 	struct tda10071_dev *dev;
 	struct tda10071_platform_data *pdata = client->dev.platform_data;
@@ -1243,20 +1242,13 @@ static int tda10071_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id tda10071_id_table[] = {
-	{"tda10071_cx24118", 0},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, tda10071_id_table);
-
 static struct i2c_driver tda10071_driver = {
 	.driver = {
 		.name	= "tda10071",
 		.suppress_bind_attrs = true,
 	},
-	.probe		= tda10071_probe,
+	.probe2 = tda10071_probe,
 	.remove		= tda10071_remove,
-	.id_table	= tda10071_id_table,
 };
 
 module_i2c_driver(tda10071_driver);

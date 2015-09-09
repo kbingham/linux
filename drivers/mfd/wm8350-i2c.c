@@ -23,8 +23,7 @@
 #include <linux/regmap.h>
 #include <linux/slab.h>
 
-static int wm8350_i2c_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *id)
+static int wm8350_i2c_probe(struct i2c_client *i2c)
 {
 	struct wm8350 *wm8350;
 	struct wm8350_platform_data *pdata = dev_get_platdata(&i2c->dev);
@@ -57,22 +56,13 @@ static int wm8350_i2c_remove(struct i2c_client *i2c)
 	return 0;
 }
 
-static const struct i2c_device_id wm8350_i2c_id[] = {
-	{ "wm8350", 0 },
-	{ "wm8351", 0 },
-	{ "wm8352", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, wm8350_i2c_id);
-
 
 static struct i2c_driver wm8350_i2c_driver = {
 	.driver = {
 		   .name = "wm8350",
 	},
-	.probe = wm8350_i2c_probe,
+	.probe2 = wm8350_i2c_probe,
 	.remove = wm8350_i2c_remove,
-	.id_table = wm8350_i2c_id,
 };
 
 static int __init wm8350_i2c_init(void)

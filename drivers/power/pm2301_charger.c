@@ -107,11 +107,6 @@ static int pm2xxx_charger_current_map[] = {
 	3000,
 };
 
-static const struct i2c_device_id pm2xxx_ident[] = {
-	{ "pm2301", 0 },
-	{ }
-};
-
 static void set_lpn_pin(struct pm2xxx_charger *pm2)
 {
 	if (!pm2->ac.charger_connected && gpio_is_valid(pm2->lpn_pin)) {
@@ -985,8 +980,7 @@ static const struct dev_pm_ops pm2xxx_pm_ops = {
 #define  PM2XXX_PM_OPS  NULL
 #endif
 
-static int pm2xxx_wall_charger_probe(struct i2c_client *i2c_client,
-		const struct i2c_device_id *id)
+static int pm2xxx_wall_charger_probe(struct i2c_client *i2c_client)
 {
 	struct pm2xxx_platform_data *pl_data = i2c_client->dev.platform_data;
 	struct power_supply_config psy_cfg = {};
@@ -1232,21 +1226,13 @@ static int pm2xxx_wall_charger_remove(struct i2c_client *i2c_client)
 	return 0;
 }
 
-static const struct i2c_device_id pm2xxx_id[] = {
-	{ "pm2301", 0 },
-	{ }
-};
-
-MODULE_DEVICE_TABLE(i2c, pm2xxx_id);
-
 static struct i2c_driver pm2xxx_charger_driver = {
-	.probe = pm2xxx_wall_charger_probe,
+	.probe2 = pm2xxx_wall_charger_probe,
 	.remove = pm2xxx_wall_charger_remove,
 	.driver = {
 		.name = "pm2xxx-wall_charger",
 		.pm = PM2XXX_PM_OPS,
 	},
-	.id_table = pm2xxx_id,
 };
 
 static int __init pm2xxx_charger_init(void)

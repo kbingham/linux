@@ -224,8 +224,7 @@ static int als_set_default_config(struct i2c_client *client)
 	return ret_val;
 }
 
-static int apds9802als_probe(struct i2c_client *client,
-			     const struct i2c_device_id *id)
+static int apds9802als_probe(struct i2c_client *client)
 {
 	int res;
 	struct als_data *data;
@@ -296,23 +295,15 @@ static UNIVERSAL_DEV_PM_OPS(apds9802als_pm_ops, apds9802als_suspend,
 
 #else	/* CONFIG_PM */
 #define APDS9802ALS_PM_OPS NULL
-#endif	/* CONFIG_PM */
-
-static struct i2c_device_id apds9802als_id[] = {
-	{ DRIVER_NAME, 0 },
-	{ }
-};
-
-MODULE_DEVICE_TABLE(i2c, apds9802als_id);
+#endif
 
 static struct i2c_driver apds9802als_driver = {
 	.driver = {
 		.name = DRIVER_NAME,
 		.pm = APDS9802ALS_PM_OPS,
 	},
-	.probe = apds9802als_probe,
+	.probe2 = apds9802als_probe,
 	.remove = apds9802als_remove,
-	.id_table = apds9802als_id,
 };
 
 module_i2c_driver(apds9802als_driver);

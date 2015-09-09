@@ -2593,8 +2593,7 @@ static struct video_device bcm2048_viddev_template = {
 /*
  *	I2C driver interface
  */
-static int bcm2048_i2c_driver_probe(struct i2c_client *client,
-					const struct i2c_device_id *id)
+static int bcm2048_i2c_driver_probe(struct i2c_client *client)
 {
 	struct bcm2048_device *bdev;
 	int err;
@@ -2685,22 +2684,12 @@ static int __exit bcm2048_i2c_driver_remove(struct i2c_client *client)
 	return 0;
 }
 
-/*
- *	bcm2048_i2c_driver - i2c driver interface
- */
-static const struct i2c_device_id bcm2048_id[] = {
-	{ "bcm2048", 0 },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, bcm2048_id);
-
 static struct i2c_driver bcm2048_i2c_driver = {
 	.driver		= {
 		.name	= BCM2048_DRIVER_NAME,
 	},
-	.probe		= bcm2048_i2c_driver_probe,
+	.probe2 = bcm2048_i2c_driver_probe,
 	.remove		= __exit_p(bcm2048_i2c_driver_remove),
-	.id_table	= bcm2048_id,
 };
 
 module_i2c_driver(bcm2048_i2c_driver);

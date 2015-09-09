@@ -604,8 +604,7 @@ static int ad5064_i2c_write(struct ad5064_state *st, unsigned int cmd,
 	return i2c_master_send(i2c, st->data.i2c, 3);
 }
 
-static int ad5064_i2c_probe(struct i2c_client *i2c,
-	const struct i2c_device_id *id)
+static int ad5064_i2c_probe(struct i2c_client *i2c)
 {
 	return ad5064_probe(&i2c->dev, id->driver_data, id->name,
 						ad5064_i2c_write);
@@ -616,24 +615,12 @@ static int ad5064_i2c_remove(struct i2c_client *i2c)
 	return ad5064_remove(&i2c->dev);
 }
 
-static const struct i2c_device_id ad5064_i2c_ids[] = {
-	{"ad5629-1", ID_AD5628_1},
-	{"ad5629-2", ID_AD5628_2},
-	{"ad5629-3", ID_AD5628_2}, /* similar enough to ad5629-2 */
-	{"ad5669-1", ID_AD5668_1},
-	{"ad5669-2", ID_AD5668_2},
-	{"ad5669-3", ID_AD5668_2}, /* similar enough to ad5669-2 */
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, ad5064_i2c_ids);
-
 static struct i2c_driver ad5064_i2c_driver = {
 	.driver = {
 		   .name = "ad5064",
 	},
-	.probe = ad5064_i2c_probe,
+	.probe2 = ad5064_i2c_probe,
 	.remove = ad5064_i2c_remove,
-	.id_table = ad5064_i2c_ids,
 };
 
 static int __init ad5064_i2c_register_driver(void)

@@ -813,8 +813,7 @@ static struct snd_soc_codec_driver soc_codec_dev_wm2000 = {
 	.num_controls = ARRAY_SIZE(wm2000_controls),
 };
 
-static int wm2000_i2c_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *i2c_id)
+static int wm2000_i2c_probe(struct i2c_client *i2c)
 {
 	struct wm2000_priv *wm2000;
 	struct wm2000_platform_data *pdata;
@@ -933,19 +932,12 @@ static int wm2000_i2c_remove(struct i2c_client *i2c)
 	return 0;
 }
 
-static const struct i2c_device_id wm2000_i2c_id[] = {
-	{ "wm2000", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, wm2000_i2c_id);
-
 static struct i2c_driver wm2000_i2c_driver = {
 	.driver = {
 		.name = "wm2000",
 	},
-	.probe = wm2000_i2c_probe,
+	.probe2 = wm2000_i2c_probe,
 	.remove = wm2000_i2c_remove,
-	.id_table = wm2000_i2c_id,
 };
 
 module_i2c_driver(wm2000_i2c_driver);

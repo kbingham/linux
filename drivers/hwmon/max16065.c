@@ -557,8 +557,7 @@ static const struct attribute_group max16065_max_group = {
 	.is_visible = max16065_secondary_is_visible,
 };
 
-static int max16065_probe(struct i2c_client *client,
-			  const struct i2c_device_id *id)
+static int max16065_probe(struct i2c_client *client)
 {
 	struct i2c_adapter *adapter = client->adapter;
 	struct max16065_data *data;
@@ -645,25 +644,12 @@ static int max16065_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id max16065_id[] = {
-	{ "max16065", max16065 },
-	{ "max16066", max16066 },
-	{ "max16067", max16067 },
-	{ "max16068", max16068 },
-	{ "max16070", max16070 },
-	{ "max16071", max16071 },
-	{ }
-};
-
-MODULE_DEVICE_TABLE(i2c, max16065_id);
-
 /* This is the driver that will be inserted */
 static struct i2c_driver max16065_driver = {
 	.driver = {
 		.name = "max16065",
 	},
-	.probe = max16065_probe,
-	.id_table = max16065_id,
+	.probe2 = max16065_probe,
 };
 
 module_i2c_driver(max16065_driver);

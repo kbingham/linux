@@ -495,8 +495,7 @@ bu21013_parse_dt(struct device *dev)
  * This function used to initializes the i2c-client touchscreen
  * driver and returns integer.
  */
-static int bu21013_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int bu21013_probe(struct i2c_client *client)
 {
 	const struct bu21013_platform_device *pdata =
 					dev_get_platdata(&client->dev);
@@ -707,12 +706,6 @@ static const struct dev_pm_ops bu21013_dev_pm_ops = {
 };
 #endif
 
-static const struct i2c_device_id bu21013_id[] = {
-	{ DRIVER_TP, 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, bu21013_id);
-
 static struct i2c_driver bu21013_driver = {
 	.driver	= {
 		.name	=	DRIVER_TP,
@@ -720,9 +713,8 @@ static struct i2c_driver bu21013_driver = {
 		.pm	=	&bu21013_dev_pm_ops,
 #endif
 	},
-	.probe		=	bu21013_probe,
+	.probe2 = bu21013_probe,
 	.remove		=	bu21013_remove,
-	.id_table	=	bu21013_id,
 };
 
 module_i2c_driver(bu21013_driver);

@@ -593,8 +593,7 @@ static void tuner_lookup(struct i2c_adapter *adap,
  * During client attach, set_type is called by adapter's attach_inform callback.
  * set_type must then be completed by tuner_probe.
  */
-static int tuner_probe(struct i2c_client *client,
-		       const struct i2c_device_id *id)
+static int tuner_probe(struct i2c_client *client)
 {
 	struct tuner *t;
 	struct tuner *radio;
@@ -1358,21 +1357,14 @@ static const struct dev_pm_ops tuner_pm_ops = {
 	SET_SYSTEM_SLEEP_PM_OPS(tuner_suspend, tuner_resume)
 };
 
-static const struct i2c_device_id tuner_id[] = {
-	{ "tuner", }, /* autodetect */
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, tuner_id);
-
 static struct i2c_driver tuner_driver = {
 	.driver = {
 		.name	= "tuner",
 		.pm	= &tuner_pm_ops,
 	},
-	.probe		= tuner_probe,
+	.probe2 = tuner_probe,
 	.remove		= tuner_remove,
 	.command	= tuner_command,
-	.id_table	= tuner_id,
 };
 
 module_i2c_driver(tuner_driver);

@@ -897,7 +897,7 @@ static void lm87_init_client(struct i2c_client *client)
 				 (data->config & 0x77) | 0x01);
 }
 
-static int lm87_probe(struct i2c_client *client, const struct i2c_device_id *id)
+static int lm87_probe(struct i2c_client *client)
 {
 	struct lm87_data *data;
 	int err;
@@ -989,25 +989,13 @@ static int lm87_remove(struct i2c_client *client)
 	return 0;
 }
 
-/*
- * Driver data (common to all clients)
- */
-
-static const struct i2c_device_id lm87_id[] = {
-	{ "lm87", lm87 },
-	{ "adm1024", adm1024 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, lm87_id);
-
 static struct i2c_driver lm87_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver = {
 		.name	= "lm87",
 	},
-	.probe		= lm87_probe,
+	.probe2 = lm87_probe,
 	.remove		= lm87_remove,
-	.id_table	= lm87_id,
 	.detect		= lm87_detect,
 	.address_list	= normal_i2c,
 };

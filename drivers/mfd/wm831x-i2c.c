@@ -24,8 +24,7 @@
 #include <linux/mfd/wm831x/core.h>
 #include <linux/mfd/wm831x/pdata.h>
 
-static int wm831x_i2c_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *id)
+static int wm831x_i2c_probe(struct i2c_client *i2c)
 {
 	struct wm831x *wm831x;
 	int ret;
@@ -73,18 +72,6 @@ static int wm831x_i2c_poweroff(struct device *dev)
 	return 0;
 }
 
-static const struct i2c_device_id wm831x_i2c_id[] = {
-	{ "wm8310", WM8310 },
-	{ "wm8311", WM8311 },
-	{ "wm8312", WM8312 },
-	{ "wm8320", WM8320 },
-	{ "wm8321", WM8321 },
-	{ "wm8325", WM8325 },
-	{ "wm8326", WM8326 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, wm831x_i2c_id);
-
 static const struct dev_pm_ops wm831x_pm_ops = {
 	.suspend = wm831x_i2c_suspend,
 	.poweroff = wm831x_i2c_poweroff,
@@ -95,9 +82,8 @@ static struct i2c_driver wm831x_i2c_driver = {
 		.name = "wm831x",
 		.pm = &wm831x_pm_ops,
 	},
-	.probe = wm831x_i2c_probe,
+	.probe2 = wm831x_i2c_probe,
 	.remove = wm831x_i2c_remove,
-	.id_table = wm831x_i2c_id,
 };
 
 static int __init wm831x_i2c_init(void)

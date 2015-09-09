@@ -1306,8 +1306,7 @@ done:
 	return ret;
 }
 
-static int rj54n1_probe(struct i2c_client *client,
-			const struct i2c_device_id *did)
+static int rj54n1_probe(struct i2c_client *client)
 {
 	struct rj54n1 *rj54n1;
 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
@@ -1388,19 +1387,12 @@ static int rj54n1_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id rj54n1_id[] = {
-	{ "rj54n1cb0c", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, rj54n1_id);
-
 static struct i2c_driver rj54n1_i2c_driver = {
 	.driver = {
 		.name = "rj54n1cb0c",
 	},
-	.probe		= rj54n1_probe,
+	.probe2 = rj54n1_probe,
 	.remove		= rj54n1_remove,
-	.id_table	= rj54n1_id,
 };
 
 module_i2c_driver(rj54n1_i2c_driver);

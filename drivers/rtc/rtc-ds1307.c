@@ -167,23 +167,6 @@ static struct chip_desc chips[last_ds_type] = {
 	},
 };
 
-static const struct i2c_device_id ds1307_id[] = {
-	{ "ds1307", ds_1307 },
-	{ "ds1337", ds_1337 },
-	{ "ds1338", ds_1338 },
-	{ "ds1339", ds_1339 },
-	{ "ds1388", ds_1388 },
-	{ "ds1340", ds_1340 },
-	{ "ds3231", ds_3231 },
-	{ "m41t00", m41t00 },
-	{ "mcp7940x", mcp794xx },
-	{ "mcp7941x", mcp794xx },
-	{ "pt7c4338", ds_1307 },
-	{ "rx8025", rx_8025 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ds1307_id);
-
 /*----------------------------------------------------------------------*/
 
 #define BLOCK_DATA_MAX_TRIES 10
@@ -885,8 +868,7 @@ out:
 	return;
 }
 
-static int ds1307_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int ds1307_probe(struct i2c_client *client)
 {
 	struct ds1307		*ds1307;
 	int			err = -ENODEV;
@@ -1247,9 +1229,8 @@ static struct i2c_driver ds1307_driver = {
 		.name	= "rtc-ds1307",
 		.owner	= THIS_MODULE,
 	},
-	.probe		= ds1307_probe,
+	.probe2 = ds1307_probe,
 	.remove		= ds1307_remove,
-	.id_table	= ds1307_id,
 };
 
 module_i2c_driver(ds1307_driver);

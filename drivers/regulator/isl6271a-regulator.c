@@ -106,8 +106,7 @@ static const struct regulator_desc isl_rd[] = {
 	},
 };
 
-static int isl6271a_probe(struct i2c_client *i2c,
-				     const struct i2c_device_id *id)
+static int isl6271a_probe(struct i2c_client *i2c)
 {
 	struct regulator_config config = { };
 	struct regulator_init_data *init_data	= dev_get_platdata(&i2c->dev);
@@ -146,19 +145,11 @@ static int isl6271a_probe(struct i2c_client *i2c,
 	return 0;
 }
 
-static const struct i2c_device_id isl6271a_id[] = {
-	{.name = "isl6271a", 0 },
-	{ },
-};
-
-MODULE_DEVICE_TABLE(i2c, isl6271a_id);
-
 static struct i2c_driver isl6271a_i2c_driver = {
 	.driver = {
 		.name = "isl6271a",
 	},
-	.probe = isl6271a_probe,
-	.id_table = isl6271a_id,
+	.probe2 = isl6271a_probe,
 };
 
 static int __init isl6271a_init(void)

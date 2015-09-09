@@ -551,8 +551,7 @@ static inline void ad5380_spi_unregister_driver(void)
 
 #if IS_ENABLED(CONFIG_I2C)
 
-static int ad5380_i2c_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *id)
+static int ad5380_i2c_probe(struct i2c_client *i2c)
 {
 	struct regmap *regmap;
 
@@ -569,34 +568,12 @@ static int ad5380_i2c_remove(struct i2c_client *i2c)
 	return ad5380_remove(&i2c->dev);
 }
 
-static const struct i2c_device_id ad5380_i2c_ids[] = {
-	{ "ad5380-3", ID_AD5380_3 },
-	{ "ad5380-5", ID_AD5380_5 },
-	{ "ad5381-3", ID_AD5381_3 },
-	{ "ad5381-5", ID_AD5381_5 },
-	{ "ad5382-3", ID_AD5382_3 },
-	{ "ad5382-5", ID_AD5382_5 },
-	{ "ad5383-3", ID_AD5383_3 },
-	{ "ad5383-5", ID_AD5383_5 },
-	{ "ad5384-3", ID_AD5380_3 },
-	{ "ad5384-5", ID_AD5380_5 },
-	{ "ad5390-3", ID_AD5390_3 },
-	{ "ad5390-5", ID_AD5390_5 },
-	{ "ad5391-3", ID_AD5391_3 },
-	{ "ad5391-5", ID_AD5391_5 },
-	{ "ad5392-3", ID_AD5392_3 },
-	{ "ad5392-5", ID_AD5392_5 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ad5380_i2c_ids);
-
 static struct i2c_driver ad5380_i2c_driver = {
 	.driver = {
 		   .name = "ad5380",
 	},
-	.probe = ad5380_i2c_probe,
+	.probe2 = ad5380_i2c_probe,
 	.remove = ad5380_i2c_remove,
-	.id_table = ad5380_i2c_ids,
 };
 
 static inline int ad5380_i2c_register_driver(void)

@@ -37,16 +37,6 @@
 #include "radio-si470x.h"
 
 
-/* I2C Device ID List */
-static const struct i2c_device_id si470x_i2c_id[] = {
-	/* Generic Entry */
-	{ "si470x", 0 },
-	/* Terminating entry */
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, si470x_i2c_id);
-
-
 
 /**************************************************************************
  * Module Parameters
@@ -347,8 +337,7 @@ end:
 /*
  * si470x_i2c_probe - probe for the device
  */
-static int si470x_i2c_probe(struct i2c_client *client,
-			    const struct i2c_device_id *id)
+static int si470x_i2c_probe(struct i2c_client *client)
 {
 	struct si470x_device *radio;
 	int retval = 0;
@@ -514,9 +503,8 @@ static struct i2c_driver si470x_i2c_driver = {
 		.pm		= &si470x_i2c_pm,
 #endif
 	},
-	.probe			= si470x_i2c_probe,
+	.probe2 = si470x_i2c_probe,
 	.remove			= si470x_i2c_remove,
-	.id_table		= si470x_i2c_id,
 };
 
 module_i2c_driver(si470x_i2c_driver);

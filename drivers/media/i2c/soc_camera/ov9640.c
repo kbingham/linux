@@ -686,8 +686,7 @@ static struct v4l2_subdev_ops ov9640_subdev_ops = {
 /*
  * i2c_driver function
  */
-static int ov9640_probe(struct i2c_client *client,
-			const struct i2c_device_id *did)
+static int ov9640_probe(struct i2c_client *client)
 {
 	struct ov9640_priv *priv;
 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
@@ -743,19 +742,12 @@ static int ov9640_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id ov9640_id[] = {
-	{ "ov9640", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ov9640_id);
-
 static struct i2c_driver ov9640_i2c_driver = {
 	.driver = {
 		.name = "ov9640",
 	},
-	.probe    = ov9640_probe,
+	.probe2 = ov9640_probe,
 	.remove   = ov9640_remove,
-	.id_table = ov9640_id,
 };
 
 module_i2c_driver(ov9640_i2c_driver);

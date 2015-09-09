@@ -145,8 +145,7 @@ static const struct iio_info mpl115_info = {
 	.driver_module = THIS_MODULE,
 };
 
-static int mpl115_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int mpl115_probe(struct i2c_client *client)
 {
 	struct mpl115_data *data;
 	struct iio_dev *indio_dev;
@@ -191,18 +190,11 @@ static int mpl115_probe(struct i2c_client *client,
 	return devm_iio_device_register(&client->dev, indio_dev);
 }
 
-static const struct i2c_device_id mpl115_id[] = {
-	{ "mpl115", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, mpl115_id);
-
 static struct i2c_driver mpl115_driver = {
 	.driver = {
 		.name	= "mpl115",
 	},
-	.probe = mpl115_probe,
-	.id_table = mpl115_id,
+	.probe2 = mpl115_probe,
 };
 module_i2c_driver(mpl115_driver);
 

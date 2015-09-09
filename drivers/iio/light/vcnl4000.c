@@ -46,12 +46,6 @@ struct vcnl4000_data {
 	struct i2c_client *client;
 };
 
-static const struct i2c_device_id vcnl4000_id[] = {
-	{ "vcnl4000", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, vcnl4000_id);
-
 static int vcnl4000_measure(struct vcnl4000_data *data, u8 req_mask,
 				u8 rdy_mask, u8 data_reg, int *val)
 {
@@ -150,8 +144,7 @@ static const struct iio_info vcnl4000_info = {
 	.driver_module = THIS_MODULE,
 };
 
-static int vcnl4000_probe(struct i2c_client *client,
-			  const struct i2c_device_id *id)
+static int vcnl4000_probe(struct i2c_client *client)
 {
 	struct vcnl4000_data *data;
 	struct iio_dev *indio_dev;
@@ -186,8 +179,7 @@ static struct i2c_driver vcnl4000_driver = {
 	.driver = {
 		.name   = VCNL4000_DRV_NAME,
 	},
-	.probe  = vcnl4000_probe,
-	.id_table = vcnl4000_id,
+	.probe2 = vcnl4000_probe,
 };
 
 module_i2c_driver(vcnl4000_driver);

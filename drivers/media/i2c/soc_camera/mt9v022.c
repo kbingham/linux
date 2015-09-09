@@ -877,8 +877,7 @@ static struct v4l2_subdev_ops mt9v022_subdev_ops = {
 	.pad	= &mt9v022_subdev_pad_ops,
 };
 
-static int mt9v022_probe(struct i2c_client *client,
-			 const struct i2c_device_id *did)
+static int mt9v022_probe(struct i2c_client *client)
 {
 	struct mt9v022 *mt9v022;
 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
@@ -985,19 +984,13 @@ static int mt9v022_remove(struct i2c_client *client)
 
 	return 0;
 }
-static const struct i2c_device_id mt9v022_id[] = {
-	{ "mt9v022", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, mt9v022_id);
 
 static struct i2c_driver mt9v022_i2c_driver = {
 	.driver = {
 		.name = "mt9v022",
 	},
-	.probe		= mt9v022_probe,
+	.probe2 = mt9v022_probe,
 	.remove		= mt9v022_remove,
-	.id_table	= mt9v022_id,
 };
 
 module_i2c_driver(mt9v022_i2c_driver);

@@ -772,8 +772,7 @@ static int inv_check_and_setup_chip(struct inv_mpu6050_state *st,
  *
  *  Returns 0 on success, a negative error code otherwise.
  */
-static int inv_mpu_probe(struct i2c_client *client,
-	const struct i2c_device_id *id)
+static int inv_mpu_probe(struct i2c_client *client)
 {
 	struct inv_mpu6050_state *st;
 	struct iio_dev *indio_dev;
@@ -901,19 +900,7 @@ static SIMPLE_DEV_PM_OPS(inv_mpu_pmops, inv_mpu_suspend, inv_mpu_resume);
 #define INV_MPU6050_PMOPS (&inv_mpu_pmops)
 #else
 #define INV_MPU6050_PMOPS NULL
-#endif /* CONFIG_PM_SLEEP */
-
-/*
- * device id table is used to identify what device can be
- * supported by this driver
- */
-static const struct i2c_device_id inv_mpu_id[] = {
-	{"mpu6050", INV_MPU6050},
-	{"mpu6500", INV_MPU6500},
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, inv_mpu_id);
+#endif
 
 static const struct acpi_device_id inv_acpi_match[] = {
 	{"INVN6500", 0},
@@ -923,9 +910,8 @@ static const struct acpi_device_id inv_acpi_match[] = {
 MODULE_DEVICE_TABLE(acpi, inv_acpi_match);
 
 static struct i2c_driver inv_mpu_driver = {
-	.probe		=	inv_mpu_probe,
+	.probe2 = inv_mpu_probe,
 	.remove		=	inv_mpu_remove,
-	.id_table	=	inv_mpu_id,
 	.driver = {
 		.name	=	"inv-mpu6050",
 		.pm     =       INV_MPU6050_PMOPS,

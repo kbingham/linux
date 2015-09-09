@@ -406,8 +406,7 @@ static const struct rtc_class_ops ds3232_rtc_ops = {
 	.alarm_irq_enable = ds3232_alarm_irq_enable,
 };
 
-static int ds3232_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int ds3232_probe(struct i2c_client *client)
 {
 	struct ds3232 *ds3232;
 	int ret;
@@ -491,21 +490,14 @@ static const struct dev_pm_ops ds3232_pm_ops = {
 	SET_SYSTEM_SLEEP_PM_OPS(ds3232_suspend, ds3232_resume)
 };
 
-static const struct i2c_device_id ds3232_id[] = {
-	{ "ds3232", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ds3232_id);
-
 static struct i2c_driver ds3232_driver = {
 	.driver = {
 		.name = "rtc-ds3232",
 		.owner = THIS_MODULE,
 		.pm	= &ds3232_pm_ops,
 	},
-	.probe = ds3232_probe,
+	.probe2 = ds3232_probe,
 	.remove = ds3232_remove,
-	.id_table = ds3232_id,
 };
 
 module_i2c_driver(ds3232_driver);

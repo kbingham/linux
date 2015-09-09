@@ -1096,7 +1096,7 @@ static void ad9389b_init_setup(struct v4l2_subdev *sd)
 	ad9389b_set_isr(sd, false);
 }
 
-static int ad9389b_probe(struct i2c_client *client, const struct i2c_device_id *id)
+static int ad9389b_probe(struct i2c_client *client)
 {
 	const struct v4l2_dv_timings dv1080p60 = V4L2_DV_BT_CEA_1920X1080P60;
 	struct ad9389b_state *state;
@@ -1228,23 +1228,13 @@ static int ad9389b_remove(struct i2c_client *client)
 	return 0;
 }
 
-/* ----------------------------------------------------------------------- */
-
-static struct i2c_device_id ad9389b_id[] = {
-	{ "ad9389b", 0 },
-	{ "ad9889b", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ad9389b_id);
-
 static struct i2c_driver ad9389b_driver = {
 	.driver = {
 		.owner = THIS_MODULE,
 		.name = "ad9389b",
 	},
-	.probe = ad9389b_probe,
+	.probe2 = ad9389b_probe,
 	.remove = ad9389b_remove,
-	.id_table = ad9389b_id,
 };
 
 module_i2c_driver(ad9389b_driver);

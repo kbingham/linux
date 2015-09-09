@@ -1539,7 +1539,7 @@ static int lm85_detect(struct i2c_client *client, struct i2c_board_info *info)
 	return 0;
 }
 
-static int lm85_probe(struct i2c_client *client, const struct i2c_device_id *id)
+static int lm85_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device *hwmon_dev;
@@ -1606,29 +1606,12 @@ static int lm85_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id lm85_id[] = {
-	{ "adm1027", adm1027 },
-	{ "adt7463", adt7463 },
-	{ "adt7468", adt7468 },
-	{ "lm85", lm85 },
-	{ "lm85b", lm85 },
-	{ "lm85c", lm85 },
-	{ "emc6d100", emc6d100 },
-	{ "emc6d101", emc6d100 },
-	{ "emc6d102", emc6d102 },
-	{ "emc6d103", emc6d103 },
-	{ "emc6d103s", emc6d103s },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, lm85_id);
-
 static struct i2c_driver lm85_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver = {
 		.name   = "lm85",
 	},
-	.probe		= lm85_probe,
-	.id_table	= lm85_id,
+	.probe2 = lm85_probe,
 	.detect		= lm85_detect,
 	.address_list	= normal_i2c,
 };

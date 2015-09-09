@@ -1356,8 +1356,7 @@ static struct i2c_adapter *m88ds3103_get_i2c_adapter(struct i2c_client *client)
 	return dev->i2c_adapter;
 }
 
-static int m88ds3103_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int m88ds3103_probe(struct i2c_client *client)
 {
 	struct m88ds3103_dev *dev;
 	struct m88ds3103_platform_data *pdata = client->dev.platform_data;
@@ -1487,20 +1486,13 @@ static int m88ds3103_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id m88ds3103_id_table[] = {
-	{"m88ds3103", 0},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, m88ds3103_id_table);
-
 static struct i2c_driver m88ds3103_driver = {
 	.driver = {
 		.name	= "m88ds3103",
 		.suppress_bind_attrs = true,
 	},
-	.probe		= m88ds3103_probe,
+	.probe2 = m88ds3103_probe,
 	.remove		= m88ds3103_remove,
-	.id_table	= m88ds3103_id_table,
 };
 
 module_i2c_driver(m88ds3103_driver);

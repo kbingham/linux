@@ -1084,8 +1084,7 @@ done:
 	return ret;
 }
 
-static int mt9t112_probe(struct i2c_client *client,
-			 const struct i2c_device_id *did)
+static int mt9t112_probe(struct i2c_client *client)
 {
 	struct mt9t112_priv *priv;
 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
@@ -1133,19 +1132,12 @@ static int mt9t112_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id mt9t112_id[] = {
-	{ "mt9t112", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, mt9t112_id);
-
 static struct i2c_driver mt9t112_i2c_driver = {
 	.driver = {
 		.name = "mt9t112",
 	},
-	.probe    = mt9t112_probe,
+	.probe2 = mt9t112_probe,
 	.remove   = mt9t112_remove,
-	.id_table = mt9t112_id,
 };
 
 module_i2c_driver(mt9t112_i2c_driver);

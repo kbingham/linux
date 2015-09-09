@@ -424,12 +424,6 @@ sil164_encoder_init(struct i2c_client *client,
 	return 0;
 }
 
-static struct i2c_device_id sil164_ids[] = {
-	{ "sil164", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, sil164_ids);
-
 static struct drm_i2c_encoder_driver sil164_driver = {
 	.i2c_driver = {
 		.probe = sil164_probe,

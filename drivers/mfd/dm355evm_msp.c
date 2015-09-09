@@ -365,7 +365,7 @@ static int dm355evm_msp_remove(struct i2c_client *client)
 }
 
 static int
-dm355evm_msp_probe(struct i2c_client *client, const struct i2c_device_id *id)
+dm355evm_msp_probe(struct i2c_client *client)
 {
 	int		status;
 	const char	*video = msp_has_tvp() ? "TVP5146" : "imager";
@@ -408,16 +408,9 @@ fail:
 	return status;
 }
 
-static const struct i2c_device_id dm355evm_msp_ids[] = {
-	{ "dm355evm_msp", 0 },
-	{ /* end of list */ },
-};
-MODULE_DEVICE_TABLE(i2c, dm355evm_msp_ids);
-
 static struct i2c_driver dm355evm_msp_driver = {
 	.driver.name	= "dm355evm_msp",
-	.id_table	= dm355evm_msp_ids,
-	.probe		= dm355evm_msp_probe,
+	.probe2 = dm355evm_msp_probe,
 	.remove		= dm355evm_msp_remove,
 };
 

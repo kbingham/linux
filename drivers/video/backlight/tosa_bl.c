@@ -78,8 +78,7 @@ static const struct backlight_ops bl_ops = {
 	.update_status		= tosa_bl_update_status,
 };
 
-static int tosa_bl_probe(struct i2c_client *client,
-		const struct i2c_device_id *id)
+static int tosa_bl_probe(struct i2c_client *client)
 {
 	struct backlight_properties props;
 	struct tosa_bl_data *data;
@@ -154,21 +153,14 @@ static int tosa_bl_resume(struct device *dev)
 
 static SIMPLE_DEV_PM_OPS(tosa_bl_pm_ops, tosa_bl_suspend, tosa_bl_resume);
 
-static const struct i2c_device_id tosa_bl_id[] = {
-	{ "tosa-bl", 0 },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, tosa_bl_id);
-
 static struct i2c_driver tosa_bl_driver = {
 	.driver = {
 		.name		= "tosa-bl",
 		.owner		= THIS_MODULE,
 		.pm		= &tosa_bl_pm_ops,
 	},
-	.probe		= tosa_bl_probe,
+	.probe2 = tosa_bl_probe,
 	.remove		= tosa_bl_remove,
-	.id_table	= tosa_bl_id,
 };
 
 module_i2c_driver(tosa_bl_driver);

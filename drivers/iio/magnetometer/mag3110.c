@@ -327,8 +327,7 @@ static int mag3110_standby(struct mag3110_data *data)
 		data->ctrl_reg1 & ~MAG3110_CTRL_AC);
 }
 
-static int mag3110_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int mag3110_probe(struct i2c_client *client)
 {
 	struct mag3110_data *data;
 	struct iio_dev *indio_dev;
@@ -418,20 +417,13 @@ static SIMPLE_DEV_PM_OPS(mag3110_pm_ops, mag3110_suspend, mag3110_resume);
 #define MAG3110_PM_OPS NULL
 #endif
 
-static const struct i2c_device_id mag3110_id[] = {
-	{ "mag3110", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, mag3110_id);
-
 static struct i2c_driver mag3110_driver = {
 	.driver = {
 		.name	= "mag3110",
 		.pm	= MAG3110_PM_OPS,
 	},
-	.probe = mag3110_probe,
+	.probe2 = mag3110_probe,
 	.remove = mag3110_remove,
-	.id_table = mag3110_id,
 };
 module_i2c_driver(mag3110_driver);
 

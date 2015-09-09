@@ -392,8 +392,7 @@ static const struct dvb_tuner_ops qm1d1c0042_ops = {
 };
 
 
-static int qm1d1c0042_probe(struct i2c_client *client,
-			    const struct i2c_device_id *id)
+static int qm1d1c0042_probe(struct i2c_client *client)
 {
 	struct qm1d1c0042_state *state;
 	struct qm1d1c0042_config *cfg;
@@ -425,20 +424,12 @@ static int qm1d1c0042_remove(struct i2c_client *client)
 	return 0;
 }
 
-
-static const struct i2c_device_id qm1d1c0042_id[] = {
-	{"qm1d1c0042", 0},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, qm1d1c0042_id);
-
 static struct i2c_driver qm1d1c0042_driver = {
 	.driver = {
 		.name	= "qm1d1c0042",
 	},
-	.probe		= qm1d1c0042_probe,
+	.probe2 = qm1d1c0042_probe,
 	.remove		= qm1d1c0042_remove,
-	.id_table	= qm1d1c0042_id,
 };
 
 module_i2c_driver(qm1d1c0042_driver);

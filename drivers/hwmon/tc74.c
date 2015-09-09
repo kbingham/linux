@@ -107,8 +107,7 @@ static struct attribute *tc74_attrs[] = {
 
 ATTRIBUTE_GROUPS(tc74);
 
-static int tc74_probe(struct i2c_client *client,
-		      const struct i2c_device_id *dev_id)
+static int tc74_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct tc74_data *data;
@@ -155,18 +154,11 @@ static int tc74_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id tc74_id[] = {
-	{ "tc74", 0 },
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, tc74_id);
-
 static struct i2c_driver tc74_driver = {
 	.driver = {
 		.name	= "tc74",
 	},
-	.probe	= tc74_probe,
-	.id_table = tc74_id,
+	.probe2 = tc74_probe,
 };
 
 module_i2c_driver(tc74_driver);

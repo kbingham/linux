@@ -1856,8 +1856,7 @@ static const struct tsl2x7x_chip_info tsl2x7x_chip_info_tbl[] = {
 	},
 };
 
-static int tsl2x7x_probe(struct i2c_client *clientp,
-	const struct i2c_device_id *id)
+static int tsl2x7x_probe(struct i2c_client *clientp)
 {
 	int ret;
 	unsigned char device_id;
@@ -1991,22 +1990,6 @@ static int tsl2x7x_remove(struct i2c_client *client)
 	return 0;
 }
 
-static struct i2c_device_id tsl2x7x_idtable[] = {
-	{ "tsl2571", tsl2571 },
-	{ "tsl2671", tsl2671 },
-	{ "tmd2671", tmd2671 },
-	{ "tsl2771", tsl2771 },
-	{ "tmd2771", tmd2771 },
-	{ "tsl2572", tsl2572 },
-	{ "tsl2672", tsl2672 },
-	{ "tmd2672", tmd2672 },
-	{ "tsl2772", tsl2772 },
-	{ "tmd2772", tmd2772 },
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, tsl2x7x_idtable);
-
 static const struct dev_pm_ops tsl2x7x_pm_ops = {
 	.suspend = tsl2x7x_suspend,
 	.resume  = tsl2x7x_resume,
@@ -2018,8 +2001,7 @@ static struct i2c_driver tsl2x7x_driver = {
 		.name = "tsl2x7x",
 		.pm = &tsl2x7x_pm_ops,
 	},
-	.id_table = tsl2x7x_idtable,
-	.probe = tsl2x7x_probe,
+	.probe2 = tsl2x7x_probe,
 	.remove = tsl2x7x_remove,
 };
 

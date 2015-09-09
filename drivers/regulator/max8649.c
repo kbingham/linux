@@ -148,8 +148,7 @@ static const struct regmap_config max8649_regmap_config = {
 	.val_bits = 8,
 };
 
-static int max8649_regulator_probe(struct i2c_client *client,
-					     const struct i2c_device_id *id)
+static int max8649_regulator_probe(struct i2c_client *client)
 {
 	struct max8649_platform_data *pdata = dev_get_platdata(&client->dev);
 	struct max8649_regulator_info *info = NULL;
@@ -243,18 +242,11 @@ static int max8649_regulator_probe(struct i2c_client *client,
 	return 0;
 }
 
-static const struct i2c_device_id max8649_id[] = {
-	{ "max8649", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, max8649_id);
-
 static struct i2c_driver max8649_driver = {
-	.probe		= max8649_regulator_probe,
+	.probe2 = max8649_regulator_probe,
 	.driver		= {
 		.name	= "max8649",
 	},
-	.id_table	= max8649_id,
 };
 
 static int __init max8649_init(void)

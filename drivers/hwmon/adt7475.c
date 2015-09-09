@@ -152,15 +152,6 @@ static const unsigned short normal_i2c[] = { 0x2c, 0x2d, 0x2e, I2C_CLIENT_END };
 
 enum chips { adt7473, adt7475, adt7476, adt7490 };
 
-static const struct i2c_device_id adt7475_id[] = {
-	{ "adt7473", adt7473 },
-	{ "adt7475", adt7475 },
-	{ "adt7476", adt7476 },
-	{ "adt7490", adt7490 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, adt7475_id);
-
 struct adt7475_data {
 	struct device *hwmon_dev;
 	struct mutex lock;
@@ -1247,8 +1238,7 @@ static void adt7475_remove_files(struct i2c_client *client,
 		sysfs_remove_group(&client->dev.kobj, &vid_attr_group);
 }
 
-static int adt7475_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int adt7475_probe(struct i2c_client *client)
 {
 	static const char * const names[] = {
 		[adt7473] = "ADT7473",
@@ -1429,9 +1419,8 @@ static struct i2c_driver adt7475_driver = {
 	.driver = {
 		.name	= "adt7475",
 	},
-	.probe		= adt7475_probe,
+	.probe2 = adt7475_probe,
 	.remove		= adt7475_remove,
-	.id_table	= adt7475_id,
 	.detect		= adt7475_detect,
 	.address_list	= normal_i2c,
 };

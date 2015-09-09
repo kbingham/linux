@@ -426,8 +426,7 @@ static struct video_device tea5764_radio_template = {
 };
 
 /* I2C probe: check if the device exists and register with v4l if it is */
-static int tea5764_i2c_probe(struct i2c_client *client,
-			     const struct i2c_device_id *id)
+static int tea5764_i2c_probe(struct i2c_client *client)
 {
 	struct tea5764_device *radio;
 	struct v4l2_device *v4l2_dev;
@@ -516,20 +515,12 @@ static int tea5764_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-/* I2C subsystem interface */
-static const struct i2c_device_id tea5764_id[] = {
-	{ "radio-tea5764", 0 },
-	{ }					/* Terminating entry */
-};
-MODULE_DEVICE_TABLE(i2c, tea5764_id);
-
 static struct i2c_driver tea5764_i2c_driver = {
 	.driver = {
 		.name = "radio-tea5764",
 	},
-	.probe = tea5764_i2c_probe,
+	.probe2 = tea5764_i2c_probe,
 	.remove = tea5764_i2c_remove,
-	.id_table = tea5764_id,
 };
 
 module_i2c_driver(tea5764_i2c_driver);

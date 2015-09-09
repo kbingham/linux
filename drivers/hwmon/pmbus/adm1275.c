@@ -308,18 +308,7 @@ static int adm1275_read_byte_data(struct i2c_client *client, int page, int reg)
 	return ret;
 }
 
-static const struct i2c_device_id adm1275_id[] = {
-	{ "adm1075", adm1075 },
-	{ "adm1275", adm1275 },
-	{ "adm1276", adm1276 },
-	{ "adm1293", adm1293 },
-	{ "adm1294", adm1294 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, adm1275_id);
-
-static int adm1275_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int adm1275_probe(struct i2c_client *client)
 {
 	u8 block_buffer[I2C_SMBUS_BLOCK_MAX + 1];
 	int config, device_config;
@@ -545,9 +534,8 @@ static struct i2c_driver adm1275_driver = {
 	.driver = {
 		   .name = "adm1275",
 		   },
-	.probe = adm1275_probe,
+	.probe2 = adm1275_probe,
 	.remove = pmbus_do_remove,
-	.id_table = adm1275_id,
 };
 
 module_i2c_driver(adm1275_driver);

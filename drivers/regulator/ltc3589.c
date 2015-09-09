@@ -457,8 +457,7 @@ static void ltc3589_apply_fb_voltage_divider(struct ltc3589_regulator *rdesc)
 	desc->fixed_uV = ltc3589_scale(desc->fixed_uV, rdesc->r1, rdesc->r2);
 }
 
-static int ltc3589_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int ltc3589_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct ltc3589_regulator *descs;
@@ -531,20 +530,11 @@ static int ltc3589_probe(struct i2c_client *client,
 	return 0;
 }
 
-static struct i2c_device_id ltc3589_i2c_id[] = {
-	{ "ltc3589",   LTC3589   },
-	{ "ltc3589-1", LTC3589_1 },
-	{ "ltc3589-2", LTC3589_2 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ltc3589_i2c_id);
-
 static struct i2c_driver ltc3589_driver = {
 	.driver = {
 		.name = DRIVER_NAME,
 	},
-	.probe = ltc3589_probe,
-	.id_table = ltc3589_i2c_id,
+	.probe2 = ltc3589_probe,
 };
 module_i2c_driver(ltc3589_driver);
 

@@ -174,8 +174,7 @@ error_i2c:
 /*
  * I2C driver interface functions
  */
-static int da9210_i2c_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *id)
+static int da9210_i2c_probe(struct i2c_client *i2c)
 {
 	struct da9210 *chip;
 	struct device *dev = &i2c->dev;
@@ -249,19 +248,11 @@ static int da9210_i2c_probe(struct i2c_client *i2c,
 	return 0;
 }
 
-static const struct i2c_device_id da9210_i2c_id[] = {
-	{"da9210", 0},
-	{},
-};
-
-MODULE_DEVICE_TABLE(i2c, da9210_i2c_id);
-
 static struct i2c_driver da9210_regulator_driver = {
 	.driver = {
 		.name = "da9210",
 	},
-	.probe = da9210_i2c_probe,
-	.id_table = da9210_i2c_id,
+	.probe2 = da9210_i2c_probe,
 };
 
 module_i2c_driver(da9210_regulator_driver);

@@ -191,8 +191,7 @@ static const struct v4l2_subdev_ops wm8739_ops = {
 
 /* i2c implementation */
 
-static int wm8739_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int wm8739_probe(struct i2c_client *client)
 {
 	struct wm8739_state *state;
 	struct v4l2_subdev *sd;
@@ -257,19 +256,12 @@ static int wm8739_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id wm8739_id[] = {
-	{ "wm8739", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, wm8739_id);
-
 static struct i2c_driver wm8739_driver = {
 	.driver = {
 		.name	= "wm8739",
 	},
-	.probe		= wm8739_probe,
+	.probe2 = wm8739_probe,
 	.remove		= wm8739_remove,
-	.id_table	= wm8739_id,
 };
 
 module_i2c_driver(wm8739_driver);

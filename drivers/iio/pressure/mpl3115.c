@@ -213,8 +213,7 @@ static const struct iio_info mpl3115_info = {
 	.driver_module = THIS_MODULE,
 };
 
-static int mpl3115_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int mpl3115_probe(struct i2c_client *client)
 {
 	struct mpl3115_data *data;
 	struct iio_dev *indio_dev;
@@ -307,20 +306,13 @@ static SIMPLE_DEV_PM_OPS(mpl3115_pm_ops, mpl3115_suspend, mpl3115_resume);
 #define MPL3115_PM_OPS NULL
 #endif
 
-static const struct i2c_device_id mpl3115_id[] = {
-	{ "mpl3115", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, mpl3115_id);
-
 static struct i2c_driver mpl3115_driver = {
 	.driver = {
 		.name	= "mpl3115",
 		.pm	= MPL3115_PM_OPS,
 	},
-	.probe = mpl3115_probe,
+	.probe2 = mpl3115_probe,
 	.remove = mpl3115_remove,
-	.id_table = mpl3115_id,
 };
 module_i2c_driver(mpl3115_driver);
 

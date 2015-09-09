@@ -156,8 +156,7 @@ static const struct regmap_config ltc4260_regmap_config = {
 	.max_register = LTC4260_ADIN,
 };
 
-static int ltc4260_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int ltc4260_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device *hwmon_dev;
@@ -178,19 +177,11 @@ static int ltc4260_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id ltc4260_id[] = {
-	{"ltc4260", 0},
-	{ }
-};
-
-MODULE_DEVICE_TABLE(i2c, ltc4260_id);
-
 static struct i2c_driver ltc4260_driver = {
 	.driver = {
 		   .name = "ltc4260",
 		   },
-	.probe = ltc4260_probe,
-	.id_table = ltc4260_id,
+	.probe2 = ltc4260_probe,
 };
 
 module_i2c_driver(ltc4260_driver);

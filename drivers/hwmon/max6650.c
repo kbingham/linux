@@ -647,8 +647,7 @@ static int max6650_init_client(struct max6650_data *data,
 	return 0;
 }
 
-static int max6650_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int max6650_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct max6650_data *data;
@@ -681,19 +680,11 @@ static int max6650_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id max6650_id[] = {
-	{ "max6650", 1 },
-	{ "max6651", 4 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, max6650_id);
-
 static struct i2c_driver max6650_driver = {
 	.driver = {
 		.name	= "max6650",
 	},
-	.probe		= max6650_probe,
-	.id_table	= max6650_id,
+	.probe2 = max6650_probe,
 };
 
 module_i2c_driver(max6650_driver);

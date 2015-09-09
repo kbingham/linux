@@ -87,8 +87,7 @@ static void set_vcomm(void)
 		pr_err("i2c_smbus_write_byte_data fail: %d\n", nr);
 }
 
-static int ad5280_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int ad5280_probe(struct i2c_client *client)
 {
 	int ret;
 	if (!i2c_check_functionality(client->adapter,
@@ -114,20 +113,12 @@ static int ad5280_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id ad5280_id[] = {
-	{"bf537-lq035-ad5280", 0},
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, ad5280_id);
-
 static struct i2c_driver ad5280_driver = {
 	.driver = {
 		.name = "bf537-lq035-ad5280",
 	},
-	.probe = ad5280_probe,
+	.probe2 = ad5280_probe,
 	.remove = ad5280_remove,
-	.id_table = ad5280_id,
 };
 
 #ifdef CONFIG_PNAV10

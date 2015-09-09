@@ -1618,8 +1618,7 @@ static int bmc150_accel_chip_init(struct bmc150_accel_data *data)
 	return 0;
 }
 
-static int bmc150_accel_probe(struct i2c_client *client,
-			      const struct i2c_device_id *id)
+static int bmc150_accel_probe(struct i2c_client *client)
 {
 	struct bmc150_accel_data *data;
 	struct iio_dev *indio_dev;
@@ -1838,27 +1837,14 @@ static const struct acpi_device_id bmc150_accel_acpi_match[] = {
 };
 MODULE_DEVICE_TABLE(acpi, bmc150_accel_acpi_match);
 
-static const struct i2c_device_id bmc150_accel_id[] = {
-	{"bmc150_accel",	bmc150},
-	{"bmi055_accel",	bmi055},
-	{"bma255",		bma255},
-	{"bma250e",		bma250e},
-	{"bma222e",		bma222e},
-	{"bma280",		bma280},
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, bmc150_accel_id);
-
 static struct i2c_driver bmc150_accel_driver = {
 	.driver = {
 		.name	= BMC150_ACCEL_DRV_NAME,
 		.acpi_match_table = ACPI_PTR(bmc150_accel_acpi_match),
 		.pm	= &bmc150_accel_pm_ops,
 	},
-	.probe		= bmc150_accel_probe,
+	.probe2 = bmc150_accel_probe,
 	.remove		= bmc150_accel_remove,
-	.id_table	= bmc150_accel_id,
 };
 module_i2c_driver(bmc150_accel_driver);
 

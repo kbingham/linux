@@ -441,13 +441,6 @@ static struct da903x_chip_ops da903x_ops[] = {
 	}
 };
 
-static const struct i2c_device_id da903x_id_table[] = {
-	{ "da9030", 0 },
-	{ "da9034", 1 },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, da903x_id_table);
-
 static int __remove_subdev(struct device *dev, void *unused)
 {
 	platform_device_unregister(to_platform_device(dev));
@@ -491,8 +484,7 @@ failed:
 	return ret;
 }
 
-static int da903x_probe(struct i2c_client *client,
-				  const struct i2c_device_id *id)
+static int da903x_probe(struct i2c_client *client)
 {
 	struct da903x_platform_data *pdata = dev_get_platdata(&client->dev);
 	struct da903x_chip *chip;
@@ -551,9 +543,8 @@ static struct i2c_driver da903x_driver = {
 	.driver	= {
 		.name	= "da903x",
 	},
-	.probe		= da903x_probe,
+	.probe2 = da903x_probe,
 	.remove		= da903x_remove,
-	.id_table	= da903x_id_table,
 };
 
 static int __init da903x_init(void)

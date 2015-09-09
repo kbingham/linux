@@ -36,8 +36,7 @@ static int bmp085_i2c_detect(struct i2c_client *client,
 	return bmp085_detect(&client->dev);
 }
 
-static int bmp085_i2c_probe(struct i2c_client *client,
-				      const struct i2c_device_id *id)
+static int bmp085_i2c_probe(struct i2c_client *client)
 {
 	int err;
 	struct regmap *regmap = devm_regmap_init_i2c(client,
@@ -57,19 +56,11 @@ static int bmp085_i2c_remove(struct i2c_client *client)
 	return bmp085_remove(&client->dev);
 }
 
-static const struct i2c_device_id bmp085_id[] = {
-	{ BMP085_NAME, 0 },
-	{ "bmp180", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, bmp085_id);
-
 static struct i2c_driver bmp085_i2c_driver = {
 	.driver = {
 		.name	= BMP085_NAME,
 	},
-	.id_table	= bmp085_id,
-	.probe		= bmp085_i2c_probe,
+	.probe2 = bmp085_i2c_probe,
 	.remove		= bmp085_i2c_remove,
 
 	.detect		= bmp085_i2c_detect,

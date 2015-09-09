@@ -182,8 +182,7 @@ static int z2_batt_ps_init(struct z2_charger *charger, int props)
 	return 0;
 }
 
-static int z2_batt_probe(struct i2c_client *client,
-				const struct i2c_device_id *id)
+static int z2_batt_probe(struct i2c_client *client)
 {
 	int ret = 0;
 	int props = 1;	/* POWER_SUPPLY_PROP_PRESENT */
@@ -308,21 +307,14 @@ static const struct dev_pm_ops z2_battery_pm_ops = {
 #define	Z2_BATTERY_PM_OPS	(NULL)
 #endif
 
-static const struct i2c_device_id z2_batt_id[] = {
-	{ "aer915", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, z2_batt_id);
-
 static struct i2c_driver z2_batt_driver = {
 	.driver	= {
 		.name	= "z2-battery",
 		.owner	= THIS_MODULE,
 		.pm	= Z2_BATTERY_PM_OPS
 	},
-	.probe		= z2_batt_probe,
+	.probe2 = z2_batt_probe,
 	.remove		= z2_batt_remove,
-	.id_table	= z2_batt_id,
 };
 module_i2c_driver(z2_batt_driver);
 

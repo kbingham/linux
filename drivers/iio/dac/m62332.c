@@ -189,8 +189,7 @@ static const struct iio_chan_spec m62332_channels[M62332_CHANNELS] = {
 	M62332_CHANNEL(1)
 };
 
-static int m62332_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int m62332_probe(struct i2c_client *client)
 {
 	struct m62332_data *data;
 	struct iio_dev *indio_dev;
@@ -247,20 +246,13 @@ static int m62332_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id m62332_id[] = {
-	{ "m62332", },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, m62332_id);
-
 static struct i2c_driver m62332_driver = {
 	.driver = {
 		.name	= "m62332",
 		.pm	= M62332_PM_OPS,
 	},
-	.probe		= m62332_probe,
+	.probe2 = m62332_probe,
 	.remove		= m62332_remove,
-	.id_table	= m62332_id,
 };
 module_i2c_driver(m62332_driver);
 

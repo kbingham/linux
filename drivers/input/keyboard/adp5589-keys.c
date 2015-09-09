@@ -856,8 +856,7 @@ static void adp5589_report_switch_state(struct adp5589_kpad *kpad)
 	input_sync(kpad->input);
 }
 
-static int adp5589_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int adp5589_probe(struct i2c_client *client)
 {
 	struct adp5589_kpad *kpad;
 	const struct adp5589_kpad_platform_data *pdata =
@@ -1085,23 +1084,13 @@ static int adp5589_resume(struct device *dev)
 
 static SIMPLE_DEV_PM_OPS(adp5589_dev_pm_ops, adp5589_suspend, adp5589_resume);
 
-static const struct i2c_device_id adp5589_id[] = {
-	{"adp5589-keys", ADP5589},
-	{"adp5585-keys", ADP5585_01},
-	{"adp5585-02-keys", ADP5585_02}, /* Adds ROW5 to ADP5585 */
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, adp5589_id);
-
 static struct i2c_driver adp5589_driver = {
 	.driver = {
 		.name = KBUILD_MODNAME,
 		.pm = &adp5589_dev_pm_ops,
 	},
-	.probe = adp5589_probe,
+	.probe2 = adp5589_probe,
 	.remove = adp5589_remove,
-	.id_table = adp5589_id,
 };
 
 module_i2c_driver(adp5589_driver);

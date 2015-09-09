@@ -75,32 +75,20 @@ static const unsigned short normal_i2c[] = { 0x2e, I2C_CLIENT_END };
  * Functions declaration
  */
 
-static int w83l785ts_probe(struct i2c_client *client,
-			   const struct i2c_device_id *id);
+static int w83l785ts_probe(struct i2c_client *client);
 static int w83l785ts_detect(struct i2c_client *client,
 			    struct i2c_board_info *info);
 static int w83l785ts_remove(struct i2c_client *client);
 static u8 w83l785ts_read_value(struct i2c_client *client, u8 reg, u8 defval);
 static struct w83l785ts_data *w83l785ts_update_device(struct device *dev);
 
-/*
- * Driver data (common to all clients)
- */
-
-static const struct i2c_device_id w83l785ts_id[] = {
-	{ "w83l785ts", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, w83l785ts_id);
-
 static struct i2c_driver w83l785ts_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver = {
 		.name	= "w83l785ts",
 	},
-	.probe		= w83l785ts_probe,
+	.probe2 = w83l785ts_probe,
 	.remove		= w83l785ts_remove,
-	.id_table	= w83l785ts_id,
 	.detect		= w83l785ts_detect,
 	.address_list	= normal_i2c,
 };
@@ -176,8 +164,7 @@ static int w83l785ts_detect(struct i2c_client *client,
 	return 0;
 }
 
-static int w83l785ts_probe(struct i2c_client *client,
-			   const struct i2c_device_id *id)
+static int w83l785ts_probe(struct i2c_client *client)
 {
 	struct w83l785ts_data *data;
 	struct device *dev = &client->dev;

@@ -293,28 +293,7 @@ static int zl6100_write_byte(struct i2c_client *client, int page, u8 value)
 	return ret;
 }
 
-static const struct i2c_device_id zl6100_id[] = {
-	{"bmr450", zl2005},
-	{"bmr451", zl2005},
-	{"bmr462", zl2008},
-	{"bmr463", zl2008},
-	{"bmr464", zl2008},
-	{"zl2004", zl2004},
-	{"zl2005", zl2005},
-	{"zl2006", zl2006},
-	{"zl2008", zl2008},
-	{"zl2105", zl2105},
-	{"zl2106", zl2106},
-	{"zl6100", zl6100},
-	{"zl6105", zl6105},
-	{"zl9101", zl9101},
-	{"zl9117", zl9117},
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, zl6100_id);
-
-static int zl6100_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int zl6100_probe(struct i2c_client *client)
 {
 	int ret;
 	struct zl6100_data *data;
@@ -408,9 +387,8 @@ static struct i2c_driver zl6100_driver = {
 	.driver = {
 		   .name = "zl6100",
 		   },
-	.probe = zl6100_probe,
+	.probe2 = zl6100_probe,
 	.remove = pmbus_do_remove,
-	.id_table = zl6100_id,
 };
 
 module_i2c_driver(zl6100_driver);

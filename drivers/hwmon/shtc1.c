@@ -177,8 +177,7 @@ static void shtc1_select_command(struct shtc1_data *data)
 	}
 }
 
-static int shtc1_probe(struct i2c_client *client,
-		       const struct i2c_device_id *id)
+static int shtc1_probe(struct i2c_client *client)
 {
 	int ret;
 	char id_reg[2];
@@ -230,18 +229,9 @@ static int shtc1_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-/* device ID table */
-static const struct i2c_device_id shtc1_id[] = {
-	{ "shtc1", 0 },
-	{ "shtw1", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, shtc1_id);
-
 static struct i2c_driver shtc1_i2c_driver = {
 	.driver.name  = "shtc1",
-	.probe        = shtc1_probe,
-	.id_table     = shtc1_id,
+	.probe2 = shtc1_probe,
 };
 
 module_i2c_driver(shtc1_i2c_driver);

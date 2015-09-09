@@ -1208,7 +1208,7 @@ static void w83781d_remove_files(struct device *dev)
 }
 
 static int
-w83781d_probe(struct i2c_client *client, const struct i2c_device_id *id)
+w83781d_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct w83781d_data *data;
@@ -1580,23 +1580,13 @@ static struct w83781d_data *w83781d_update_device(struct device *dev)
 	return data;
 }
 
-static const struct i2c_device_id w83781d_ids[] = {
-	{ "w83781d", w83781d, },
-	{ "w83782d", w83782d, },
-	{ "w83783s", w83783s, },
-	{ "as99127f", as99127f },
-	{ /* LIST END */ }
-};
-MODULE_DEVICE_TABLE(i2c, w83781d_ids);
-
 static struct i2c_driver w83781d_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver = {
 		.name = "w83781d",
 	},
-	.probe		= w83781d_probe,
+	.probe2 = w83781d_probe,
 	.remove		= w83781d_remove,
-	.id_table	= w83781d_ids,
 	.detect		= w83781d_detect,
 	.address_list	= normal_i2c,
 };

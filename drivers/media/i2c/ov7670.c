@@ -1549,8 +1549,7 @@ static const struct ov7670_devtype ov7670_devdata[] = {
 	},
 };
 
-static int ov7670_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int ov7670_probe(struct i2c_client *client)
 {
 	struct v4l2_fract tpf;
 	struct v4l2_subdev *sd;
@@ -1665,20 +1664,12 @@ static int ov7670_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id ov7670_id[] = {
-	{ "ov7670", MODEL_OV7670 },
-	{ "ov7675", MODEL_OV7675 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ov7670_id);
-
 static struct i2c_driver ov7670_driver = {
 	.driver = {
 		.name	= "ov7670",
 	},
-	.probe		= ov7670_probe,
+	.probe2 = ov7670_probe,
 	.remove		= ov7670_remove,
-	.id_table	= ov7670_id,
 };
 
 module_i2c_driver(ov7670_driver);

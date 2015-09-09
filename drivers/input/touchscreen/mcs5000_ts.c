@@ -185,8 +185,7 @@ static void mcs5000_ts_phys_init(struct mcs5000_ts_data *data,
 			OP_MODE_ACTIVE | REPORT_RATE_80);
 }
 
-static int mcs5000_ts_probe(struct i2c_client *client,
-			    const struct i2c_device_id *id)
+static int mcs5000_ts_probe(struct i2c_client *client)
 {
 	const struct mcs_platform_data *pdata;
 	struct mcs5000_ts_data *data;
@@ -271,19 +270,12 @@ static int __maybe_unused mcs5000_ts_resume(struct device *dev)
 
 static SIMPLE_DEV_PM_OPS(mcs5000_ts_pm, mcs5000_ts_suspend, mcs5000_ts_resume);
 
-static const struct i2c_device_id mcs5000_ts_id[] = {
-	{ "mcs5000_ts", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, mcs5000_ts_id);
-
 static struct i2c_driver mcs5000_ts_driver = {
-	.probe		= mcs5000_ts_probe,
+	.probe2 = mcs5000_ts_probe,
 	.driver = {
 		.name = "mcs5000_ts",
 		.pm   = &mcs5000_ts_pm,
 	},
-	.id_table	= mcs5000_ts_id,
 };
 
 module_i2c_driver(mcs5000_ts_driver);

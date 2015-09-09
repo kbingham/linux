@@ -804,8 +804,7 @@ static int as3645a_init_controls(struct as3645a *flash)
 	return flash->ctrls.error;
 }
 
-static int as3645a_probe(struct i2c_client *client,
-			 const struct i2c_device_id *devid)
+static int as3645a_probe(struct i2c_client *client)
 {
 	struct as3645a *flash;
 	int ret;
@@ -857,12 +856,6 @@ static int as3645a_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id as3645a_id_table[] = {
-	{ AS3645A_NAME, 0 },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, as3645a_id_table);
-
 static const struct dev_pm_ops as3645a_pm_ops = {
 	.suspend = as3645a_suspend,
 	.resume = as3645a_resume,
@@ -873,9 +866,8 @@ static struct i2c_driver as3645a_i2c_driver = {
 		.name = AS3645A_NAME,
 		.pm   = &as3645a_pm_ops,
 	},
-	.probe	= as3645a_probe,
+	.probe2 = as3645a_probe,
 	.remove	= as3645a_remove,
-	.id_table = as3645a_id_table,
 };
 
 module_i2c_driver(as3645a_i2c_driver);

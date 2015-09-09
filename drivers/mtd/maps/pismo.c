@@ -211,8 +211,7 @@ static int pismo_remove(struct i2c_client *client)
 	return 0;
 }
 
-static int pismo_probe(struct i2c_client *client,
-		       const struct i2c_device_id *id)
+static int pismo_probe(struct i2c_client *client)
 {
 	struct i2c_adapter *adapter = to_i2c_adapter(client->dev.parent);
 	struct pismo_pdata *pdata = client->dev.platform_data;
@@ -256,20 +255,13 @@ static int pismo_probe(struct i2c_client *client,
 	return ret;
 }
 
-static const struct i2c_device_id pismo_id[] = {
-	{ "pismo" },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, pismo_id);
-
 static struct i2c_driver pismo_driver = {
 	.driver	= {
 		.name	= "pismo",
 		.owner	= THIS_MODULE,
 	},
-	.probe		= pismo_probe,
+	.probe2 = pismo_probe,
 	.remove		= pismo_remove,
-	.id_table	= pismo_id,
 };
 
 static int __init pismo_init(void)

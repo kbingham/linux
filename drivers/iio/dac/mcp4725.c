@@ -277,8 +277,7 @@ static const struct iio_info mcp4725_info = {
 	.driver_module = THIS_MODULE,
 };
 
-static int mcp4725_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int mcp4725_probe(struct i2c_client *client)
 {
 	struct mcp4725_data *data;
 	struct iio_dev *indio_dev;
@@ -327,20 +326,13 @@ static int mcp4725_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id mcp4725_id[] = {
-	{ "mcp4725", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, mcp4725_id);
-
 static struct i2c_driver mcp4725_driver = {
 	.driver = {
 		.name	= MCP4725_DRV_NAME,
 		.pm	= MCP4725_PM_OPS,
 	},
-	.probe		= mcp4725_probe,
+	.probe2 = mcp4725_probe,
 	.remove		= mcp4725_remove,
-	.id_table	= mcp4725_id,
 };
 module_i2c_driver(mcp4725_driver);
 

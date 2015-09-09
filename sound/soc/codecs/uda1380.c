@@ -774,8 +774,7 @@ static struct snd_soc_codec_driver soc_codec_dev_uda1380 = {
 };
 
 #if IS_ENABLED(CONFIG_I2C)
-static int uda1380_i2c_probe(struct i2c_client *i2c,
-			     const struct i2c_device_id *id)
+static int uda1380_i2c_probe(struct i2c_client *i2c)
 {
 	struct uda1380_priv *uda1380;
 	int ret;
@@ -799,19 +798,12 @@ static int uda1380_i2c_remove(struct i2c_client *i2c)
 	return 0;
 }
 
-static const struct i2c_device_id uda1380_i2c_id[] = {
-	{ "uda1380", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, uda1380_i2c_id);
-
 static struct i2c_driver uda1380_i2c_driver = {
 	.driver = {
 		.name =  "uda1380-codec",
 	},
-	.probe =    uda1380_i2c_probe,
+	.probe2 = uda1380_i2c_probe,
 	.remove =   uda1380_i2c_remove,
-	.id_table = uda1380_i2c_id,
 };
 #endif
 

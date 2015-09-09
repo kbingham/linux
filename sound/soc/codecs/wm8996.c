@@ -2759,8 +2759,7 @@ static struct snd_soc_dai_driver wm8996_dai[] = {
 	},
 };
 
-static int wm8996_i2c_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *id)
+static int wm8996_i2c_probe(struct i2c_client *i2c)
 {
 	struct wm8996_priv *wm8996;
 	int ret, i;
@@ -3089,19 +3088,12 @@ static int wm8996_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id wm8996_i2c_id[] = {
-	{ "wm8996", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, wm8996_i2c_id);
-
 static struct i2c_driver wm8996_i2c_driver = {
 	.driver = {
 		.name = "wm8996",
 	},
-	.probe =    wm8996_i2c_probe,
+	.probe2 = wm8996_i2c_probe,
 	.remove =   wm8996_i2c_remove,
-	.id_table = wm8996_i2c_id,
 };
 
 module_i2c_driver(wm8996_i2c_driver);

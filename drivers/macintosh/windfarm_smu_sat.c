@@ -201,8 +201,7 @@ static struct wf_sensor_ops wf_sat_ops = {
 	.owner		= THIS_MODULE,
 };
 
-static int wf_sat_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int wf_sat_probe(struct i2c_client *client)
 {
 	struct device_node *dev = client->dev.of_node;
 	struct wf_sat *sat;
@@ -348,19 +347,12 @@ static int wf_sat_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id wf_sat_id[] = {
-	{ "MAC,smu-sat", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, wf_sat_id);
-
 static struct i2c_driver wf_sat_driver = {
 	.driver = {
 		.name		= "wf_smu_sat",
 	},
-	.probe		= wf_sat_probe,
+	.probe2 = wf_sat_probe,
 	.remove		= wf_sat_remove,
-	.id_table	= wf_sat_id,
 };
 
 module_i2c_driver(wf_sat_driver);

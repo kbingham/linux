@@ -534,8 +534,7 @@ static int tps65010_remove(struct i2c_client *client)
 	return 0;
 }
 
-static int tps65010_probe(struct i2c_client *client,
-			  const struct i2c_device_id *id)
+static int tps65010_probe(struct i2c_client *client)
 {
 	struct tps65010		*tps;
 	int			status;
@@ -669,23 +668,12 @@ static int tps65010_probe(struct i2c_client *client,
 	return 0;
 }
 
-static const struct i2c_device_id tps65010_id[] = {
-	{ "tps65010", TPS65010 },
-	{ "tps65011", TPS65011 },
-	{ "tps65012", TPS65012 },
-	{ "tps65013", TPS65013 },
-	{ "tps65014", TPS65011 },	/* tps65011 charging at 6.5V max */
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, tps65010_id);
-
 static struct i2c_driver tps65010_driver = {
 	.driver = {
 		.name	= "tps65010",
 	},
-	.probe	= tps65010_probe,
+	.probe2 = tps65010_probe,
 	.remove	= tps65010_remove,
-	.id_table = tps65010_id,
 };
 
 /*-------------------------------------------------------------------------*/

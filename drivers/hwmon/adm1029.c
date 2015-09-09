@@ -366,8 +366,7 @@ static int adm1029_init_client(struct i2c_client *client)
 	return 1;
 }
 
-static int adm1029_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int adm1029_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct adm1029_data *data;
@@ -393,19 +392,12 @@ static int adm1029_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id adm1029_id[] = {
-	{ "adm1029", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, adm1029_id);
-
 static struct i2c_driver adm1029_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver = {
 		.name = "adm1029",
 	},
-	.probe		= adm1029_probe,
-	.id_table	= adm1029_id,
+	.probe2 = adm1029_probe,
 	.detect		= adm1029_detect,
 	.address_list	= normal_i2c,
 };

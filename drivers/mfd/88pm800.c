@@ -115,12 +115,6 @@ enum {
 /* PM800: generation identification number */
 #define PM800_CHIP_GEN_ID_NUM	0x3
 
-static const struct i2c_device_id pm80x_id_table[] = {
-	{"88PM800", 0},
-	{} /* NULL terminated */
-};
-MODULE_DEVICE_TABLE(i2c, pm80x_id_table);
-
 static struct resource rtc_resources[] = {
 	{
 	 .name = "88pm80x-rtc",
@@ -538,8 +532,7 @@ out:
 	return ret;
 }
 
-static int pm800_probe(struct i2c_client *client,
-				 const struct i2c_device_id *id)
+static int pm800_probe(struct i2c_client *client)
 {
 	int ret = 0;
 	struct pm80x_chip *chip;
@@ -611,9 +604,8 @@ static struct i2c_driver pm800_driver = {
 		.name = "88PM800",
 		.pm = &pm80x_pm_ops,
 		},
-	.probe = pm800_probe,
+	.probe2 = pm800_probe,
 	.remove = pm800_remove,
-	.id_table = pm80x_id_table,
 };
 
 static int __init pm800_i2c_init(void)

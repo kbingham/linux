@@ -423,8 +423,7 @@ static const struct regmap_config emc1403_regmap_config = {
 	.volatile_reg = emc1403_regmap_is_volatile,
 };
 
-static int emc1403_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int emc1403_probe(struct i2c_client *client)
 {
 	struct thermal_data *data;
 	struct device *hwmon_dev;
@@ -466,29 +465,13 @@ static const unsigned short emc1403_address_list[] = {
 	0x18, 0x1c, 0x29, 0x4c, 0x4d, 0x5c, I2C_CLIENT_END
 };
 
-/* Last digit of chip name indicates number of channels */
-static const struct i2c_device_id emc1403_idtable[] = {
-	{ "emc1402", emc1402 },
-	{ "emc1403", emc1403 },
-	{ "emc1404", emc1404 },
-	{ "emc1412", emc1402 },
-	{ "emc1413", emc1403 },
-	{ "emc1414", emc1404 },
-	{ "emc1422", emc1402 },
-	{ "emc1423", emc1403 },
-	{ "emc1424", emc1404 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, emc1403_idtable);
-
 static struct i2c_driver sensor_emc1403 = {
 	.class = I2C_CLASS_HWMON,
 	.driver = {
 		.name = "emc1403",
 	},
 	.detect = emc1403_detect,
-	.probe = emc1403_probe,
-	.id_table = emc1403_idtable,
+	.probe2 = emc1403_probe,
 	.address_list = emc1403_address_list,
 };
 

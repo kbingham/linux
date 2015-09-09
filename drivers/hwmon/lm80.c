@@ -617,8 +617,7 @@ static int lm80_detect(struct i2c_client *client, struct i2c_board_info *info)
 	return 0;
 }
 
-static int lm80_probe(struct i2c_client *client,
-		      const struct i2c_device_id *id)
+static int lm80_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device *hwmon_dev;
@@ -644,24 +643,12 @@ static int lm80_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-/*
- * Driver data (common to all clients)
- */
-
-static const struct i2c_device_id lm80_id[] = {
-	{ "lm80", 0 },
-	{ "lm96080", 1 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, lm80_id);
-
 static struct i2c_driver lm80_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver = {
 		.name	= "lm80",
 	},
-	.probe		= lm80_probe,
-	.id_table	= lm80_id,
+	.probe2 = lm80_probe,
 	.detect		= lm80_detect,
 	.address_list	= normal_i2c,
 };

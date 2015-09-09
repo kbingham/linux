@@ -968,8 +968,7 @@ static int amc6821_init_client(struct i2c_client *client)
 	return 0;
 }
 
-static int amc6821_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int amc6821_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct amc6821_data *data;
@@ -996,20 +995,12 @@ static int amc6821_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id amc6821_id[] = {
-	{ "amc6821", amc6821 },
-	{ }
-};
-
-MODULE_DEVICE_TABLE(i2c, amc6821_id);
-
 static struct i2c_driver amc6821_driver = {
 	.class = I2C_CLASS_HWMON,
 	.driver = {
 		.name	= "amc6821",
 	},
-	.probe = amc6821_probe,
-	.id_table = amc6821_id,
+	.probe2 = amc6821_probe,
 	.detect = amc6821_detect,
 	.address_list = normal_i2c,
 };

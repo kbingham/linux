@@ -578,7 +578,7 @@ static const struct attribute_group emc2103_temp4_group = {
 };
 
 static int
-emc2103_probe(struct i2c_client *client, const struct i2c_device_id *id)
+emc2103_probe(struct i2c_client *client)
 {
 	struct emc2103_data *data;
 	struct device *hwmon_dev;
@@ -646,12 +646,6 @@ emc2103_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	return 0;
 }
 
-static const struct i2c_device_id emc2103_ids[] = {
-	{ "emc2103", 0, },
-	{ /* LIST END */ }
-};
-MODULE_DEVICE_TABLE(i2c, emc2103_ids);
-
 /* Return 0 if detection is successful, -ENODEV otherwise */
 static int
 emc2103_detect(struct i2c_client *new_client, struct i2c_board_info *info)
@@ -680,8 +674,7 @@ static struct i2c_driver emc2103_driver = {
 	.driver = {
 		.name	= "emc2103",
 	},
-	.probe		= emc2103_probe,
-	.id_table	= emc2103_ids,
+	.probe2 = emc2103_probe,
 	.detect		= emc2103_detect,
 	.address_list	= normal_i2c,
 };

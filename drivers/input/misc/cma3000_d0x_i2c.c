@@ -55,8 +55,7 @@ static const struct cma3000_bus_ops cma3000_i2c_bops = {
 	.write		= cma3000_i2c_set,
 };
 
-static int cma3000_i2c_probe(struct i2c_client *client,
-					const struct i2c_device_id *id)
+static int cma3000_i2c_probe(struct i2c_client *client)
 {
 	struct cma3000_accl_data *data;
 
@@ -105,17 +104,9 @@ static const struct dev_pm_ops cma3000_i2c_pm_ops = {
 };
 #endif
 
-static const struct i2c_device_id cma3000_i2c_id[] = {
-	{ "cma3000_d01", 0 },
-	{ },
-};
-
-MODULE_DEVICE_TABLE(i2c, cma3000_i2c_id);
-
 static struct i2c_driver cma3000_i2c_driver = {
-	.probe		= cma3000_i2c_probe,
+	.probe2 = cma3000_i2c_probe,
 	.remove		= cma3000_i2c_remove,
-	.id_table	= cma3000_i2c_id,
 	.driver = {
 		.name	= "cma3000_i2c_accl",
 #ifdef CONFIG_PM

@@ -133,8 +133,7 @@ static struct mfd_cell tps6105x_cells[] = {
 	},
 };
 
-static int tps6105x_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int tps6105x_probe(struct i2c_client *client)
 {
 	struct tps6105x			*tps6105x;
 	struct tps6105x_platform_data	*pdata;
@@ -205,20 +204,12 @@ static int tps6105x_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id tps6105x_id[] = {
-	{ "tps61050", 0 },
-	{ "tps61052", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, tps6105x_id);
-
 static struct i2c_driver tps6105x_driver = {
 	.driver = {
 		.name	= "tps6105x",
 	},
-	.probe		= tps6105x_probe,
+	.probe2 = tps6105x_probe,
 	.remove		= tps6105x_remove,
-	.id_table	= tps6105x_id,
 };
 
 static int __init tps6105x_init(void)

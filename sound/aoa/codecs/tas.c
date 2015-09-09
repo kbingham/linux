@@ -877,8 +877,7 @@ static void tas_exit_codec(struct aoa_codec *codec)
 }
 
 
-static int tas_i2c_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int tas_i2c_probe(struct i2c_client *client)
 {
 	struct device_node *node = client->dev.of_node;
 	struct tas *tas;
@@ -930,19 +929,12 @@ static int tas_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id tas_i2c_id[] = {
-	{ "MAC,tas3004", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c,tas_i2c_id);
-
 static struct i2c_driver tas_driver = {
 	.driver = {
 		.name = "aoa_codec_tas",
 	},
-	.probe = tas_i2c_probe,
+	.probe2 = tas_i2c_probe,
 	.remove = tas_i2c_remove,
-	.id_table = tas_i2c_id,
 };
 
 module_i2c_driver(tas_driver);

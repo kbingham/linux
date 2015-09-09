@@ -523,8 +523,7 @@ static int bma150_register_polled_device(struct bma150_data *bma150)
 	return 0;
 }
 
-static int bma150_probe(struct i2c_client *client,
-				  const struct i2c_device_id *id)
+static int bma150_probe(struct i2c_client *client)
 {
 	const struct bma150_platform_data *pdata =
 			dev_get_platdata(&client->dev);
@@ -641,24 +640,13 @@ static int bma150_resume(struct device *dev)
 
 static UNIVERSAL_DEV_PM_OPS(bma150_pm, bma150_suspend, bma150_resume, NULL);
 
-static const struct i2c_device_id bma150_id[] = {
-	{ "bma150", 0 },
-	{ "bma180", 0 },
-	{ "smb380", 0 },
-	{ "bma023", 0 },
-	{ }
-};
-
-MODULE_DEVICE_TABLE(i2c, bma150_id);
-
 static struct i2c_driver bma150_driver = {
 	.driver = {
 		.name	= BMA150_DRIVER,
 		.pm	= &bma150_pm,
 	},
 	.class		= I2C_CLASS_HWMON,
-	.id_table	= bma150_id,
-	.probe		= bma150_probe,
+	.probe2 = bma150_probe,
 	.remove		= bma150_remove,
 };
 

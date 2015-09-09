@@ -415,8 +415,7 @@ static const struct regmap_config tps80031_regmap_configs[] = {
 	},
 };
 
-static int tps80031_probe(struct i2c_client *client,
-			  const struct i2c_device_id *id)
+static int tps80031_probe(struct i2c_client *client)
 {
 	struct tps80031_platform_data *pdata = dev_get_platdata(&client->dev);
 	struct tps80031 *tps80031;
@@ -539,20 +538,12 @@ static int tps80031_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id tps80031_id_table[] = {
-	{ "tps80031", TPS80031 },
-	{ "tps80032", TPS80032 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, tps80031_id_table);
-
 static struct i2c_driver tps80031_driver = {
 	.driver	= {
 		.name	= "tps80031",
 	},
-	.probe		= tps80031_probe,
+	.probe2 = tps80031_probe,
 	.remove		= tps80031_remove,
-	.id_table	= tps80031_id_table,
 };
 
 static int __init tps80031_init(void)

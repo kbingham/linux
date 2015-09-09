@@ -3188,8 +3188,7 @@ static int adv7842_register_clients(struct v4l2_subdev *sd)
 	return 0;
 }
 
-static int adv7842_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int adv7842_probe(struct i2c_client *client)
 {
 	struct adv7842_state *state;
 	static const struct v4l2_dv_timings cea640x480 =
@@ -3353,21 +3352,12 @@ static int adv7842_remove(struct i2c_client *client)
 
 /* ----------------------------------------------------------------------- */
 
-static struct i2c_device_id adv7842_id[] = {
-	{ "adv7842", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, adv7842_id);
-
-/* ----------------------------------------------------------------------- */
-
 static struct i2c_driver adv7842_driver = {
 	.driver = {
 		.name = "adv7842",
 	},
-	.probe = adv7842_probe,
+	.probe2 = adv7842_probe,
 	.remove = adv7842_remove,
-	.id_table = adv7842_id,
 };
 
 module_i2c_driver(adv7842_driver);

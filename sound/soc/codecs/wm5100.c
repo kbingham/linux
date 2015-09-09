@@ -2421,8 +2421,7 @@ static const unsigned int wm5100_mic_ctrl_reg[] = {
 	WM5100_IN4L_CONTROL,
 };
 
-static int wm5100_i2c_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *id)
+static int wm5100_i2c_probe(struct i2c_client *i2c)
 {
 	struct wm5100_pdata *pdata = dev_get_platdata(&i2c->dev);
 	struct wm5100_priv *wm5100;
@@ -2711,20 +2710,13 @@ static const struct dev_pm_ops wm5100_pm = {
 			   NULL)
 };
 
-static const struct i2c_device_id wm5100_i2c_id[] = {
-	{ "wm5100", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, wm5100_i2c_id);
-
 static struct i2c_driver wm5100_i2c_driver = {
 	.driver = {
 		.name = "wm5100",
 		.pm = &wm5100_pm,
 	},
-	.probe =    wm5100_i2c_probe,
+	.probe2 = wm5100_i2c_probe,
 	.remove =   wm5100_i2c_remove,
-	.id_table = wm5100_i2c_id,
 };
 
 module_i2c_driver(wm5100_i2c_driver);

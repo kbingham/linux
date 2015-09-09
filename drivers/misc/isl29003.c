@@ -380,8 +380,7 @@ static int isl29003_init_client(struct i2c_client *client)
  * I2C layer
  */
 
-static int isl29003_probe(struct i2c_client *client,
-				    const struct i2c_device_id *id)
+static int isl29003_probe(struct i2c_client *client)
 {
 	struct i2c_adapter *adapter = to_i2c_adapter(client->dev.parent);
 	struct isl29003_data *data;
@@ -454,22 +453,15 @@ static SIMPLE_DEV_PM_OPS(isl29003_pm_ops, isl29003_suspend, isl29003_resume);
 
 #else
 #define ISL29003_PM_OPS NULL
-#endif /* CONFIG_PM_SLEEP */
-
-static const struct i2c_device_id isl29003_id[] = {
-	{ "isl29003", 0 },
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, isl29003_id);
+#endif
 
 static struct i2c_driver isl29003_driver = {
 	.driver = {
 		.name	= ISL29003_DRV_NAME,
 		.pm	= ISL29003_PM_OPS,
 	},
-	.probe	= isl29003_probe,
+	.probe2 = isl29003_probe,
 	.remove	= isl29003_remove,
-	.id_table = isl29003_id,
 };
 
 module_i2c_driver(isl29003_driver);

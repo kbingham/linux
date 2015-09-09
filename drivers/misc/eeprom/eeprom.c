@@ -149,8 +149,7 @@ static int eeprom_detect(struct i2c_client *client, struct i2c_board_info *info)
 	return 0;
 }
 
-static int eeprom_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int eeprom_probe(struct i2c_client *client)
 {
 	struct i2c_adapter *adapter = client->adapter;
 	struct eeprom_data *data;
@@ -194,18 +193,12 @@ static int eeprom_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id eeprom_id[] = {
-	{ "eeprom", 0 },
-	{ }
-};
-
 static struct i2c_driver eeprom_driver = {
 	.driver = {
 		.name	= "eeprom",
 	},
-	.probe		= eeprom_probe,
+	.probe2 = eeprom_probe,
 	.remove		= eeprom_remove,
-	.id_table	= eeprom_id,
 
 	.class		= I2C_CLASS_DDC | I2C_CLASS_SPD,
 	.detect		= eeprom_detect,

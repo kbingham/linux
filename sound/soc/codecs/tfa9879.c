@@ -273,8 +273,7 @@ static struct snd_soc_dai_driver tfa9879_dai = {
 	.ops = &tfa9879_dai_ops,
 };
 
-static int tfa9879_i2c_probe(struct i2c_client *i2c,
-			     const struct i2c_device_id *id)
+static int tfa9879_i2c_probe(struct i2c_client *i2c)
 {
 	struct tfa9879_priv *tfa9879;
 	int i;
@@ -305,19 +304,12 @@ static int tfa9879_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id tfa9879_i2c_id[] = {
-	{ "tfa9879", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, tfa9879_i2c_id);
-
 static struct i2c_driver tfa9879_i2c_driver = {
 	.driver = {
 		.name = "tfa9879",
 	},
-	.probe = tfa9879_i2c_probe,
+	.probe2 = tfa9879_i2c_probe,
 	.remove = tfa9879_i2c_remove,
-	.id_table = tfa9879_i2c_id,
 };
 
 module_i2c_driver(tfa9879_i2c_driver);

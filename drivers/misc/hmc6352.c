@@ -111,8 +111,7 @@ static const struct attribute_group m_compass_gr = {
 	.attrs = mid_att_compass
 };
 
-static int hmc6352_probe(struct i2c_client *client,
-					const struct i2c_device_id *id)
+static int hmc6352_probe(struct i2c_client *client)
 {
 	int res;
 
@@ -132,20 +131,12 @@ static int hmc6352_remove(struct i2c_client *client)
 	return 0;
 }
 
-static struct i2c_device_id hmc6352_id[] = {
-	{ "hmc6352", 0 },
-	{ }
-};
-
-MODULE_DEVICE_TABLE(i2c, hmc6352_id);
-
 static struct i2c_driver hmc6352_driver = {
 	.driver = {
 		.name = "hmc6352",
 	},
-	.probe = hmc6352_probe,
+	.probe2 = hmc6352_probe,
 	.remove = hmc6352_remove,
-	.id_table = hmc6352_id,
 };
 
 module_i2c_driver(hmc6352_driver);

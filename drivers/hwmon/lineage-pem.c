@@ -441,8 +441,7 @@ static const struct attribute_group pem_fan_group = {
 	.attrs = pem_fan_attributes,
 };
 
-static int pem_probe(struct i2c_client *client,
-		     const struct i2c_device_id *id)
+static int pem_probe(struct i2c_client *client)
 {
 	struct i2c_adapter *adapter = client->adapter;
 	struct device *dev = &client->dev;
@@ -526,18 +525,11 @@ static int pem_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id pem_id[] = {
-	{"lineage_pem", 0},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, pem_id);
-
 static struct i2c_driver pem_driver = {
 	.driver = {
 		   .name = "lineage_pem",
 		   },
-	.probe = pem_probe,
-	.id_table = pem_id,
+	.probe2 = pem_probe,
 };
 
 module_i2c_driver(pem_driver);

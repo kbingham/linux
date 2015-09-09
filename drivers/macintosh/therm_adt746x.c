@@ -464,8 +464,7 @@ static void thermostat_remove_files(struct thermostat *th)
 
 }
 
-static int probe_thermostat(struct i2c_client *client,
-			    const struct i2c_device_id *id)
+static int probe_thermostat(struct i2c_client *client)
 {
 	struct device_node *np = client->dev.of_node;
 	struct thermostat* th;
@@ -589,20 +588,12 @@ static int remove_thermostat(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id therm_adt746x_id[] = {
-	{ "MAC,adt7460", ADT7460 },
-	{ "MAC,adt7467", ADT7467 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, therm_adt746x_id);
-
 static struct i2c_driver thermostat_driver = {
 	.driver = {
 		.name	= "therm_adt746x",
 	},
-	.probe = probe_thermostat,
+	.probe2 = probe_thermostat,
 	.remove = remove_thermostat,
-	.id_table = therm_adt746x_id,
 };
 
 static int __init thermostat_init(void)

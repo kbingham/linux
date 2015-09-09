@@ -1352,27 +1352,17 @@ static int close(struct inode *node, struct file *filep)
 }
 
 static int ir_remove(struct i2c_client *client);
-static int ir_probe(struct i2c_client *client, const struct i2c_device_id *id);
+static int ir_probe(struct i2c_client *client);
 
 #define ID_FLAG_TX	0x01
 #define ID_FLAG_HDPVR	0x02
-
-static const struct i2c_device_id ir_transceiver_id[] = {
-	{ "ir_tx_z8f0811_haup",  ID_FLAG_TX                 },
-	{ "ir_rx_z8f0811_haup",  0                          },
-	{ "ir_tx_z8f0811_hdpvr", ID_FLAG_HDPVR | ID_FLAG_TX },
-	{ "ir_rx_z8f0811_hdpvr", ID_FLAG_HDPVR              },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ir_transceiver_id);
 
 static struct i2c_driver driver = {
 	.driver = {
 		.name	= "Zilog/Hauppauge i2c IR",
 	},
-	.probe		= ir_probe,
+	.probe2 = ir_probe,
 	.remove		= ir_remove,
-	.id_table	= ir_transceiver_id,
 };
 
 static const struct file_operations lirc_fops = {
@@ -1444,7 +1434,7 @@ static struct IR *get_ir_device_by_adapter(struct i2c_adapter *adapter)
 	return NULL;
 }
 
-static int ir_probe(struct i2c_client *client, const struct i2c_device_id *id)
+static int ir_probe(struct i2c_client *client)
 {
 	struct IR *ir;
 	struct IR_tx *tx;

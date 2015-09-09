@@ -192,8 +192,7 @@ static const struct regmap_config ltc4222_regmap_config = {
 	.max_register = LTC4222_ADC_CONTROL,
 };
 
-static int ltc4222_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int ltc4222_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device *hwmon_dev;
@@ -215,19 +214,11 @@ static int ltc4222_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id ltc4222_id[] = {
-	{"ltc4222", 0},
-	{ }
-};
-
-MODULE_DEVICE_TABLE(i2c, ltc4222_id);
-
 static struct i2c_driver ltc4222_driver = {
 	.driver = {
 		   .name = "ltc4222",
 		   },
-	.probe = ltc4222_probe,
-	.id_table = ltc4222_id,
+	.probe2 = ltc4222_probe,
 };
 
 module_i2c_driver(ltc4222_driver);

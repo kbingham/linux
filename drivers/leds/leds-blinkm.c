@@ -628,8 +628,7 @@ static int blinkm_detect(struct i2c_client *client, struct i2c_board_info *info)
 	return 0;
 }
 
-static int blinkm_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int blinkm_probe(struct i2c_client *client)
 {
 	struct blinkm_data *data;
 	struct blinkm_led *led[3];
@@ -783,22 +782,14 @@ static int blinkm_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id blinkm_id[] = {
-	{"blinkm", 0},
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, blinkm_id);
-
   /* This is the driver that will be inserted */
 static struct i2c_driver blinkm_driver = {
 	.class = I2C_CLASS_HWMON,
 	.driver = {
 		   .name = "blinkm",
 		   },
-	.probe = blinkm_probe,
+	.probe2 = blinkm_probe,
 	.remove = blinkm_remove,
-	.id_table = blinkm_id,
 	.detect = blinkm_detect,
 	.address_list = normal_i2c,
 };

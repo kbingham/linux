@@ -442,8 +442,7 @@ static void adm1021_init_client(struct i2c_client *client)
 	i2c_smbus_write_byte_data(client, ADM1021_REG_CONV_RATE_W, 0x04);
 }
 
-static int adm1021_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int adm1021_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct adm1021_data *data;
@@ -471,26 +470,12 @@ static int adm1021_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id adm1021_id[] = {
-	{ "adm1021", adm1021 },
-	{ "adm1023", adm1023 },
-	{ "max1617", max1617 },
-	{ "max1617a", max1617a },
-	{ "thmc10", thmc10 },
-	{ "lm84", lm84 },
-	{ "gl523sm", gl523sm },
-	{ "mc1066", mc1066 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, adm1021_id);
-
 static struct i2c_driver adm1021_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver = {
 		.name	= "adm1021",
 	},
-	.probe		= adm1021_probe,
-	.id_table	= adm1021_id,
+	.probe2 = adm1021_probe,
 	.detect		= adm1021_detect,
 	.address_list	= normal_i2c,
 };

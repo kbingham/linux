@@ -227,37 +227,19 @@ static const int FSCHMD_NO_TEMP_SENSORS[7] = { 3, 3, 4, 3, 5, 5, 11 };
  * Functions declarations
  */
 
-static int fschmd_probe(struct i2c_client *client,
-			const struct i2c_device_id *id);
+static int fschmd_probe(struct i2c_client *client);
 static int fschmd_detect(struct i2c_client *client,
 			 struct i2c_board_info *info);
 static int fschmd_remove(struct i2c_client *client);
 static struct fschmd_data *fschmd_update_device(struct device *dev);
-
-/*
- * Driver data (common to all clients)
- */
-
-static const struct i2c_device_id fschmd_id[] = {
-	{ "fscpos", fscpos },
-	{ "fscher", fscher },
-	{ "fscscy", fscscy },
-	{ "fschrc", fschrc },
-	{ "fschmd", fschmd },
-	{ "fschds", fschds },
-	{ "fscsyl", fscsyl },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, fschmd_id);
 
 static struct i2c_driver fschmd_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver = {
 		.name	= "fschmd",
 	},
-	.probe		= fschmd_probe,
+	.probe2 = fschmd_probe,
 	.remove		= fschmd_remove,
-	.id_table	= fschmd_id,
 	.detect		= fschmd_detect,
 	.address_list	= normal_i2c,
 };
@@ -1096,8 +1078,7 @@ static int fschmd_detect(struct i2c_client *client,
 	return 0;
 }
 
-static int fschmd_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int fschmd_probe(struct i2c_client *client)
 {
 	struct fschmd_data *data;
 	const char * const names[7] = { "Poseidon", "Hermes", "Scylla",

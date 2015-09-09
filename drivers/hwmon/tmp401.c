@@ -140,20 +140,6 @@ static const u8 TMP432_STATUS_REG[] = {
 #define TMP435_DEVICE_ID			0x35
 
 /*
- * Driver data (common to all clients)
- */
-
-static const struct i2c_device_id tmp401_id[] = {
-	{ "tmp401", tmp401 },
-	{ "tmp411", tmp411 },
-	{ "tmp431", tmp431 },
-	{ "tmp432", tmp432 },
-	{ "tmp435", tmp435 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, tmp401_id);
-
-/*
  * Client data (each client gets its own)
  */
 
@@ -710,8 +696,7 @@ static int tmp401_detect(struct i2c_client *client,
 	return 0;
 }
 
-static int tmp401_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int tmp401_probe(struct i2c_client *client)
 {
 	static const char * const names[] = {
 		"TMP401", "TMP411", "TMP431", "TMP432", "TMP435"
@@ -760,8 +745,7 @@ static struct i2c_driver tmp401_driver = {
 	.driver = {
 		.name	= "tmp401",
 	},
-	.probe		= tmp401_probe,
-	.id_table	= tmp401_id,
+	.probe2 = tmp401_probe,
 	.detect		= tmp401_detect,
 	.address_list	= normal_i2c,
 };

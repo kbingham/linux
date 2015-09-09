@@ -428,8 +428,7 @@ static void adp5588_report_switch_state(struct adp5588_kpad *kpad)
 }
 
 
-static int adp5588_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int adp5588_probe(struct i2c_client *client)
 {
 	struct adp5588_kpad *kpad;
 	const struct adp5588_kpad_platform_data *pdata =
@@ -646,13 +645,6 @@ static const struct dev_pm_ops adp5588_dev_pm_ops = {
 };
 #endif
 
-static const struct i2c_device_id adp5588_id[] = {
-	{ "adp5588-keys", 0 },
-	{ "adp5587-keys", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, adp5588_id);
-
 static struct i2c_driver adp5588_driver = {
 	.driver = {
 		.name = KBUILD_MODNAME,
@@ -660,9 +652,8 @@ static struct i2c_driver adp5588_driver = {
 		.pm   = &adp5588_dev_pm_ops,
 #endif
 	},
-	.probe    = adp5588_probe,
+	.probe2 = adp5588_probe,
 	.remove   = adp5588_remove,
-	.id_table = adp5588_id,
 };
 
 module_i2c_driver(adp5588_driver);

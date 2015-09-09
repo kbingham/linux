@@ -142,8 +142,7 @@ static const struct v4l2_subdev_ops m52790_ops = {
 
 /* i2c implementation */
 
-static int m52790_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int m52790_probe(struct i2c_client *client)
 {
 	struct m52790_state *state;
 	struct v4l2_subdev *sd;
@@ -175,21 +174,12 @@ static int m52790_remove(struct i2c_client *client)
 	return 0;
 }
 
-/* ----------------------------------------------------------------------- */
-
-static const struct i2c_device_id m52790_id[] = {
-	{ "m52790", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, m52790_id);
-
 static struct i2c_driver m52790_driver = {
 	.driver = {
 		.name	= "m52790",
 	},
-	.probe		= m52790_probe,
+	.probe2 = m52790_probe,
 	.remove		= m52790_remove,
-	.id_table	= m52790_id,
 };
 
 module_i2c_driver(m52790_driver);

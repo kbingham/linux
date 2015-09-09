@@ -670,8 +670,7 @@ static void bd2802_unregister_led_classdev(struct bd2802_led *led)
 	led_classdev_unregister(&led->cdev_led1r);
 }
 
-static int bd2802_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int bd2802_probe(struct i2c_client *client)
 {
 	struct bd2802_led *led;
 	struct bd2802_led_platform_data *pdata;
@@ -786,20 +785,13 @@ static int bd2802_resume(struct device *dev)
 
 static SIMPLE_DEV_PM_OPS(bd2802_pm, bd2802_suspend, bd2802_resume);
 
-static const struct i2c_device_id bd2802_id[] = {
-	{ "BD2802", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, bd2802_id);
-
 static struct i2c_driver bd2802_i2c_driver = {
 	.driver	= {
 		.name	= "BD2802",
 		.pm	= &bd2802_pm,
 	},
-	.probe		= bd2802_probe,
+	.probe2 = bd2802_probe,
 	.remove		= bd2802_remove,
-	.id_table	= bd2802_id,
 };
 
 module_i2c_driver(bd2802_i2c_driver);

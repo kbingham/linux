@@ -50,8 +50,7 @@ struct pca9532_data {
 	u8 psc[2];
 };
 
-static int pca9532_probe(struct i2c_client *client,
-	const struct i2c_device_id *id);
+static int pca9532_probe(struct i2c_client *client);
 static int pca9532_remove(struct i2c_client *client);
 
 enum {
@@ -60,16 +59,6 @@ enum {
 	pca9532,
 	pca9533,
 };
-
-static const struct i2c_device_id pca9532_id[] = {
-	{ "pca9530", pca9530 },
-	{ "pca9531", pca9531 },
-	{ "pca9532", pca9532 },
-	{ "pca9533", pca9533 },
-	{ }
-};
-
-MODULE_DEVICE_TABLE(i2c, pca9532_id);
 
 static const struct pca9532_chip_info pca9532_chip_info_tbl[] = {
 	[pca9530] = {
@@ -90,9 +79,8 @@ static struct i2c_driver pca9532_driver = {
 	.driver = {
 		.name = "leds-pca953x",
 	},
-	.probe = pca9532_probe,
+	.probe2 = pca9532_probe,
 	.remove = pca9532_remove,
-	.id_table = pca9532_id,
 };
 
 /* We have two pwm/blinkers, but 16 possible leds to drive. Additionally,
@@ -436,8 +424,7 @@ exit:
 	return err;
 }
 
-static int pca9532_probe(struct i2c_client *client,
-	const struct i2c_device_id *id)
+static int pca9532_probe(struct i2c_client *client)
 {
 	struct pca9532_data *data = i2c_get_clientdata(client);
 	struct pca9532_platform_data *pca9532_pdata =

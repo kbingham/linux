@@ -1191,8 +1191,7 @@ static int kxcjk1013_gpio_probe(struct i2c_client *client,
 	return ret;
 }
 
-static int kxcjk1013_probe(struct i2c_client *client,
-			   const struct i2c_device_id *id)
+static int kxcjk1013_probe(struct i2c_client *client)
 {
 	struct kxcjk1013_data *data;
 	struct iio_dev *indio_dev;
@@ -1433,25 +1432,14 @@ static const struct acpi_device_id kx_acpi_match[] = {
 };
 MODULE_DEVICE_TABLE(acpi, kx_acpi_match);
 
-static const struct i2c_device_id kxcjk1013_id[] = {
-	{"kxcjk1013", KXCJK1013},
-	{"kxcj91008", KXCJ91008},
-	{"kxtj21009", KXTJ21009},
-	{"SMO8500",   KXCJ91008},
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, kxcjk1013_id);
-
 static struct i2c_driver kxcjk1013_driver = {
 	.driver = {
 		.name	= KXCJK1013_DRV_NAME,
 		.acpi_match_table = ACPI_PTR(kx_acpi_match),
 		.pm	= &kxcjk1013_pm_ops,
 	},
-	.probe		= kxcjk1013_probe,
+	.probe2 = kxcjk1013_probe,
 	.remove		= kxcjk1013_remove,
-	.id_table	= kxcjk1013_id,
 };
 module_i2c_driver(kxcjk1013_driver);
 

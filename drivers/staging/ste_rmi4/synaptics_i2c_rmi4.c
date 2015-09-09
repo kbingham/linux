@@ -888,7 +888,7 @@ static struct synaptics_rmi4_platform_data synaptics_rmi4_platformdata = {
  * have data sources associated with them.
  */
 static int synaptics_rmi4_probe
-	(struct i2c_client *client, const struct i2c_device_id *dev_id)
+	(struct i2c_client *client)
 {
 	int retval;
 	unsigned char intr_status[4];
@@ -1117,20 +1117,13 @@ static int synaptics_rmi4_resume(struct device *dev)
 static SIMPLE_DEV_PM_OPS(synaptics_rmi4_dev_pm_ops, synaptics_rmi4_suspend,
 			 synaptics_rmi4_resume);
 
-static const struct i2c_device_id synaptics_rmi4_id_table[] = {
-	{ DRIVER_NAME, 0 },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, synaptics_rmi4_id_table);
-
 static struct i2c_driver synaptics_rmi4_driver = {
 	.driver = {
 		.name	=	DRIVER_NAME,
 		.pm	=	&synaptics_rmi4_dev_pm_ops,
 	},
-	.probe		=	synaptics_rmi4_probe,
+	.probe2 = synaptics_rmi4_probe,
 	.remove		=	synaptics_rmi4_remove,
-	.id_table	=	synaptics_rmi4_id_table,
 };
 
 module_i2c_driver(synaptics_rmi4_driver);

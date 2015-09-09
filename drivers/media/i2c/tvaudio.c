@@ -1891,7 +1891,7 @@ static const struct v4l2_subdev_ops tvaudio_ops = {
 
 /* i2c registration                                                       */
 
-static int tvaudio_probe(struct i2c_client *client, const struct i2c_device_id *id)
+static int tvaudio_probe(struct i2c_client *client)
 {
 	struct CHIPSTATE *chip;
 	struct CHIPDESC  *desc;
@@ -2040,22 +2040,12 @@ static int tvaudio_remove(struct i2c_client *client)
 	return 0;
 }
 
-/* This driver supports many devices and the idea is to let the driver
-   detect which device is present. So rather than listing all supported
-   devices here, we pretend to support a single, fake device type. */
-static const struct i2c_device_id tvaudio_id[] = {
-	{ "tvaudio", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, tvaudio_id);
-
 static struct i2c_driver tvaudio_driver = {
 	.driver = {
 		.name	= "tvaudio",
 	},
-	.probe		= tvaudio_probe,
+	.probe2 = tvaudio_probe,
 	.remove		= tvaudio_remove,
-	.id_table	= tvaudio_id,
 };
 
 module_i2c_driver(tvaudio_driver);

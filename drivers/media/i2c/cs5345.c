@@ -149,8 +149,7 @@ static const struct v4l2_subdev_ops cs5345_ops = {
 
 /* ----------------------------------------------------------------------- */
 
-static int cs5345_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int cs5345_probe(struct i2c_client *client)
 {
 	struct cs5345_state *state;
 	struct v4l2_subdev *sd;
@@ -201,21 +200,12 @@ static int cs5345_remove(struct i2c_client *client)
 	return 0;
 }
 
-/* ----------------------------------------------------------------------- */
-
-static const struct i2c_device_id cs5345_id[] = {
-	{ "cs5345", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, cs5345_id);
-
 static struct i2c_driver cs5345_driver = {
 	.driver = {
 		.name	= "cs5345",
 	},
-	.probe		= cs5345_probe,
+	.probe2 = cs5345_probe,
 	.remove		= cs5345_remove,
-	.id_table	= cs5345_id,
 };
 
 module_i2c_driver(cs5345_driver);

@@ -1109,8 +1109,7 @@ static const char *mma9553_match_acpi_device(struct device *dev)
 	return dev_name(dev);
 }
 
-static int mma9553_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int mma9553_probe(struct i2c_client *client)
 {
 	struct mma9553_data *data;
 	struct iio_dev *indio_dev;
@@ -1280,22 +1279,14 @@ static const struct acpi_device_id mma9553_acpi_match[] = {
 
 MODULE_DEVICE_TABLE(acpi, mma9553_acpi_match);
 
-static const struct i2c_device_id mma9553_id[] = {
-	{"mma9553", 0},
-	{},
-};
-
-MODULE_DEVICE_TABLE(i2c, mma9553_id);
-
 static struct i2c_driver mma9553_driver = {
 	.driver = {
 		   .name = MMA9553_DRV_NAME,
 		   .acpi_match_table = ACPI_PTR(mma9553_acpi_match),
 		   .pm = &mma9553_pm_ops,
 		   },
-	.probe = mma9553_probe,
+	.probe2 = mma9553_probe,
 	.remove = mma9553_remove,
-	.id_table = mma9553_id,
 };
 
 module_i2c_driver(mma9553_driver);

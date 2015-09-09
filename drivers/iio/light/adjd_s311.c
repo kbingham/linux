@@ -248,8 +248,7 @@ static const struct iio_info adjd_s311_info = {
 	.driver_module = THIS_MODULE,
 };
 
-static int adjd_s311_probe(struct i2c_client *client,
-			   const struct i2c_device_id *id)
+static int adjd_s311_probe(struct i2c_client *client)
 {
 	struct adjd_s311_data *data;
 	struct iio_dev *indio_dev;
@@ -300,19 +299,12 @@ static int adjd_s311_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id adjd_s311_id[] = {
-	{ "adjd_s311", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, adjd_s311_id);
-
 static struct i2c_driver adjd_s311_driver = {
 	.driver = {
 		.name	= ADJD_S311_DRV_NAME,
 	},
-	.probe		= adjd_s311_probe,
+	.probe2 = adjd_s311_probe,
 	.remove		= adjd_s311_remove,
-	.id_table	= adjd_s311_id,
 };
 module_i2c_driver(adjd_s311_driver);
 

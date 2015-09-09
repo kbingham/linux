@@ -1303,8 +1303,7 @@ static const struct regmap_config wm9081_regmap = {
 };
 
 #if IS_ENABLED(CONFIG_I2C)
-static int wm9081_i2c_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *id)
+static int wm9081_i2c_probe(struct i2c_client *i2c)
 {
 	struct wm9081_priv *wm9081;
 	unsigned int reg;
@@ -1368,19 +1367,12 @@ static int wm9081_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id wm9081_i2c_id[] = {
-	{ "wm9081", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, wm9081_i2c_id);
-
 static struct i2c_driver wm9081_i2c_driver = {
 	.driver = {
 		.name = "wm9081",
 	},
-	.probe =    wm9081_i2c_probe,
+	.probe2 = wm9081_i2c_probe,
 	.remove =   wm9081_i2c_remove,
-	.id_table = wm9081_i2c_id,
 };
 #endif
 

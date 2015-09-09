@@ -565,8 +565,7 @@ static struct attribute *smm665_attrs[] = {
 
 ATTRIBUTE_GROUPS(smm665);
 
-static int smm665_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int smm665_probe(struct i2c_client *client)
 {
 	struct i2c_adapter *adapter = client->adapter;
 	struct smm665_data *data;
@@ -681,25 +680,13 @@ static int smm665_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id smm665_id[] = {
-	{"smm465", smm465},
-	{"smm665", smm665},
-	{"smm665c", smm665c},
-	{"smm764", smm764},
-	{"smm766", smm766},
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, smm665_id);
-
 /* This is the driver that will be inserted */
 static struct i2c_driver smm665_driver = {
 	.driver = {
 		   .name = "smm665",
 		   },
-	.probe = smm665_probe,
+	.probe2 = smm665_probe,
 	.remove = smm665_remove,
-	.id_table = smm665_id,
 };
 
 module_i2c_driver(smm665_driver);

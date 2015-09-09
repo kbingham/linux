@@ -535,8 +535,7 @@ static int max6639_detect(struct i2c_client *client,
 	return 0;
 }
 
-static int max6639_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int max6639_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct max6639_data *data;
@@ -583,14 +582,7 @@ static int max6639_resume(struct device *dev)
 	return i2c_smbus_write_byte_data(client,
 			MAX6639_REG_GCONFIG, data & ~MAX6639_GCONFIG_STANDBY);
 }
-#endif /* CONFIG_PM_SLEEP */
-
-static const struct i2c_device_id max6639_id[] = {
-	{"max6639", 0},
-	{ }
-};
-
-MODULE_DEVICE_TABLE(i2c, max6639_id);
+#endif
 
 static SIMPLE_DEV_PM_OPS(max6639_pm_ops, max6639_suspend, max6639_resume);
 
@@ -600,8 +592,7 @@ static struct i2c_driver max6639_driver = {
 		   .name = "max6639",
 		   .pm = &max6639_pm_ops,
 		   },
-	.probe = max6639_probe,
-	.id_table = max6639_id,
+	.probe2 = max6639_probe,
 	.detect = max6639_detect,
 	.address_list = normal_i2c,
 };

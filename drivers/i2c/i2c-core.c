@@ -1037,14 +1037,7 @@ void i2c_unregister_device(struct i2c_client *client)
 }
 EXPORT_SYMBOL_GPL(i2c_unregister_device);
 
-
-static const struct i2c_device_id dummy_id[] = {
-	{ "dummy", 0 },
-	{ },
-};
-
-static int dummy_probe(struct i2c_client *client,
-		       const struct i2c_device_id *id)
+static int dummy_probe(struct i2c_client *client)
 {
 	return 0;
 }
@@ -1056,9 +1049,8 @@ static int dummy_remove(struct i2c_client *client)
 
 static struct i2c_driver dummy_driver = {
 	.driver.name	= "dummy",
-	.probe		= dummy_probe,
+	.probe2 = dummy_probe,
 	.remove		= dummy_remove,
-	.id_table	= dummy_id,
 };
 
 /**

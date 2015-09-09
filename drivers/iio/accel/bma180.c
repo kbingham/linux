@@ -701,8 +701,7 @@ static const struct iio_trigger_ops bma180_trigger_ops = {
 	.owner = THIS_MODULE,
 };
 
-static int bma180_probe(struct i2c_client *client,
-		const struct i2c_device_id *id)
+static int bma180_probe(struct i2c_client *client)
 {
 	struct bma180_data *data;
 	struct iio_dev *indio_dev;
@@ -835,22 +834,13 @@ static SIMPLE_DEV_PM_OPS(bma180_pm_ops, bma180_suspend, bma180_resume);
 #define BMA180_PM_OPS NULL
 #endif
 
-static struct i2c_device_id bma180_ids[] = {
-	{ "bma180", BMA180 },
-	{ "bma250", BMA250 },
-	{ }
-};
-
-MODULE_DEVICE_TABLE(i2c, bma180_ids);
-
 static struct i2c_driver bma180_driver = {
 	.driver = {
 		.name	= "bma180",
 		.pm	= BMA180_PM_OPS,
 	},
-	.probe		= bma180_probe,
+	.probe2 = bma180_probe,
 	.remove		= bma180_remove,
-	.id_table	= bma180_ids,
 };
 
 module_i2c_driver(bma180_driver);

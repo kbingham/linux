@@ -69,21 +69,6 @@
 #define M41T80_FEATURE_SQ_ALT	(1 << 4)	/* RSx bits are in reg 4 */
 
 static DEFINE_MUTEX(m41t80_rtc_mutex);
-static const struct i2c_device_id m41t80_id[] = {
-	{ "m41t62", M41T80_FEATURE_SQ | M41T80_FEATURE_SQ_ALT },
-	{ "m41t65", M41T80_FEATURE_HT | M41T80_FEATURE_WD },
-	{ "m41t80", M41T80_FEATURE_SQ },
-	{ "m41t81", M41T80_FEATURE_HT | M41T80_FEATURE_SQ},
-	{ "m41t81s", M41T80_FEATURE_HT | M41T80_FEATURE_BL | M41T80_FEATURE_SQ },
-	{ "m41t82", M41T80_FEATURE_HT | M41T80_FEATURE_BL | M41T80_FEATURE_SQ },
-	{ "m41t83", M41T80_FEATURE_HT | M41T80_FEATURE_BL | M41T80_FEATURE_SQ },
-	{ "m41st84", M41T80_FEATURE_HT | M41T80_FEATURE_BL | M41T80_FEATURE_SQ },
-	{ "m41st85", M41T80_FEATURE_HT | M41T80_FEATURE_BL | M41T80_FEATURE_SQ },
-	{ "m41st87", M41T80_FEATURE_HT | M41T80_FEATURE_BL | M41T80_FEATURE_SQ },
-	{ "rv4162", M41T80_FEATURE_SQ | M41T80_FEATURE_WD | M41T80_FEATURE_SQ_ALT },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, m41t80_id);
 
 struct m41t80_data {
 	u8 features;
@@ -630,8 +615,7 @@ static struct notifier_block wdt_notifier = {
  *
  *****************************************************************************
  */
-static int m41t80_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int m41t80_probe(struct i2c_client *client)
 {
 	int rc = 0;
 	struct rtc_device *rtc = NULL;
@@ -729,9 +713,8 @@ static struct i2c_driver m41t80_driver = {
 	.driver = {
 		.name = "rtc-m41t80",
 	},
-	.probe = m41t80_probe,
+	.probe2 = m41t80_probe,
 	.remove = m41t80_remove,
-	.id_table = m41t80_id,
 };
 
 module_i2c_driver(m41t80_driver);

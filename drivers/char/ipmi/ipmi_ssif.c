@@ -1407,7 +1407,7 @@ static bool check_acpi(struct ssif_info *ssif_info, struct device *dev)
 #define GLOBAL_ENABLES_MASK (IPMI_BMC_EVT_MSG_BUFF | IPMI_BMC_RCV_MSG_INTR | \
 			     IPMI_BMC_EVT_MSG_INTR)
 
-static int ssif_probe(struct i2c_client *client, const struct i2c_device_id *id)
+static int ssif_probe(struct i2c_client *client)
 {
 	unsigned char     msg[3];
 	unsigned char     *resp;
@@ -1941,22 +1941,15 @@ static void dmi_iterator(void)
 static void dmi_iterator(void) { }
 #endif
 
-static const struct i2c_device_id ssif_id[] = {
-	{ DEVICE_NAME, 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ssif_id);
-
 static struct i2c_driver ssif_i2c_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver		= {
 		.owner			= THIS_MODULE,
 		.name			= DEVICE_NAME
 	},
-	.probe		= ssif_probe,
+	.probe2 = ssif_probe,
 	.remove		= ssif_remove,
 	.alert		= ssif_alert,
-	.id_table	= ssif_id,
 	.detect		= ssif_detect
 };
 

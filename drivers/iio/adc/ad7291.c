@@ -464,8 +464,7 @@ static const struct iio_info ad7291_info = {
 	.driver_module = THIS_MODULE,
 };
 
-static int ad7291_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int ad7291_probe(struct i2c_client *client)
 {
 	struct ad7291_platform_data *pdata = client->dev.platform_data;
 	struct ad7291_chip_info *chip;
@@ -563,20 +562,12 @@ static int ad7291_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id ad7291_id[] = {
-	{ "ad7291", 0 },
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, ad7291_id);
-
 static struct i2c_driver ad7291_driver = {
 	.driver = {
 		.name = KBUILD_MODNAME,
 	},
-	.probe = ad7291_probe,
+	.probe2 = ad7291_probe,
 	.remove = ad7291_remove,
-	.id_table = ad7291_id,
 };
 module_i2c_driver(ad7291_driver);
 

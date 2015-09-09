@@ -1179,8 +1179,7 @@ static struct attribute_group bh1770_attribute_group = {
 	.attrs = sysfs_attrs
 };
 
-static int bh1770_probe(struct i2c_client *client,
-				const struct i2c_device_id *id)
+static int bh1770_probe(struct i2c_client *client)
 {
 	struct bh1770_chip *chip;
 	int err;
@@ -1380,14 +1379,6 @@ static int bh1770_runtime_resume(struct device *dev)
 }
 #endif
 
-static const struct i2c_device_id bh1770_id[] = {
-	{"bh1770glc", 0 },
-	{"sfh7770", 0 },
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, bh1770_id);
-
 static const struct dev_pm_ops bh1770_pm_ops = {
 	SET_SYSTEM_SLEEP_PM_OPS(bh1770_suspend, bh1770_resume)
 	SET_RUNTIME_PM_OPS(bh1770_runtime_suspend, bh1770_runtime_resume, NULL)
@@ -1398,9 +1389,8 @@ static struct i2c_driver bh1770_driver = {
 		.name	= "bh1770glc",
 		.pm	= &bh1770_pm_ops,
 	},
-	.probe	  = bh1770_probe,
+	.probe2 = bh1770_probe,
 	.remove	  = bh1770_remove,
-	.id_table = bh1770_id,
 };
 
 module_i2c_driver(bh1770_driver);

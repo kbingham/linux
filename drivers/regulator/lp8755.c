@@ -437,8 +437,7 @@ static const struct regmap_config lp8755_regmap = {
 	.max_register = LP8755_REG_MAX,
 };
 
-static int lp8755_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int lp8755_probe(struct i2c_client *client)
 {
 	int ret, icnt;
 	struct lp8755_chip *pchip;
@@ -513,20 +512,12 @@ static int lp8755_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id lp8755_id[] = {
-	{LP8755_NAME, 0},
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, lp8755_id);
-
 static struct i2c_driver lp8755_i2c_driver = {
 	.driver = {
 		   .name = LP8755_NAME,
 		   },
-	.probe = lp8755_probe,
+	.probe2 = lp8755_probe,
 	.remove = lp8755_remove,
-	.id_table = lp8755_id,
 };
 
 static int __init lp8755_init(void)

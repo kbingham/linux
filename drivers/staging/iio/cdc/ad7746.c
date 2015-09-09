@@ -691,8 +691,7 @@ static const struct iio_info ad7746_info = {
  * device probe and remove
  */
 
-static int ad7746_probe(struct i2c_client *client,
-		const struct i2c_device_id *id)
+static int ad7746_probe(struct i2c_client *client)
 {
 	struct ad7746_platform_data *pdata = client->dev.platform_data;
 	struct ad7746_chip_info *chip;
@@ -767,22 +766,12 @@ static int ad7746_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id ad7746_id[] = {
-	{ "ad7745", 7745 },
-	{ "ad7746", 7746 },
-	{ "ad7747", 7747 },
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, ad7746_id);
-
 static struct i2c_driver ad7746_driver = {
 	.driver = {
 		.name = KBUILD_MODNAME,
 	},
-	.probe = ad7746_probe,
+	.probe2 = ad7746_probe,
 	.remove = ad7746_remove,
-	.id_table = ad7746_id,
 };
 module_i2c_driver(ad7746_driver);
 

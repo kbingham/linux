@@ -330,8 +330,7 @@ static int lm83_detect(struct i2c_client *new_client,
 	return 0;
 }
 
-static int lm83_probe(struct i2c_client *new_client,
-		      const struct i2c_device_id *id)
+static int lm83_probe(struct i2c_client *new_client)
 {
 	struct device *hwmon_dev;
 	struct lm83_data *data;
@@ -360,24 +359,12 @@ static int lm83_probe(struct i2c_client *new_client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-/*
- * Driver data (common to all clients)
- */
-
-static const struct i2c_device_id lm83_id[] = {
-	{ "lm83", lm83 },
-	{ "lm82", lm82 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, lm83_id);
-
 static struct i2c_driver lm83_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver = {
 		.name	= "lm83",
 	},
-	.probe		= lm83_probe,
-	.id_table	= lm83_id,
+	.probe2 = lm83_probe,
 	.detect		= lm83_detect,
 	.address_list	= normal_i2c,
 };

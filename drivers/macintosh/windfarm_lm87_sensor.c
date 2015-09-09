@@ -97,8 +97,7 @@ static struct wf_sensor_ops wf_lm87_ops = {
 	.owner		= THIS_MODULE,
 };
 
-static int wf_lm87_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int wf_lm87_probe(struct i2c_client *client)
 {	
 	struct wf_lm87_sensor *lm;
 	const char *name = NULL, *loc;
@@ -162,19 +161,12 @@ static int wf_lm87_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id wf_lm87_id[] = {
-	{ "MAC,lm87cimt", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, wf_lm87_id);
-
 static struct i2c_driver wf_lm87_driver = {
 	.driver = {
 		.name	= "wf_lm87",
 	},
-	.probe		= wf_lm87_probe,
+	.probe2 = wf_lm87_probe,
 	.remove		= wf_lm87_remove,
-	.id_table	= wf_lm87_id,
 };
 
 static int __init wf_lm87_sensor_init(void)

@@ -358,8 +358,7 @@ static int lm92_detect(struct i2c_client *new_client,
 	return 0;
 }
 
-static int lm92_probe(struct i2c_client *new_client,
-		      const struct i2c_device_id *id)
+static int lm92_probe(struct i2c_client *new_client)
 {
 	struct device *hwmon_dev;
 	struct lm92_data *data;
@@ -381,25 +380,12 @@ static int lm92_probe(struct i2c_client *new_client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-
-/*
- * Module and driver stuff
- */
-
-static const struct i2c_device_id lm92_id[] = {
-	{ "lm92", 0 },
-	/* max6635 could be added here */
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, lm92_id);
-
 static struct i2c_driver lm92_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver = {
 		.name	= "lm92",
 	},
-	.probe		= lm92_probe,
-	.id_table	= lm92_id,
+	.probe2 = lm92_probe,
 	.detect		= lm92_detect,
 	.address_list	= normal_i2c,
 };

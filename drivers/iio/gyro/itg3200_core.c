@@ -283,8 +283,7 @@ static const struct iio_info itg3200_info = {
 
 static const unsigned long itg3200_available_scan_masks[] = { 0xffffffff, 0x0 };
 
-static int itg3200_probe(struct i2c_client *client,
-		const struct i2c_device_id *id)
+static int itg3200_probe(struct i2c_client *client)
 {
 	int ret;
 	struct itg3200 *st;
@@ -371,19 +370,12 @@ static int __maybe_unused itg3200_resume(struct device *dev)
 
 static SIMPLE_DEV_PM_OPS(itg3200_pm_ops, itg3200_suspend, itg3200_resume);
 
-static const struct i2c_device_id itg3200_id[] = {
-	{ "itg3200", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, itg3200_id);
-
 static struct i2c_driver itg3200_driver = {
 	.driver = {
 		.name	= "itg3200",
 		.pm	= &itg3200_pm_ops,
 	},
-	.id_table	= itg3200_id,
-	.probe		= itg3200_probe,
+	.probe2 = itg3200_probe,
 	.remove		= itg3200_remove,
 };
 

@@ -653,8 +653,7 @@ static const struct attribute_group adp8860_bl_attr_group = {
 	.attrs = adp8860_bl_attributes,
 };
 
-static int adp8860_probe(struct i2c_client *client,
-					const struct i2c_device_id *id)
+static int adp8860_probe(struct i2c_client *client)
 {
 	struct backlight_device *bl;
 	struct adp8860_bl *data;
@@ -796,22 +795,13 @@ static int adp8860_i2c_resume(struct device *dev)
 static SIMPLE_DEV_PM_OPS(adp8860_i2c_pm_ops, adp8860_i2c_suspend,
 			adp8860_i2c_resume);
 
-static const struct i2c_device_id adp8860_id[] = {
-	{ "adp8860", adp8860 },
-	{ "adp8861", adp8861 },
-	{ "adp8863", adp8863 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, adp8860_id);
-
 static struct i2c_driver adp8860_driver = {
 	.driver = {
 		.name	= KBUILD_MODNAME,
 		.pm	= &adp8860_i2c_pm_ops,
 	},
-	.probe    = adp8860_probe,
+	.probe2 = adp8860_probe,
 	.remove   = adp8860_remove,
-	.id_table = adp8860_id,
 };
 
 module_i2c_driver(adp8860_driver);

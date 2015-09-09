@@ -1510,8 +1510,7 @@ static struct snd_soc_codec_driver soc_codec_dev_da732x = {
 	.set_pll		= da732x_set_dai_pll,
 };
 
-static int da732x_i2c_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *id)
+static int da732x_i2c_probe(struct i2c_client *i2c)
 {
 	struct da732x_priv *da732x;
 	unsigned int reg;
@@ -1557,19 +1556,12 @@ static int da732x_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id da732x_i2c_id[] = {
-	{ "da7320", 0},
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, da732x_i2c_id);
-
 static struct i2c_driver da732x_i2c_driver = {
 	.driver		= {
 		.name	= "da7320",
 	},
-	.probe		= da732x_i2c_probe,
+	.probe2 = da732x_i2c_probe,
 	.remove		= da732x_i2c_remove,
-	.id_table	= da732x_i2c_id,
 };
 
 module_i2c_driver(da732x_i2c_driver);

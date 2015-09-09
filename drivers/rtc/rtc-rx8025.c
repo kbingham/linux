@@ -65,12 +65,6 @@
 #define RX8025_ADJ_DATA_MAX	62
 #define RX8025_ADJ_DATA_MIN	-62
 
-static const struct i2c_device_id rx8025_id[] = {
-	{ "rx8025", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, rx8025_id);
-
 struct rx8025_data {
 	struct i2c_client *client;
 	struct rtc_device *rtc;
@@ -534,8 +528,7 @@ static void rx8025_sysfs_unregister(struct device *dev)
 	device_remove_file(dev, &dev_attr_clock_adjust_ppb);
 }
 
-static int rx8025_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int rx8025_probe(struct i2c_client *client)
 {
 	struct i2c_adapter *adapter = to_i2c_adapter(client->dev.parent);
 	struct rx8025_data *rx8025;
@@ -630,9 +623,8 @@ static struct i2c_driver rx8025_driver = {
 		.name = "rtc-rx8025",
 		.owner = THIS_MODULE,
 	},
-	.probe		= rx8025_probe,
+	.probe2 = rx8025_probe,
 	.remove		= rx8025_remove,
-	.id_table	= rx8025_id,
 };
 
 module_i2c_driver(rx8025_driver);

@@ -488,12 +488,6 @@ static int ch7006_encoder_init(struct i2c_client *client,
 	return 0;
 }
 
-static struct i2c_device_id ch7006_ids[] = {
-	{ "ch7006", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ch7006_ids);
-
 static const struct dev_pm_ops ch7006_pm_ops = {
 	.resume = ch7006_resume,
 };

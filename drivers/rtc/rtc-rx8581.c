@@ -266,8 +266,7 @@ static const struct rtc_class_ops rx8581_rtc_ops = {
 	.set_time	= rx8581_rtc_set_time,
 };
 
-static int rx8581_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int rx8581_probe(struct i2c_client *client)
 {
 	struct rx8581	  *rx8581;
 
@@ -306,19 +305,12 @@ static int rx8581_probe(struct i2c_client *client,
 	return 0;
 }
 
-static const struct i2c_device_id rx8581_id[] = {
-	{ "rx8581", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, rx8581_id);
-
 static struct i2c_driver rx8581_driver = {
 	.driver		= {
 		.name	= "rtc-rx8581",
 		.owner	= THIS_MODULE,
 	},
-	.probe		= rx8581_probe,
-	.id_table	= rx8581_id,
+	.probe2 = rx8581_probe,
 };
 
 module_i2c_driver(rx8581_driver);

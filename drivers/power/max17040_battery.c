@@ -206,8 +206,7 @@ static const struct power_supply_desc max17040_battery_desc = {
 	.num_properties	= ARRAY_SIZE(max17040_battery_props),
 };
 
-static int max17040_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int max17040_probe(struct i2c_client *client)
 {
 	struct i2c_adapter *adapter = to_i2c_adapter(client->dev.parent);
 	struct power_supply_config psy_cfg = {};
@@ -280,23 +279,15 @@ static SIMPLE_DEV_PM_OPS(max17040_pm_ops, max17040_suspend, max17040_resume);
 
 #define MAX17040_PM_OPS NULL
 
-#endif /* CONFIG_PM_SLEEP */
-
-static const struct i2c_device_id max17040_id[] = {
-	{ "max17040" },
-	{ "max77836-battery" },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, max17040_id);
+#endif
 
 static struct i2c_driver max17040_i2c_driver = {
 	.driver	= {
 		.name	= "max17040",
 		.pm	= MAX17040_PM_OPS,
 	},
-	.probe		= max17040_probe,
+	.probe2 = max17040_probe,
 	.remove		= max17040_remove,
-	.id_table	= max17040_id,
 };
 module_i2c_driver(max17040_i2c_driver);
 

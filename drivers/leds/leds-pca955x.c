@@ -92,15 +92,6 @@ static struct pca955x_chipdef pca955x_chipdefs[] = {
 	},
 };
 
-static const struct i2c_device_id pca955x_id[] = {
-	{ "pca9550", pca9550 },
-	{ "pca9551", pca9551 },
-	{ "pca9552", pca9552 },
-	{ "pca9553", pca9553 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, pca955x_id);
-
 struct pca955x {
 	struct mutex lock;
 	struct pca955x_led *leds;
@@ -255,8 +246,7 @@ static void pca955x_led_set(struct led_classdev *led_cdev, enum led_brightness v
 	schedule_work(&pca955x->work);
 }
 
-static int pca955x_probe(struct i2c_client *client,
-					const struct i2c_device_id *id)
+static int pca955x_probe(struct i2c_client *client)
 {
 	struct pca955x *pca955x;
 	struct pca955x_led *pca955x_led;
@@ -380,9 +370,8 @@ static struct i2c_driver pca955x_driver = {
 	.driver = {
 		.name	= "leds-pca955x",
 	},
-	.probe	= pca955x_probe,
+	.probe2 = pca955x_probe,
 	.remove	= pca955x_remove,
-	.id_table = pca955x_id,
 };
 
 module_i2c_driver(pca955x_driver);

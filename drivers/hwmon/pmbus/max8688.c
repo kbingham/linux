@@ -175,27 +175,18 @@ static struct pmbus_driver_info max8688_info = {
 	.write_word_data = max8688_write_word_data,
 };
 
-static int max8688_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int max8688_probe(struct i2c_client *client)
 {
 	return pmbus_do_probe(client, id, &max8688_info);
 }
-
-static const struct i2c_device_id max8688_id[] = {
-	{"max8688", 0},
-	{ }
-};
-
-MODULE_DEVICE_TABLE(i2c, max8688_id);
 
 /* This is the driver that will be inserted */
 static struct i2c_driver max8688_driver = {
 	.driver = {
 		   .name = "max8688",
 		   },
-	.probe = max8688_probe,
+	.probe2 = max8688_probe,
 	.remove = pmbus_do_remove,
-	.id_table = max8688_id,
 };
 
 module_i2c_driver(max8688_driver);

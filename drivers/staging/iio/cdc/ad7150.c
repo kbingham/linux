@@ -582,8 +582,7 @@ static const struct iio_info ad7150_info = {
  * device probe and remove
  */
 
-static int ad7150_probe(struct i2c_client *client,
-		const struct i2c_device_id *id)
+static int ad7150_probe(struct i2c_client *client)
 {
 	int ret;
 	struct ad7150_chip_info *chip;
@@ -655,22 +654,12 @@ static int ad7150_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id ad7150_id[] = {
-	{ "ad7150", 0 },
-	{ "ad7151", 0 },
-	{ "ad7156", 0 },
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, ad7150_id);
-
 static struct i2c_driver ad7150_driver = {
 	.driver = {
 		.name = "ad7150",
 	},
-	.probe = ad7150_probe,
+	.probe2 = ad7150_probe,
 	.remove = ad7150_remove,
-	.id_table = ad7150_id,
 };
 module_i2c_driver(ad7150_driver);
 

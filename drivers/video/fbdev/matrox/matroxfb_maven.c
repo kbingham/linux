@@ -1248,8 +1248,7 @@ static int maven_shutdown_client(struct i2c_client* clnt) {
 	return 0;
 }
 
-static int maven_probe(struct i2c_client *client,
-		       const struct i2c_device_id *id)
+static int maven_probe(struct i2c_client *client)
 {
 	struct i2c_adapter *adapter = client->adapter;
 	int err = -ENODEV;
@@ -1282,19 +1281,12 @@ static int maven_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id maven_id[] = {
-	{ "maven", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, maven_id);
-
 static struct i2c_driver maven_driver={
 	.driver = {
 		.name	= "maven",
 	},
-	.probe		= maven_probe,
+	.probe2 = maven_probe,
 	.remove		= maven_remove,
-	.id_table	= maven_id,
 };
 
 module_i2c_driver(maven_driver);

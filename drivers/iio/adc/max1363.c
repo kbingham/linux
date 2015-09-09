@@ -1517,8 +1517,7 @@ done:
 	return IRQ_HANDLED;
 }
 
-static int max1363_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int max1363_probe(struct i2c_client *client)
 {
 	int ret;
 	struct max1363_state *st;
@@ -1646,53 +1645,12 @@ static int max1363_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id max1363_id[] = {
-	{ "max1361", max1361 },
-	{ "max1362", max1362 },
-	{ "max1363", max1363 },
-	{ "max1364", max1364 },
-	{ "max1036", max1036 },
-	{ "max1037", max1037 },
-	{ "max1038", max1038 },
-	{ "max1039", max1039 },
-	{ "max1136", max1136 },
-	{ "max1137", max1137 },
-	{ "max1138", max1138 },
-	{ "max1139", max1139 },
-	{ "max1236", max1236 },
-	{ "max1237", max1237 },
-	{ "max1238", max1238 },
-	{ "max1239", max1239 },
-	{ "max11600", max11600 },
-	{ "max11601", max11601 },
-	{ "max11602", max11602 },
-	{ "max11603", max11603 },
-	{ "max11604", max11604 },
-	{ "max11605", max11605 },
-	{ "max11606", max11606 },
-	{ "max11607", max11607 },
-	{ "max11608", max11608 },
-	{ "max11609", max11609 },
-	{ "max11610", max11610 },
-	{ "max11611", max11611 },
-	{ "max11612", max11612 },
-	{ "max11613", max11613 },
-	{ "max11614", max11614 },
-	{ "max11615", max11615 },
-	{ "max11616", max11616 },
-	{ "max11617", max11617 },
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, max1363_id);
-
 static struct i2c_driver max1363_driver = {
 	.driver = {
 		.name = "max1363",
 	},
-	.probe = max1363_probe,
+	.probe2 = max1363_probe,
 	.remove = max1363_remove,
-	.id_table = max1363_id,
 };
 module_i2c_driver(max1363_driver);
 

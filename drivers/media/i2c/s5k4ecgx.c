@@ -931,8 +931,7 @@ static int s5k4ecgx_init_v4l2_ctrls(struct s5k4ecgx *priv)
 	return 0;
 };
 
-static int s5k4ecgx_probe(struct i2c_client *client,
-			  const struct i2c_device_id *id)
+static int s5k4ecgx_probe(struct i2c_client *client)
 {
 	struct s5k4ecgx_platform_data *pdata = client->dev.platform_data;
 	struct v4l2_subdev *sd;
@@ -1011,20 +1010,13 @@ static int s5k4ecgx_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id s5k4ecgx_id[] = {
-	{ S5K4ECGX_DRIVER_NAME, 0 },
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, s5k4ecgx_id);
-
 static struct i2c_driver v4l2_i2c_driver = {
 	.driver = {
 		.owner	= THIS_MODULE,
 		.name = S5K4ECGX_DRIVER_NAME,
 	},
-	.probe = s5k4ecgx_probe,
+	.probe2 = s5k4ecgx_probe,
 	.remove = s5k4ecgx_remove,
-	.id_table = s5k4ecgx_id,
 };
 
 module_i2c_driver(v4l2_i2c_driver);

@@ -23,8 +23,7 @@
 
 #include "arizona.h"
 
-static int arizona_i2c_probe(struct i2c_client *i2c,
-			     const struct i2c_device_id *id)
+static int arizona_i2c_probe(struct i2c_client *i2c)
 {
 	struct arizona *arizona;
 	const struct regmap_config *regmap_config;
@@ -91,26 +90,14 @@ static int arizona_i2c_remove(struct i2c_client *i2c)
 	return 0;
 }
 
-static const struct i2c_device_id arizona_i2c_id[] = {
-	{ "wm5102", WM5102 },
-	{ "wm5110", WM5110 },
-	{ "wm8280", WM8280 },
-	{ "wm8997", WM8997 },
-	{ "wm8998", WM8998 },
-	{ "wm1814", WM1814 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, arizona_i2c_id);
-
 static struct i2c_driver arizona_i2c_driver = {
 	.driver = {
 		.name	= "arizona",
 		.pm	= &arizona_pm_ops,
 		.of_match_table	= of_match_ptr(arizona_of_match),
 	},
-	.probe		= arizona_i2c_probe,
+	.probe2 = arizona_i2c_probe,
 	.remove		= arizona_i2c_remove,
-	.id_table	= arizona_i2c_id,
 };
 
 module_i2c_driver(arizona_i2c_driver);

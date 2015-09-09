@@ -139,8 +139,7 @@ static irqreturn_t qt1070_interrupt(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-static int qt1070_probe(struct i2c_client *client,
-				const struct i2c_device_id *id)
+static int qt1070_probe(struct i2c_client *client)
 {
 	struct qt1070_data *data;
 	struct input_dev *input;
@@ -268,19 +267,12 @@ static int qt1070_resume(struct device *dev)
 
 static SIMPLE_DEV_PM_OPS(qt1070_pm_ops, qt1070_suspend, qt1070_resume);
 
-static const struct i2c_device_id qt1070_id[] = {
-	{ "qt1070", 0 },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, qt1070_id);
-
 static struct i2c_driver qt1070_driver = {
 	.driver	= {
 		.name	= "qt1070",
 		.pm	= &qt1070_pm_ops,
 	},
-	.id_table	= qt1070_id,
-	.probe		= qt1070_probe,
+	.probe2 = qt1070_probe,
 	.remove		= qt1070_remove,
 };
 

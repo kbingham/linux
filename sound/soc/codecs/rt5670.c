@@ -2799,14 +2799,6 @@ static const struct regmap_config rt5670_regmap = {
 	.num_ranges = ARRAY_SIZE(rt5670_ranges),
 };
 
-static const struct i2c_device_id rt5670_i2c_id[] = {
-	{ "rt5670", 0 },
-	{ "rt5671", 0 },
-	{ "rt5672", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, rt5670_i2c_id);
-
 #ifdef CONFIG_ACPI
 static const struct acpi_device_id rt5670_acpi_match[] = {
 	{ "10EC5670", 0},
@@ -2826,8 +2818,7 @@ static const struct dmi_system_id dmi_platform_intel_braswell[] = {
 	{}
 };
 
-static int rt5670_i2c_probe(struct i2c_client *i2c,
-		    const struct i2c_device_id *id)
+static int rt5670_i2c_probe(struct i2c_client *i2c)
 {
 	struct rt5670_platform_data *pdata = dev_get_platdata(&i2c->dev);
 	struct rt5670_priv *rt5670;
@@ -3045,9 +3036,8 @@ static struct i2c_driver rt5670_i2c_driver = {
 		.name = "rt5670",
 		.acpi_match_table = ACPI_PTR(rt5670_acpi_match),
 	},
-	.probe = rt5670_i2c_probe,
+	.probe2 = rt5670_i2c_probe,
 	.remove   = rt5670_i2c_remove,
-	.id_table = rt5670_i2c_id,
 };
 
 module_i2c_driver(rt5670_i2c_driver);

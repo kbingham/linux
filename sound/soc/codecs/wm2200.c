@@ -2188,8 +2188,7 @@ static const unsigned int wm2200_mic_ctrl_reg[] = {
 	WM2200_IN3L_CONTROL,
 };
 
-static int wm2200_i2c_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *id)
+static int wm2200_i2c_probe(struct i2c_client *i2c)
 {
 	struct wm2200_pdata *pdata = dev_get_platdata(&i2c->dev);
 	struct wm2200_priv *wm2200;
@@ -2486,20 +2485,13 @@ static const struct dev_pm_ops wm2200_pm = {
 			   NULL)
 };
 
-static const struct i2c_device_id wm2200_i2c_id[] = {
-	{ "wm2200", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, wm2200_i2c_id);
-
 static struct i2c_driver wm2200_i2c_driver = {
 	.driver = {
 		.name = "wm2200",
 		.pm = &wm2200_pm,
 	},
-	.probe =    wm2200_i2c_probe,
+	.probe2 = wm2200_i2c_probe,
 	.remove =   wm2200_i2c_remove,
-	.id_table = wm2200_i2c_id,
 };
 
 module_i2c_driver(wm2200_i2c_driver);

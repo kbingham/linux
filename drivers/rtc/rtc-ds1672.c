@@ -194,18 +194,11 @@ static int ds1672_probe(struct i2c_client *client,
 	return 0;
 }
 
-static struct i2c_device_id ds1672_id[] = {
-	{ "ds1672", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ds1672_id);
-
 static struct i2c_driver ds1672_driver = {
 	.driver = {
 		   .name = "rtc-ds1672",
 		   },
 	.probe = &ds1672_probe,
-	.id_table = ds1672_id,
 };
 
 module_i2c_driver(ds1672_driver);

@@ -224,8 +224,7 @@ static struct v4l2_subdev_ops ak881x_subdev_ops = {
 	.pad	= &ak881x_subdev_pad_ops,
 };
 
-static int ak881x_probe(struct i2c_client *client,
-			const struct i2c_device_id *did)
+static int ak881x_probe(struct i2c_client *client)
 {
 	struct i2c_adapter *adapter = to_i2c_adapter(client->dev.parent);
 	struct ak881x *ak881x;
@@ -304,20 +303,12 @@ static int ak881x_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id ak881x_id[] = {
-	{ "ak8813", 0 },
-	{ "ak8814", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ak881x_id);
-
 static struct i2c_driver ak881x_i2c_driver = {
 	.driver = {
 		.name = "ak881x",
 	},
-	.probe		= ak881x_probe,
+	.probe2 = ak881x_probe,
 	.remove		= ak881x_remove,
-	.id_table	= ak881x_id,
 };
 
 module_i2c_driver(ak881x_i2c_driver);

@@ -1533,8 +1533,7 @@ static const struct regmap_config da7213_regmap_config = {
 	.cache_type = REGCACHE_RBTREE,
 };
 
-static int da7213_i2c_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *id)
+static int da7213_i2c_probe(struct i2c_client *i2c)
 {
 	struct da7213_priv *da7213;
 	struct da7213_platform_data *pdata = dev_get_platdata(&i2c->dev);
@@ -1572,20 +1571,13 @@ static int da7213_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id da7213_i2c_id[] = {
-	{ "da7213", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, da7213_i2c_id);
-
 /* I2C codec control layer */
 static struct i2c_driver da7213_i2c_driver = {
 	.driver = {
 		.name = "da7213",
 	},
-	.probe		= da7213_i2c_probe,
+	.probe2 = da7213_i2c_probe,
 	.remove		= da7213_remove,
-	.id_table	= da7213_i2c_id,
 };
 
 module_i2c_driver(da7213_i2c_driver);

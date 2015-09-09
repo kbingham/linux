@@ -180,8 +180,7 @@ static const struct attribute_group ili210x_attr_group = {
 	.attrs = ili210x_attributes,
 };
 
-static int ili210x_i2c_probe(struct i2c_client *client,
-				       const struct i2c_device_id *id)
+static int ili210x_i2c_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	const struct ili210x_platform_data *pdata = dev_get_platdata(dev);
@@ -334,19 +333,12 @@ static int __maybe_unused ili210x_i2c_resume(struct device *dev)
 static SIMPLE_DEV_PM_OPS(ili210x_i2c_pm,
 			 ili210x_i2c_suspend, ili210x_i2c_resume);
 
-static const struct i2c_device_id ili210x_i2c_id[] = {
-	{ "ili210x", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ili210x_i2c_id);
-
 static struct i2c_driver ili210x_ts_driver = {
 	.driver = {
 		.name = "ili210x_i2c",
 		.pm = &ili210x_i2c_pm,
 	},
-	.id_table = ili210x_i2c_id,
-	.probe = ili210x_i2c_probe,
+	.probe2 = ili210x_i2c_probe,
 	.remove = ili210x_i2c_remove,
 };
 

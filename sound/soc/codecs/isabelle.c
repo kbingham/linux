@@ -1108,8 +1108,7 @@ static const struct regmap_config isabelle_regmap_config = {
 	.cache_type = REGCACHE_RBTREE,
 };
 
-static int isabelle_i2c_probe(struct i2c_client *i2c,
-			      const struct i2c_device_id *id)
+static int isabelle_i2c_probe(struct i2c_client *i2c)
 {
 	struct regmap *isabelle_regmap;
 	int ret = 0;
@@ -1140,19 +1139,12 @@ static int isabelle_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id isabelle_i2c_id[] = {
-	{ "isabelle", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, isabelle_i2c_id);
-
 static struct i2c_driver isabelle_i2c_driver = {
 	.driver = {
 		.name = "isabelle",
 	},
-	.probe = isabelle_i2c_probe,
+	.probe2 = isabelle_i2c_probe,
 	.remove = isabelle_i2c_remove,
-	.id_table = isabelle_i2c_id,
 };
 
 module_i2c_driver(isabelle_i2c_driver);

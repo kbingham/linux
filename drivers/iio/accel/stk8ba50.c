@@ -412,8 +412,7 @@ static int stk8ba50_gpio_probe(struct i2c_client *client)
 	return ret;
 }
 
-static int stk8ba50_probe(struct i2c_client *client,
-			  const struct i2c_device_id *id)
+static int stk8ba50_probe(struct i2c_client *client)
 {
 	int ret;
 	struct iio_dev *indio_dev;
@@ -568,12 +567,6 @@ static SIMPLE_DEV_PM_OPS(stk8ba50_pm_ops, stk8ba50_suspend, stk8ba50_resume);
 #define STK8BA50_PM_OPS NULL
 #endif
 
-static const struct i2c_device_id stk8ba50_i2c_id[] = {
-	{"stk8ba50", 0},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, stk8ba50_i2c_id);
-
 static const struct acpi_device_id stk8ba50_acpi_id[] = {
 	{"STK8BA50", 0},
 	{}
@@ -587,9 +580,8 @@ static struct i2c_driver stk8ba50_driver = {
 		.pm = STK8BA50_PM_OPS,
 		.acpi_match_table = ACPI_PTR(stk8ba50_acpi_id),
 	},
-	.probe =            stk8ba50_probe,
+	.probe2 = stk8ba50_probe,
 	.remove =           stk8ba50_remove,
-	.id_table =         stk8ba50_i2c_id,
 };
 
 module_i2c_driver(stk8ba50_driver);

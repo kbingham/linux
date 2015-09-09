@@ -122,8 +122,7 @@ static int gp2a_initialize(struct gp2a_data *dt)
 	return error;
 }
 
-static int gp2a_probe(struct i2c_client *client,
-				const struct i2c_device_id *id)
+static int gp2a_probe(struct i2c_client *client)
 {
 	const struct gp2a_platform_data *pdata = dev_get_platdata(&client->dev);
 	struct gp2a_data *dt;
@@ -263,20 +262,13 @@ static int __maybe_unused gp2a_resume(struct device *dev)
 
 static SIMPLE_DEV_PM_OPS(gp2a_pm, gp2a_suspend, gp2a_resume);
 
-static const struct i2c_device_id gp2a_i2c_id[] = {
-	{ GP2A_I2C_NAME, 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, gp2a_i2c_id);
-
 static struct i2c_driver gp2a_i2c_driver = {
 	.driver = {
 		.name	= GP2A_I2C_NAME,
 		.pm	= &gp2a_pm,
 	},
-	.probe		= gp2a_probe,
+	.probe2 = gp2a_probe,
 	.remove		= gp2a_remove,
-	.id_table	= gp2a_i2c_id,
 };
 
 module_i2c_driver(gp2a_i2c_driver);

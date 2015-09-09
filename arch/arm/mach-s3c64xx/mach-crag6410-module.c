@@ -344,8 +344,7 @@ static const struct {
 	  .i2c_devs = wm2200_i2c, .num_i2c_devs = ARRAY_SIZE(wm2200_i2c) },
 };
 
-static int wlf_gf_module_probe(struct i2c_client *i2c,
-			       const struct i2c_device_id *i2c_id)
+static int wlf_gf_module_probe(struct i2c_client *i2c)
 {
 	int ret, i, j, id, rev;
 
@@ -383,18 +382,12 @@ static int wlf_gf_module_probe(struct i2c_client *i2c,
 	return 0;
 }
 
-static const struct i2c_device_id wlf_gf_module_id[] = {
-	{ "wlf-gf-module", 0 },
-	{ }
-};
-
 static struct i2c_driver wlf_gf_module_driver = {
 	.driver = {
 		.name = "wlf-gf-module",
 		.owner = THIS_MODULE,
 	},
-	.probe = wlf_gf_module_probe,
-	.id_table = wlf_gf_module_id,
+	.probe2 = wlf_gf_module_probe,
 };
 
 static int __init wlf_gf_module_register(void)

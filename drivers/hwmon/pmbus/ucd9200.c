@@ -33,21 +33,7 @@
 enum chips { ucd9200, ucd9220, ucd9222, ucd9224, ucd9240, ucd9244, ucd9246,
 	     ucd9248 };
 
-static const struct i2c_device_id ucd9200_id[] = {
-	{"ucd9200", ucd9200},
-	{"ucd9220", ucd9220},
-	{"ucd9222", ucd9222},
-	{"ucd9224", ucd9224},
-	{"ucd9240", ucd9240},
-	{"ucd9244", ucd9244},
-	{"ucd9246", ucd9246},
-	{"ucd9248", ucd9248},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, ucd9200_id);
-
-static int ucd9200_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int ucd9200_probe(struct i2c_client *client)
 {
 	u8 block_buffer[I2C_SMBUS_BLOCK_MAX + 1];
 	struct pmbus_driver_info *info;
@@ -168,9 +154,8 @@ static struct i2c_driver ucd9200_driver = {
 	.driver = {
 		.name = "ucd9200",
 	},
-	.probe = ucd9200_probe,
+	.probe2 = ucd9200_probe,
 	.remove = pmbus_do_remove,
-	.id_table = ucd9200_id,
 };
 
 module_i2c_driver(ucd9200_driver);

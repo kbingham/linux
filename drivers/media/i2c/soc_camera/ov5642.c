@@ -1004,8 +1004,7 @@ done:
 	return ret;
 }
 
-static int ov5642_probe(struct i2c_client *client,
-			const struct i2c_device_id *did)
+static int ov5642_probe(struct i2c_client *client)
 {
 	struct ov5642 *priv;
 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
@@ -1054,19 +1053,12 @@ static int ov5642_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id ov5642_id[] = {
-	{ "ov5642", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ov5642_id);
-
 static struct i2c_driver ov5642_i2c_driver = {
 	.driver = {
 		.name = "ov5642",
 	},
-	.probe		= ov5642_probe,
+	.probe2 = ov5642_probe,
 	.remove		= ov5642_remove,
-	.id_table	= ov5642_id,
 };
 
 module_i2c_driver(ov5642_i2c_driver);

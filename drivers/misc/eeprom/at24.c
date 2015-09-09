@@ -107,30 +107,6 @@ MODULE_PARM_DESC(write_timeout, "Time (in ms) to try writes (default 25)");
 	((1 << AT24_SIZE_FLAGS | (_flags)) 		\
 	    << AT24_SIZE_BYTELEN | ilog2(_len))
 
-static const struct i2c_device_id at24_ids[] = {
-	/* needs 8 addresses as A0-A2 are ignored */
-	{ "24c00", AT24_DEVICE_MAGIC(128 / 8, AT24_FLAG_TAKE8ADDR) },
-	/* old variants can't be handled with this generic entry! */
-	{ "24c01", AT24_DEVICE_MAGIC(1024 / 8, 0) },
-	{ "24c02", AT24_DEVICE_MAGIC(2048 / 8, 0) },
-	/* spd is a 24c02 in memory DIMMs */
-	{ "spd", AT24_DEVICE_MAGIC(2048 / 8,
-		AT24_FLAG_READONLY | AT24_FLAG_IRUGO) },
-	{ "24c04", AT24_DEVICE_MAGIC(4096 / 8, 0) },
-	/* 24rf08 quirk is handled at i2c-core */
-	{ "24c08", AT24_DEVICE_MAGIC(8192 / 8, 0) },
-	{ "24c16", AT24_DEVICE_MAGIC(16384 / 8, 0) },
-	{ "24c32", AT24_DEVICE_MAGIC(32768 / 8, AT24_FLAG_ADDR16) },
-	{ "24c64", AT24_DEVICE_MAGIC(65536 / 8, AT24_FLAG_ADDR16) },
-	{ "24c128", AT24_DEVICE_MAGIC(131072 / 8, AT24_FLAG_ADDR16) },
-	{ "24c256", AT24_DEVICE_MAGIC(262144 / 8, AT24_FLAG_ADDR16) },
-	{ "24c512", AT24_DEVICE_MAGIC(524288 / 8, AT24_FLAG_ADDR16) },
-	{ "24c1024", AT24_DEVICE_MAGIC(1048576 / 8, AT24_FLAG_ADDR16) },
-	{ "at24", 0 },
-	{ /* END OF LIST */ }
-};
-MODULE_DEVICE_TABLE(i2c, at24_ids);
-
 /*-------------------------------------------------------------------------*/
 
 /*
@@ -489,7 +465,7 @@ static void at24_get_ofdata(struct i2c_client *client,
 { }
 #endif /* CONFIG_OF */
 
-static int at24_probe(struct i2c_client *client, const struct i2c_device_id *id)
+static int at24_probe(struct i2c_client *client)
 {
 	struct at24_platform_data chip;
 	bool writable;
@@ -687,9 +663,8 @@ static struct i2c_driver at24_driver = {
 	.driver = {
 		.name = "at24",
 	},
-	.probe = at24_probe,
+	.probe2 = at24_probe,
 	.remove = at24_remove,
-	.id_table = at24_ids,
 };
 
 static int __init at24_init(void)

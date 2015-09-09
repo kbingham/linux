@@ -110,8 +110,7 @@ static const struct regmap_config ads2830_regmap_config = {
 	.val_bits = 8,
 };
 
-static int ads7828_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int ads7828_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct ads7828_platform_data *pdata = dev_get_platdata(dev);
@@ -160,20 +159,12 @@ static int ads7828_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id ads7828_device_ids[] = {
-	{ "ads7828", ads7828 },
-	{ "ads7830", ads7830 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ads7828_device_ids);
-
 static struct i2c_driver ads7828_driver = {
 	.driver = {
 		.name = "ads7828",
 	},
 
-	.id_table = ads7828_device_ids,
-	.probe = ads7828_probe,
+	.probe2 = ads7828_probe,
 };
 
 module_i2c_driver(ads7828_driver);

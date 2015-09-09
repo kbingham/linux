@@ -369,8 +369,7 @@ static int ltc294x_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static int ltc294x_i2c_probe(struct i2c_client *client,
-	const struct i2c_device_id *id)
+static int ltc294x_i2c_probe(struct i2c_client *client)
 {
 	struct power_supply_config psy_cfg = {};
 	struct ltc294x_info *info;
@@ -487,24 +486,15 @@ static SIMPLE_DEV_PM_OPS(ltc294x_pm_ops, ltc294x_suspend, ltc294x_resume);
 
 #else
 #define LTC294X_PM_OPS NULL
-#endif /* CONFIG_PM_SLEEP */
-
-
-static const struct i2c_device_id ltc294x_i2c_id[] = {
-	{"ltc2941", LTC2941_NUM_REGS},
-	{"ltc2943", LTC2943_NUM_REGS},
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, ltc294x_i2c_id);
+#endif
 
 static struct i2c_driver ltc294x_driver = {
 	.driver = {
 		.name	= "LTC2941",
 		.pm	= LTC294X_PM_OPS,
 	},
-	.probe		= ltc294x_i2c_probe,
+	.probe2 = ltc294x_i2c_probe,
 	.remove		= ltc294x_i2c_remove,
-	.id_table	= ltc294x_i2c_id,
 };
 module_i2c_driver(ltc294x_driver);
 

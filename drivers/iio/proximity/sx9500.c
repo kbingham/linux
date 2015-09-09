@@ -891,8 +891,7 @@ static void sx9500_gpio_probe(struct i2c_client *client,
 	}
 }
 
-static int sx9500_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int sx9500_probe(struct i2c_client *client)
 {
 	int ret;
 	struct iio_dev *indio_dev;
@@ -1034,21 +1033,14 @@ static const struct acpi_device_id sx9500_acpi_match[] = {
 };
 MODULE_DEVICE_TABLE(acpi, sx9500_acpi_match);
 
-static const struct i2c_device_id sx9500_id[] = {
-	{"sx9500", 0},
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, sx9500_id);
-
 static struct i2c_driver sx9500_driver = {
 	.driver = {
 		.name	= SX9500_DRIVER_NAME,
 		.acpi_match_table = ACPI_PTR(sx9500_acpi_match),
 		.pm = &sx9500_pm_ops,
 	},
-	.probe		= sx9500_probe,
+	.probe2 = sx9500_probe,
 	.remove		= sx9500_remove,
-	.id_table	= sx9500_id,
 };
 module_i2c_driver(sx9500_driver);
 

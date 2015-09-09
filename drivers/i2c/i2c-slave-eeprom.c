@@ -104,7 +104,7 @@ static ssize_t i2c_slave_eeprom_bin_write(struct file *filp, struct kobject *kob
 	return count;
 }
 
-static int i2c_slave_eeprom_probe(struct i2c_client *client, const struct i2c_device_id *id)
+static int i2c_slave_eeprom_probe(struct i2c_client *client)
 {
 	struct eeprom_data *eeprom;
 	int ret;
@@ -148,20 +148,13 @@ static int i2c_slave_eeprom_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id i2c_slave_eeprom_id[] = {
-	{ "slave-24c02", 2048 / 8 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, i2c_slave_eeprom_id);
-
 static struct i2c_driver i2c_slave_eeprom_driver = {
 	.driver = {
 		.name = "i2c-slave-eeprom",
 		.owner = THIS_MODULE,
 	},
-	.probe = i2c_slave_eeprom_probe,
+	.probe2 = i2c_slave_eeprom_probe,
 	.remove = i2c_slave_eeprom_remove,
-	.id_table = i2c_slave_eeprom_id,
 };
 module_i2c_driver(i2c_slave_eeprom_driver);
 

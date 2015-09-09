@@ -385,8 +385,7 @@ static const struct dvb_tuner_ops it913x_tuner_ops = {
 	.set_params = it913x_set_params,
 };
 
-static int it913x_probe(struct i2c_client *client,
-		const struct i2c_device_id *id)
+static int it913x_probe(struct i2c_client *client)
 {
 	struct it913x_config *cfg = client->dev.platform_data;
 	struct dvb_frontend *fe = cfg->fe;
@@ -455,19 +454,12 @@ static int it913x_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id it913x_id_table[] = {
-	{"it913x", 0},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, it913x_id_table);
-
 static struct i2c_driver it913x_driver = {
 	.driver = {
 		.name	= "it913x",
 	},
-	.probe		= it913x_probe,
+	.probe2 = it913x_probe,
 	.remove		= it913x_remove,
-	.id_table	= it913x_id_table,
 };
 
 module_i2c_driver(it913x_driver);

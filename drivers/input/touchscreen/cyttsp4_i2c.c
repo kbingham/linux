@@ -37,8 +37,7 @@ static const struct cyttsp4_bus_ops cyttsp4_i2c_bus_ops = {
 	.read           = cyttsp_i2c_read_block_data,
 };
 
-static int cyttsp4_i2c_probe(struct i2c_client *client,
-				      const struct i2c_device_id *id)
+static int cyttsp4_i2c_probe(struct i2c_client *client)
 {
 	struct cyttsp4 *ts;
 
@@ -65,20 +64,13 @@ static int cyttsp4_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id cyttsp4_i2c_id[] = {
-	{ CYTTSP4_I2C_NAME, 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, cyttsp4_i2c_id);
-
 static struct i2c_driver cyttsp4_i2c_driver = {
 	.driver = {
 		.name	= CYTTSP4_I2C_NAME,
 		.pm	= &cyttsp4_pm_ops,
 	},
-	.probe		= cyttsp4_i2c_probe,
+	.probe2 = cyttsp4_i2c_probe,
 	.remove		= cyttsp4_i2c_remove,
-	.id_table	= cyttsp4_i2c_id,
 };
 
 module_i2c_driver(cyttsp4_i2c_driver);

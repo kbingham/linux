@@ -767,8 +767,7 @@ static const struct dvb_frontend_ops tc90522_ops_ter = {
 };
 
 
-static int tc90522_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int tc90522_probe(struct i2c_client *client)
 {
 	struct tc90522_state *state;
 	struct tc90522_config *cfg;
@@ -818,21 +817,12 @@ static int tc90522_remove(struct i2c_client *client)
 	return 0;
 }
 
-
-static const struct i2c_device_id tc90522_id[] = {
-	{ TC90522_I2C_DEV_SAT, 0 },
-	{ TC90522_I2C_DEV_TER, 1 },
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, tc90522_id);
-
 static struct i2c_driver tc90522_driver = {
 	.driver = {
 		.name	= "tc90522",
 	},
-	.probe		= tc90522_probe,
+	.probe2 = tc90522_probe,
 	.remove		= tc90522_remove,
-	.id_table	= tc90522_id,
 };
 
 module_i2c_driver(tc90522_driver);

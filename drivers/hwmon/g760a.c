@@ -174,8 +174,7 @@ ATTRIBUTE_GROUPS(g760a);
  * new-style driver model code
  */
 
-static int g760a_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int g760a_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct g760a_data *data;
@@ -201,18 +200,11 @@ static int g760a_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id g760a_id[] = {
-	{ "g760a", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, g760a_id);
-
 static struct i2c_driver g760a_driver = {
 	.driver = {
 		.name	= "g760a",
 	},
-	.probe	  = g760a_probe,
-	.id_table = g760a_id,
+	.probe2 = g760a_probe,
 };
 
 module_i2c_driver(g760a_driver);

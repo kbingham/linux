@@ -1620,8 +1620,7 @@ static struct snd_soc_codec_driver soc_codec_dev_wm8993 = {
 	.set_bias_level = wm8993_set_bias_level,
 };
 
-static int wm8993_i2c_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *id)
+static int wm8993_i2c_probe(struct i2c_client *i2c)
 {
 	struct wm8993_priv *wm8993;
 	unsigned int reg;
@@ -1732,19 +1731,12 @@ static int wm8993_i2c_remove(struct i2c_client *i2c)
 	return 0;
 }
 
-static const struct i2c_device_id wm8993_i2c_id[] = {
-	{ "wm8993", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, wm8993_i2c_id);
-
 static struct i2c_driver wm8993_i2c_driver = {
 	.driver = {
 		.name = "wm8993",
 	},
-	.probe =    wm8993_i2c_probe,
+	.probe2 = wm8993_i2c_probe,
 	.remove =   wm8993_i2c_remove,
-	.id_table = wm8993_i2c_id,
 };
 
 module_i2c_driver(wm8993_i2c_driver);

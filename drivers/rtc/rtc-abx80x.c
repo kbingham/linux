@@ -185,8 +185,7 @@ static int abx80x_dt_trickle_cfg(struct device_node *np)
 	return (trickle_cfg | i);
 }
 
-static int abx80x_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int abx80x_probe(struct i2c_client *client)
 {
 	struct device_node *np = client->dev.of_node;
 	struct rtc_device *rtc;
@@ -276,27 +275,12 @@ static int abx80x_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id abx80x_id[] = {
-	{ "abx80x", ABX80X },
-	{ "ab0801", AB0801 },
-	{ "ab0803", AB0803 },
-	{ "ab0804", AB0804 },
-	{ "ab0805", AB0805 },
-	{ "ab1801", AB1801 },
-	{ "ab1803", AB1803 },
-	{ "ab1804", AB1804 },
-	{ "ab1805", AB1805 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, abx80x_id);
-
 static struct i2c_driver abx80x_driver = {
 	.driver		= {
 		.name	= "rtc-abx80x",
 	},
-	.probe		= abx80x_probe,
+	.probe2 = abx80x_probe,
 	.remove		= abx80x_remove,
-	.id_table	= abx80x_id,
 };
 
 module_i2c_driver(abx80x_driver);

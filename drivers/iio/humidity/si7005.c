@@ -127,8 +127,7 @@ static const struct iio_info si7005_info = {
 	.driver_module = THIS_MODULE,
 };
 
-static int si7005_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int si7005_probe(struct i2c_client *client)
 {
 	struct iio_dev *indio_dev;
 	struct si7005_data *data;
@@ -168,18 +167,11 @@ static int si7005_probe(struct i2c_client *client,
 	return devm_iio_device_register(&client->dev, indio_dev);
 }
 
-static const struct i2c_device_id si7005_id[] = {
-	{ "si7005", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, si7005_id);
-
 static struct i2c_driver si7005_driver = {
 	.driver = {
 		.name	= "si7005",
 	},
-	.probe = si7005_probe,
-	.id_table = si7005_id,
+	.probe2 = si7005_probe,
 };
 module_i2c_driver(si7005_driver);
 

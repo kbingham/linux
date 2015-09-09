@@ -869,8 +869,7 @@ static const char *bmc150_magn_match_acpi_device(struct device *dev)
 	return dev_name(dev);
 }
 
-static int bmc150_magn_probe(struct i2c_client *client,
-			     const struct i2c_device_id *id)
+static int bmc150_magn_probe(struct i2c_client *client)
 {
 	struct bmc150_magn_data *data;
 	struct iio_dev *indio_dev;
@@ -1090,22 +1089,14 @@ static const struct acpi_device_id bmc150_magn_acpi_match[] = {
 };
 MODULE_DEVICE_TABLE(acpi, bmc150_magn_acpi_match);
 
-static const struct i2c_device_id bmc150_magn_id[] = {
-	{"bmc150_magn", 0},
-	{"bmc156_magn", 0},
-	{},
-};
-MODULE_DEVICE_TABLE(i2c, bmc150_magn_id);
-
 static struct i2c_driver bmc150_magn_driver = {
 	.driver = {
 		   .name = BMC150_MAGN_DRV_NAME,
 		   .acpi_match_table = ACPI_PTR(bmc150_magn_acpi_match),
 		   .pm = &bmc150_magn_pm_ops,
 		   },
-	.probe = bmc150_magn_probe,
+	.probe2 = bmc150_magn_probe,
 	.remove = bmc150_magn_remove,
-	.id_table = bmc150_magn_id,
 };
 module_i2c_driver(bmc150_magn_driver);
 

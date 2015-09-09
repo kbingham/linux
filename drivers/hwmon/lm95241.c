@@ -375,8 +375,7 @@ static void lm95241_init_client(struct i2c_client *client,
 				  data->model);
 }
 
-static int lm95241_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int lm95241_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct lm95241_data *data;
@@ -398,21 +397,12 @@ static int lm95241_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-/* Driver data (common to all clients) */
-static const struct i2c_device_id lm95241_id[] = {
-	{ "lm95231", 0 },
-	{ "lm95241", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, lm95241_id);
-
 static struct i2c_driver lm95241_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver = {
 		.name	= DEVNAME,
 	},
-	.probe		= lm95241_probe,
-	.id_table	= lm95241_id,
+	.probe2 = lm95241_probe,
 	.detect		= lm95241_detect,
 	.address_list	= normal_i2c,
 };

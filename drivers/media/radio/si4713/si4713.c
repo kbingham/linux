@@ -1441,8 +1441,7 @@ static const struct v4l2_ctrl_config si4713_alt_freqs_ctrl = {
  * I2C driver interface
  */
 /* si4713_probe - probe for the device */
-static int si4713_probe(struct i2c_client *client,
-					const struct i2c_device_id *id)
+static int si4713_probe(struct i2c_client *client)
 {
 	struct si4713_device *sdev;
 	struct v4l2_ctrl_handler *hdl;
@@ -1654,20 +1653,12 @@ static int si4713_remove(struct i2c_client *client)
 	return 0;
 }
 
-/* si4713_i2c_driver - i2c driver interface */
-static const struct i2c_device_id si4713_id[] = {
-	{ "si4713" , 0 },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, si4713_id);
-
 static struct i2c_driver si4713_i2c_driver = {
 	.driver		= {
 		.name	= "si4713",
 	},
-	.probe		= si4713_probe,
+	.probe2 = si4713_probe,
 	.remove         = si4713_remove,
-	.id_table       = si4713_id,
 };
 
 module_i2c_driver(si4713_i2c_driver);

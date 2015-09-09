@@ -199,8 +199,7 @@ static const struct regmap_config tps65023_regmap_config = {
 	.val_bits = 8,
 };
 
-static int tps_65023_probe(struct i2c_client *client,
-				     const struct i2c_device_id *id)
+static int tps_65023_probe(struct i2c_client *client)
 {
 	const struct tps_driver_data *drv_data = (void *)id->driver_data;
 	const struct tps_info *info = drv_data->info;
@@ -395,24 +394,11 @@ static struct tps_driver_data tps65023_drv_data = {
 	.core_regulator = TPS65023_DCDC_1,
 };
 
-static const struct i2c_device_id tps_65023_id[] = {
-	{.name = "tps65023",
-	.driver_data = (unsigned long) &tps65023_drv_data},
-	{.name = "tps65021",
-	.driver_data = (unsigned long) &tps65021_drv_data,},
-	{.name = "tps65020",
-	.driver_data = (unsigned long) &tps65020_drv_data},
-	{ },
-};
-
-MODULE_DEVICE_TABLE(i2c, tps_65023_id);
-
 static struct i2c_driver tps_65023_i2c_driver = {
 	.driver = {
 		.name = "tps65023",
 	},
-	.probe = tps_65023_probe,
-	.id_table = tps_65023_id,
+	.probe2 = tps_65023_probe,
 };
 
 static int __init tps_65023_init(void)

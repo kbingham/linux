@@ -126,8 +126,7 @@ static struct platform_device davinci_nand_device = {
 #define DM646X_EVM_ATA_PWD		BIT(1)
 
 /* CPLD Register 0 Client: used for I/O Control */
-static int cpld_reg0_probe(struct i2c_client *client,
-			   const struct i2c_device_id *id)
+static int cpld_reg0_probe(struct i2c_client *client)
 {
 	if (HAS_ATA) {
 		u8 data;
@@ -155,15 +154,9 @@ static int cpld_reg0_probe(struct i2c_client *client,
 	return 0;
 }
 
-static const struct i2c_device_id cpld_reg_ids[] = {
-	{ "cpld_reg0", 0, },
-	{ },
-};
-
 static struct i2c_driver dm6467evm_cpld_driver = {
 	.driver.name	= "cpld_reg0",
-	.id_table	= cpld_reg_ids,
-	.probe		= cpld_reg0_probe,
+	.probe2 = cpld_reg0_probe,
 };
 
 /* LEDS */
@@ -348,8 +341,7 @@ static struct snd_platform_data dm646x_evm_snd_data[] = {
 
 static struct i2c_client *cpld_client;
 
-static int cpld_video_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int cpld_video_probe(struct i2c_client *client)
 {
 	cpld_client = client;
 	return 0;
@@ -361,18 +353,12 @@ static int cpld_video_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id cpld_video_id[] = {
-	{ "cpld_video", 0 },
-	{ }
-};
-
 static struct i2c_driver cpld_video_driver = {
 	.driver = {
 		.name	= "cpld_video",
 	},
-	.probe		= cpld_video_probe,
+	.probe2 = cpld_video_probe,
 	.remove		= cpld_video_remove,
-	.id_table	= cpld_video_id,
 };
 
 static void evm_init_cpld(void)

@@ -470,8 +470,7 @@ static const struct regmap_config rpr0521_regmap_config = {
 	.volatile_reg	= rpr0521_is_volatile_reg,
 };
 
-static int rpr0521_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int rpr0521_probe(struct i2c_client *client)
 {
 	struct rpr0521_data *data;
 	struct iio_dev *indio_dev;
@@ -590,22 +589,14 @@ static const struct acpi_device_id rpr0521_acpi_match[] = {
 };
 MODULE_DEVICE_TABLE(acpi, rpr0521_acpi_match);
 
-static const struct i2c_device_id rpr0521_id[] = {
-	{"rpr0521", 0},
-	{ }
-};
-
-MODULE_DEVICE_TABLE(i2c, rpr0521_id);
-
 static struct i2c_driver rpr0521_driver = {
 	.driver = {
 		.name	= RPR0521_DRV_NAME,
 		.pm	= &rpr0521_pm_ops,
 		.acpi_match_table = ACPI_PTR(rpr0521_acpi_match),
 	},
-	.probe		= rpr0521_probe,
+	.probe2 = rpr0521_probe,
 	.remove		= rpr0521_remove,
-	.id_table	= rpr0521_id,
 };
 
 module_i2c_driver(rpr0521_driver);

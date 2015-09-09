@@ -186,7 +186,7 @@ static const struct thermal_zone_of_device_ops lm75_of_thermal_ops = {
 /* device probe and removal */
 
 static int
-lm75_probe(struct i2c_client *client, const struct i2c_device_id *id)
+lm75_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct lm75_data *data;
@@ -321,31 +321,6 @@ static int lm75_remove(struct i2c_client *client)
 	lm75_write_value(client, LM75_REG_CONF, data->orig_conf);
 	return 0;
 }
-
-static const struct i2c_device_id lm75_ids[] = {
-	{ "adt75", adt75, },
-	{ "ds1775", ds1775, },
-	{ "ds75", ds75, },
-	{ "ds7505", ds7505, },
-	{ "g751", g751, },
-	{ "lm75", lm75, },
-	{ "lm75a", lm75a, },
-	{ "lm75b", lm75b, },
-	{ "max6625", max6625, },
-	{ "max6626", max6626, },
-	{ "mcp980x", mcp980x, },
-	{ "stds75", stds75, },
-	{ "tcn75", tcn75, },
-	{ "tmp100", tmp100, },
-	{ "tmp101", tmp101, },
-	{ "tmp105", tmp105, },
-	{ "tmp112", tmp112, },
-	{ "tmp175", tmp175, },
-	{ "tmp275", tmp275, },
-	{ "tmp75", tmp75, },
-	{ /* LIST END */ }
-};
-MODULE_DEVICE_TABLE(i2c, lm75_ids);
 
 #define LM75A_ID 0xA1
 
@@ -485,9 +460,8 @@ static struct i2c_driver lm75_driver = {
 		.name	= "lm75",
 		.pm	= LM75_DEV_PM_OPS,
 	},
-	.probe		= lm75_probe,
+	.probe2 = lm75_probe,
 	.remove		= lm75_remove,
-	.id_table	= lm75_ids,
 	.detect		= lm75_detect,
 	.address_list	= normal_i2c,
 };

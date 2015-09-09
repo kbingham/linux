@@ -592,8 +592,7 @@ static const struct regmap_config regmap_config = {
 	.precious_reg	= lm3533_precious_register,
 };
 
-static int lm3533_i2c_probe(struct i2c_client *i2c,
-					const struct i2c_device_id *id)
+static int lm3533_i2c_probe(struct i2c_client *i2c)
 {
 	struct lm3533 *lm3533;
 	int ret;
@@ -631,18 +630,11 @@ static int lm3533_i2c_remove(struct i2c_client *i2c)
 	return 0;
 }
 
-static const struct i2c_device_id lm3533_i2c_ids[] = {
-	{ "lm3533", 0 },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, lm3533_i2c_ids);
-
 static struct i2c_driver lm3533_i2c_driver = {
 	.driver = {
 		   .name = "lm3533",
 	},
-	.id_table	= lm3533_i2c_ids,
-	.probe		= lm3533_i2c_probe,
+	.probe2 = lm3533_i2c_probe,
 	.remove		= lm3533_i2c_remove,
 };
 

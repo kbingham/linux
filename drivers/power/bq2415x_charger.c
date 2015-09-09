@@ -1538,8 +1538,7 @@ static void bq2415x_sysfs_exit(struct bq2415x_device *bq)
 }
 
 /* main bq2415x probe function */
-static int bq2415x_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int bq2415x_probe(struct i2c_client *client)
 {
 	int ret;
 	int num;
@@ -1743,24 +1742,6 @@ static int bq2415x_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id bq2415x_i2c_id_table[] = {
-	{ "bq2415x", BQUNKNOWN },
-	{ "bq24150", BQ24150 },
-	{ "bq24150a", BQ24150A },
-	{ "bq24151", BQ24151 },
-	{ "bq24151a", BQ24151A },
-	{ "bq24152", BQ24152 },
-	{ "bq24153", BQ24153 },
-	{ "bq24153a", BQ24153A },
-	{ "bq24155", BQ24155 },
-	{ "bq24156", BQ24156 },
-	{ "bq24156a", BQ24156A },
-	{ "bq24157s", BQ24157S },
-	{ "bq24158", BQ24158 },
-	{},
-};
-MODULE_DEVICE_TABLE(i2c, bq2415x_i2c_id_table);
-
 static const struct acpi_device_id bq2415x_i2c_acpi_match[] = {
 	{ "BQ2415X", BQUNKNOWN },
 	{ "BQ241500", BQ24150 },
@@ -1784,9 +1765,8 @@ static struct i2c_driver bq2415x_driver = {
 		.name = "bq2415x-charger",
 		.acpi_match_table = ACPI_PTR(bq2415x_i2c_acpi_match),
 	},
-	.probe = bq2415x_probe,
+	.probe2 = bq2415x_probe,
 	.remove = bq2415x_remove,
-	.id_table = bq2415x_i2c_id_table,
 };
 module_i2c_driver(bq2415x_driver);
 

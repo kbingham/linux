@@ -201,8 +201,7 @@ static const struct v4l2_subdev_ops tw9903_ops = {
 
 /* --------------------------------------------------------------------------*/
 
-static int tw9903_probe(struct i2c_client *client,
-			     const struct i2c_device_id *id)
+static int tw9903_probe(struct i2c_client *client)
 {
 	struct tw9903 *dec;
 	struct v4l2_subdev *sd;
@@ -256,20 +255,11 @@ static int tw9903_remove(struct i2c_client *client)
 	return 0;
 }
 
-/* ----------------------------------------------------------------------- */
-
-static const struct i2c_device_id tw9903_id[] = {
-	{ "tw9903", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, tw9903_id);
-
 static struct i2c_driver tw9903_driver = {
 	.driver = {
 		.name	= "tw9903",
 	},
-	.probe = tw9903_probe,
+	.probe2 = tw9903_probe,
 	.remove = tw9903_remove,
-	.id_table = tw9903_id,
 };
 module_i2c_driver(tw9903_driver);

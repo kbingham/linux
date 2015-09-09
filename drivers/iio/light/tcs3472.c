@@ -249,8 +249,7 @@ static const struct iio_info tcs3472_info = {
 	.driver_module = THIS_MODULE,
 };
 
-static int tcs3472_probe(struct i2c_client *client,
-			   const struct i2c_device_id *id)
+static int tcs3472_probe(struct i2c_client *client)
 {
 	struct tcs3472_data *data;
 	struct iio_dev *indio_dev;
@@ -356,20 +355,13 @@ static int tcs3472_resume(struct device *dev)
 
 static SIMPLE_DEV_PM_OPS(tcs3472_pm_ops, tcs3472_suspend, tcs3472_resume);
 
-static const struct i2c_device_id tcs3472_id[] = {
-	{ "tcs3472", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, tcs3472_id);
-
 static struct i2c_driver tcs3472_driver = {
 	.driver = {
 		.name	= TCS3472_DRV_NAME,
 		.pm	= &tcs3472_pm_ops,
 	},
-	.probe		= tcs3472_probe,
+	.probe2 = tcs3472_probe,
 	.remove		= tcs3472_remove,
-	.id_table	= tcs3472_id,
 };
 module_i2c_driver(tcs3472_driver);
 

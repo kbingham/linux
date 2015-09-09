@@ -584,7 +584,7 @@ static int dcon_detect(struct i2c_client *client, struct i2c_board_info *info)
 	return 0;
 }
 
-static int dcon_probe(struct i2c_client *client, const struct i2c_device_id *id)
+static int dcon_probe(struct i2c_client *client)
 {
 	struct dcon_priv *dcon;
 	int rc, i, j;
@@ -772,20 +772,13 @@ static const struct dev_pm_ops dcon_pm_ops = {
 	.resume = dcon_resume,
 };
 
-static const struct i2c_device_id dcon_idtable[] = {
-	{ "olpc_dcon",  0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, dcon_idtable);
-
 static struct i2c_driver dcon_driver = {
 	.driver = {
 		.name	= "olpc_dcon",
 		.pm = &dcon_pm_ops,
 	},
 	.class = I2C_CLASS_DDC | I2C_CLASS_HWMON,
-	.id_table = dcon_idtable,
-	.probe = dcon_probe,
+	.probe2 = dcon_probe,
 	.remove = dcon_remove,
 	.detect = dcon_detect,
 	.address_list = normal_i2c,

@@ -379,14 +379,7 @@ static const struct rtc_class_ops rv3029c2_rtc_ops = {
 	.set_alarm	= rv3029c2_rtc_set_alarm,
 };
 
-static struct i2c_device_id rv3029c2_id[] = {
-	{ "rv3029c2", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, rv3029c2_id);
-
-static int rv3029c2_probe(struct i2c_client *client,
-			  const struct i2c_device_id *id)
+static int rv3029c2_probe(struct i2c_client *client)
 {
 	struct rtc_device *rtc;
 	int rc = 0;
@@ -416,8 +409,7 @@ static struct i2c_driver rv3029c2_driver = {
 	.driver = {
 		.name = "rtc-rv3029c2",
 	},
-	.probe = rv3029c2_probe,
-	.id_table = rv3029c2_id,
+	.probe2 = rv3029c2_probe,
 };
 
 module_i2c_driver(rv3029c2_driver);

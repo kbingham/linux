@@ -719,8 +719,7 @@ static void adm9240_init_client(struct i2c_client *client)
 	}
 }
 
-static int adm9240_probe(struct i2c_client *new_client,
-			 const struct i2c_device_id *id)
+static int adm9240_probe(struct i2c_client *new_client)
 {
 	struct device *dev = &new_client->dev;
 	struct device *hwmon_dev;
@@ -743,21 +742,12 @@ static int adm9240_probe(struct i2c_client *new_client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id adm9240_id[] = {
-	{ "adm9240", adm9240 },
-	{ "ds1780", ds1780 },
-	{ "lm81", lm81 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, adm9240_id);
-
 static struct i2c_driver adm9240_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver = {
 		.name	= "adm9240",
 	},
-	.probe		= adm9240_probe,
-	.id_table	= adm9240_id,
+	.probe2 = adm9240_probe,
 	.detect		= adm9240_detect,
 	.address_list	= normal_i2c,
 };

@@ -1101,7 +1101,7 @@ static void asc7621_init_client(struct i2c_client *client)
 }
 
 static int
-asc7621_probe(struct i2c_client *client, const struct i2c_device_id *id)
+asc7621_probe(struct i2c_client *client)
 {
 	struct asc7621_data *data;
 	int i, err;
@@ -1194,22 +1194,13 @@ static int asc7621_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id asc7621_id[] = {
-	{"asc7621", asc7621},
-	{"asc7621a", asc7621a},
-	{},
-};
-
-MODULE_DEVICE_TABLE(i2c, asc7621_id);
-
 static struct i2c_driver asc7621_driver = {
 	.class = I2C_CLASS_HWMON,
 	.driver = {
 		.name = "asc7621",
 	},
-	.probe = asc7621_probe,
+	.probe2 = asc7621_probe,
 	.remove = asc7621_remove,
-	.id_table = asc7621_id,
 	.detect = asc7621_detect,
 	.address_list = normal_i2c,
 };

@@ -175,8 +175,7 @@ static struct attribute *ad7414_attrs[] = {
 
 ATTRIBUTE_GROUPS(ad7414);
 
-static int ad7414_probe(struct i2c_client *client,
-			const struct i2c_device_id *dev_id)
+static int ad7414_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct ad7414_data *data;
@@ -211,18 +210,11 @@ static int ad7414_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id ad7414_id[] = {
-	{ "ad7414", 0 },
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, ad7414_id);
-
 static struct i2c_driver ad7414_driver = {
 	.driver = {
 		.name	= "ad7414",
 	},
-	.probe	= ad7414_probe,
-	.id_table = ad7414_id,
+	.probe2 = ad7414_probe,
 };
 
 module_i2c_driver(ad7414_driver);

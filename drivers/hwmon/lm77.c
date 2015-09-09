@@ -327,7 +327,7 @@ static void lm77_init_client(struct i2c_client *client)
 		lm77_write_value(client, LM77_REG_CONF, conf & 0xfe);
 }
 
-static int lm77_probe(struct i2c_client *client, const struct i2c_device_id *id)
+static int lm77_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device *hwmon_dev;
@@ -348,20 +348,13 @@ static int lm77_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id lm77_id[] = {
-	{ "lm77", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, lm77_id);
-
 /* This is the driver that will be inserted */
 static struct i2c_driver lm77_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver = {
 		.name	= "lm77",
 	},
-	.probe		= lm77_probe,
-	.id_table	= lm77_id,
+	.probe2 = lm77_probe,
 	.detect		= lm77_detect,
 	.address_list	= normal_i2c,
 };

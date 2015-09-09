@@ -75,17 +75,6 @@ enum rtc_type {
 	rtc_rv5c387a,
 };
 
-static const struct i2c_device_id rs5c372_id[] = {
-	{ "r2025sd", rtc_r2025sd },
-	{ "r2221tl", rtc_r2221tl },
-	{ "rs5c372a", rtc_rs5c372a },
-	{ "rs5c372b", rtc_rs5c372b },
-	{ "rv5c386", rtc_rv5c386 },
-	{ "rv5c387a", rtc_rv5c387a },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, rs5c372_id);
-
 /* REVISIT:  this assumes that:
  *  - we're in the 21st century, so it's safe to ignore the century
  *    bit for rv5c38[67] (REG_MONTH bit 7);
@@ -554,8 +543,7 @@ static int rs5c_oscillator_setup(struct rs5c372 *rs5c372)
 	return 0;
 }
 
-static int rs5c372_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int rs5c372_probe(struct i2c_client *client)
 {
 	int err = 0;
 	int smbus_mode = 0;
@@ -683,9 +671,8 @@ static struct i2c_driver rs5c372_driver = {
 	.driver		= {
 		.name	= "rtc-rs5c372",
 	},
-	.probe		= rs5c372_probe,
+	.probe2 = rs5c372_probe,
 	.remove		= rs5c372_remove,
-	.id_table	= rs5c372_id,
 };
 
 module_i2c_driver(rs5c372_driver);

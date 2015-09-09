@@ -257,8 +257,7 @@ static void ads1015_get_channels_config(struct i2c_client *client)
 	}
 }
 
-static int ads1015_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int ads1015_probe(struct i2c_client *client)
 {
 	struct ads1015_data *data;
 	int err;
@@ -296,20 +295,12 @@ exit_remove:
 	return err;
 }
 
-static const struct i2c_device_id ads1015_id[] = {
-	{ "ads1015",  ads1015},
-	{ "ads1115",  ads1115},
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ads1015_id);
-
 static struct i2c_driver ads1015_driver = {
 	.driver = {
 		.name = "ads1015",
 	},
-	.probe = ads1015_probe,
+	.probe2 = ads1015_probe,
 	.remove = ads1015_remove,
-	.id_table = ads1015_id,
 };
 
 module_i2c_driver(ads1015_driver);

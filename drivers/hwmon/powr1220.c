@@ -346,8 +346,7 @@ static struct attribute *powr1220_attrs[] = {
 
 ATTRIBUTE_GROUPS(powr1220);
 
-static int powr1220_probe(struct i2c_client *client,
-		const struct i2c_device_id *id)
+static int powr1220_probe(struct i2c_client *client)
 {
 	struct powr1220_data *data;
 	struct device *hwmon_dev;
@@ -368,20 +367,12 @@ static int powr1220_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id powr1220_ids[] = {
-	{ "powr1220", 0, },
-	{ }
-};
-
-MODULE_DEVICE_TABLE(i2c, powr1220_ids);
-
 static struct i2c_driver powr1220_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver = {
 		.name	= "powr1220",
 	},
-	.probe		= powr1220_probe,
-	.id_table	= powr1220_ids,
+	.probe2 = powr1220_probe,
 };
 
 module_i2c_driver(powr1220_driver);

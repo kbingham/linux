@@ -296,8 +296,7 @@ static void w83793_release_resources(struct kref *ref)
 
 static u8 w83793_read_value(struct i2c_client *client, u16 reg);
 static int w83793_write_value(struct i2c_client *client, u16 reg, u8 value);
-static int w83793_probe(struct i2c_client *client,
-			const struct i2c_device_id *id);
+static int w83793_probe(struct i2c_client *client);
 static int w83793_detect(struct i2c_client *client,
 			 struct i2c_board_info *info);
 static int w83793_remove(struct i2c_client *client);
@@ -305,20 +304,13 @@ static void w83793_init_client(struct i2c_client *client);
 static void w83793_update_nonvolatile(struct device *dev);
 static struct w83793_data *w83793_update_device(struct device *dev);
 
-static const struct i2c_device_id w83793_id[] = {
-	{ "w83793", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, w83793_id);
-
 static struct i2c_driver w83793_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver = {
 		   .name = "w83793",
 	},
-	.probe		= w83793_probe,
+	.probe2 = w83793_probe,
 	.remove		= w83793_remove,
-	.id_table	= w83793_id,
 	.detect		= w83793_detect,
 	.address_list	= normal_i2c,
 };
@@ -1672,8 +1664,7 @@ static int w83793_detect(struct i2c_client *client,
 	return 0;
 }
 
-static int w83793_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int w83793_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	const int watchdog_minors[] = { WATCHDOG_MINOR, 212, 213, 214, 215 };

@@ -256,8 +256,7 @@ static struct attribute *atxp1_attrs[] = {
 };
 ATTRIBUTE_GROUPS(atxp1);
 
-static int atxp1_probe(struct i2c_client *client,
-		       const struct i2c_device_id *id)
+static int atxp1_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct atxp1_data *data;
@@ -289,19 +288,12 @@ static int atxp1_probe(struct i2c_client *client,
 	return 0;
 };
 
-static const struct i2c_device_id atxp1_id[] = {
-	{ "atxp1", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, atxp1_id);
-
 static struct i2c_driver atxp1_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver = {
 		.name	= "atxp1",
 	},
-	.probe		= atxp1_probe,
-	.id_table	= atxp1_id,
+	.probe2 = atxp1_probe,
 };
 
 module_i2c_driver(atxp1_driver);

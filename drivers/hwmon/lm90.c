@@ -207,37 +207,6 @@ enum chips { lm90, adm1032, lm99, lm86, max6657, max6659, adt7461, max6680,
 #define MAX6696_STATUS2_LOT2	(1 << 7) /* local emergency limit tripped */
 
 /*
- * Driver data (common to all clients)
- */
-
-static const struct i2c_device_id lm90_id[] = {
-	{ "adm1032", adm1032 },
-	{ "adt7461", adt7461 },
-	{ "adt7461a", adt7461 },
-	{ "g781", g781 },
-	{ "lm90", lm90 },
-	{ "lm86", lm86 },
-	{ "lm89", lm86 },
-	{ "lm99", lm99 },
-	{ "max6646", max6646 },
-	{ "max6647", max6646 },
-	{ "max6649", max6646 },
-	{ "max6657", max6657 },
-	{ "max6658", max6657 },
-	{ "max6659", max6659 },
-	{ "max6680", max6680 },
-	{ "max6681", max6680 },
-	{ "max6695", max6696 },
-	{ "max6696", max6696 },
-	{ "nct1008", adt7461 },
-	{ "w83l771", w83l771 },
-	{ "sa56004", sa56004 },
-	{ "tmp451", tmp451 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, lm90_id);
-
-/*
  * chip type specific parameters
  */
 struct lm90_params {
@@ -1506,8 +1475,7 @@ static irqreturn_t lm90_irq_thread(int irq, void *dev_id)
 		return IRQ_NONE;
 }
 
-static int lm90_probe(struct i2c_client *client,
-		      const struct i2c_device_id *id)
+static int lm90_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct i2c_adapter *adapter = to_i2c_adapter(dev->parent);
@@ -1654,10 +1622,9 @@ static struct i2c_driver lm90_driver = {
 	.driver = {
 		.name	= "lm90",
 	},
-	.probe		= lm90_probe,
+	.probe2 = lm90_probe,
 	.remove		= lm90_remove,
 	.alert		= lm90_alert,
-	.id_table	= lm90_id,
 	.detect		= lm90_detect,
 	.address_list	= normal_i2c,
 };

@@ -274,8 +274,7 @@ static const struct iio_buffer_setup_ops tcs3414_buffer_setup_ops = {
 	.predisable = tcs3414_buffer_predisable,
 };
 
-static int tcs3414_probe(struct i2c_client *client,
-			   const struct i2c_device_id *id)
+static int tcs3414_probe(struct i2c_client *client)
 {
 	struct tcs3414_data *data;
 	struct iio_dev *indio_dev;
@@ -382,20 +381,13 @@ static int tcs3414_resume(struct device *dev)
 
 static SIMPLE_DEV_PM_OPS(tcs3414_pm_ops, tcs3414_suspend, tcs3414_resume);
 
-static const struct i2c_device_id tcs3414_id[] = {
-	{ "tcs3414", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, tcs3414_id);
-
 static struct i2c_driver tcs3414_driver = {
 	.driver = {
 		.name	= TCS3414_DRV_NAME,
 		.pm	= &tcs3414_pm_ops,
 	},
-	.probe		= tcs3414_probe,
+	.probe2 = tcs3414_probe,
 	.remove		= tcs3414_remove,
-	.id_table	= tcs3414_id,
 };
 module_i2c_driver(tcs3414_driver);
 

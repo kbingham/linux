@@ -3159,13 +3159,6 @@ static const struct regmap_config rt5645_regmap = {
 	.num_ranges = ARRAY_SIZE(rt5645_ranges),
 };
 
-static const struct i2c_device_id rt5645_i2c_id[] = {
-	{ "rt5645", 0 },
-	{ "rt5650", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, rt5645_i2c_id);
-
 #ifdef CONFIG_ACPI
 static struct acpi_device_id rt5645_acpi_match[] = {
 	{ "10EC5645", 0 },
@@ -3222,8 +3215,7 @@ static int rt5645_parse_dt(struct rt5645_priv *rt5645, struct device *dev)
 	return 0;
 }
 
-static int rt5645_i2c_probe(struct i2c_client *i2c,
-		    const struct i2c_device_id *id)
+static int rt5645_i2c_probe(struct i2c_client *i2c)
 {
 	struct rt5645_platform_data *pdata = dev_get_platdata(&i2c->dev);
 	struct rt5645_priv *rt5645;
@@ -3475,10 +3467,9 @@ static struct i2c_driver rt5645_i2c_driver = {
 		.name = "rt5645",
 		.acpi_match_table = ACPI_PTR(rt5645_acpi_match),
 	},
-	.probe = rt5645_i2c_probe,
+	.probe2 = rt5645_i2c_probe,
 	.remove = rt5645_i2c_remove,
 	.shutdown = rt5645_i2c_shutdown,
-	.id_table = rt5645_i2c_id,
 };
 module_i2c_driver(rt5645_i2c_driver);
 

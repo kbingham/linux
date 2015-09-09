@@ -559,8 +559,7 @@ static const struct regmap_config ml26124_i2c_regmap = {
 	.write_flag_mask = 0x01,
 };
 
-static int ml26124_i2c_probe(struct i2c_client *i2c,
-			     const struct i2c_device_id *id)
+static int ml26124_i2c_probe(struct i2c_client *i2c)
 {
 	struct ml26124_priv *priv;
 	int ret;
@@ -588,19 +587,12 @@ static int ml26124_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id ml26124_i2c_id[] = {
-	{ "ml26124", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ml26124_i2c_id);
-
 static struct i2c_driver ml26124_i2c_driver = {
 	.driver = {
 		.name = "ml26124",
 	},
-	.probe = ml26124_i2c_probe,
+	.probe2 = ml26124_i2c_probe,
 	.remove = ml26124_i2c_remove,
-	.id_table = ml26124_i2c_id,
 };
 
 module_i2c_driver(ml26124_i2c_driver);

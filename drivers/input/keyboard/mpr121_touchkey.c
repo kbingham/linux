@@ -184,8 +184,7 @@ err_i2c_write:
 	return ret;
 }
 
-static int mpr_touchkey_probe(struct i2c_client *client,
-			      const struct i2c_device_id *id)
+static int mpr_touchkey_probe(struct i2c_client *client)
 {
 	const struct mpr121_platform_data *pdata =
 			dev_get_platdata(&client->dev);
@@ -296,19 +295,12 @@ static int mpr_resume(struct device *dev)
 
 static SIMPLE_DEV_PM_OPS(mpr121_touchkey_pm_ops, mpr_suspend, mpr_resume);
 
-static const struct i2c_device_id mpr121_id[] = {
-	{ "mpr121_touchkey", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, mpr121_id);
-
 static struct i2c_driver mpr_touchkey_driver = {
 	.driver = {
 		.name	= "mpr121",
 		.pm	= &mpr121_touchkey_pm_ops,
 	},
-	.id_table	= mpr121_id,
-	.probe		= mpr_touchkey_probe,
+	.probe2 = mpr_touchkey_probe,
 };
 
 module_i2c_driver(mpr_touchkey_driver);

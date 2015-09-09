@@ -115,8 +115,7 @@ static const struct power_supply_desc rt5033_battery_desc = {
 	.num_properties	= ARRAY_SIZE(rt5033_battery_props),
 };
 
-static int rt5033_battery_probe(struct i2c_client *client,
-		const struct i2c_device_id *id)
+static int rt5033_battery_probe(struct i2c_client *client)
 {
 	struct i2c_adapter *adapter = to_i2c_adapter(client->dev.parent);
 	struct power_supply_config psy_cfg = {};
@@ -161,19 +160,12 @@ static int rt5033_battery_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id rt5033_battery_id[] = {
-	{ "rt5033-battery", },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, rt5033_battery_id);
-
 static struct i2c_driver rt5033_battery_driver = {
 	.driver = {
 		.name = "rt5033-battery",
 	},
-	.probe = rt5033_battery_probe,
+	.probe2 = rt5033_battery_probe,
 	.remove = rt5033_battery_remove,
-	.id_table = rt5033_battery_id,
 };
 module_i2c_driver(rt5033_battery_driver);
 

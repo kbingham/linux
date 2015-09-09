@@ -88,8 +88,7 @@ static int mc9s08dz60_direction_output(struct gpio_chip *gc,
 	return mc9s08dz60_set(mc9s, offset, val);
 }
 
-static int mc9s08dz60_probe(struct i2c_client *client,
-			    const struct i2c_device_id *id)
+static int mc9s08dz60_probe(struct i2c_client *client)
 {
 	struct mc9s08dz60 *mc9s;
 
@@ -122,21 +121,13 @@ static int mc9s08dz60_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id mc9s08dz60_id[] = {
-	{"mc9s08dz60", 0},
-	{},
-};
-
-MODULE_DEVICE_TABLE(i2c, mc9s08dz60_id);
-
 static struct i2c_driver mc9s08dz60_i2c_driver = {
 	.driver = {
 		.owner = THIS_MODULE,
 		.name = "mc9s08dz60",
 	},
-	.probe = mc9s08dz60_probe,
+	.probe2 = mc9s08dz60_probe,
 	.remove = mc9s08dz60_remove,
-	.id_table = mc9s08dz60_id,
 };
 
 module_i2c_driver(mc9s08dz60_i2c_driver);

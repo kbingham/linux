@@ -131,8 +131,7 @@ static irqreturn_t smbalert_irq(int irq, void *d)
 }
 
 /* Setup SMBALERT# infrastructure */
-static int smbalert_probe(struct i2c_client *ara,
-			  const struct i2c_device_id *id)
+static int smbalert_probe(struct i2c_client *ara)
 {
 	struct i2c_smbus_alert_setup *setup = dev_get_platdata(&ara->dev);
 	struct i2c_smbus_alert *alert;
@@ -172,19 +171,12 @@ static int smbalert_remove(struct i2c_client *ara)
 	return 0;
 }
 
-static const struct i2c_device_id smbalert_ids[] = {
-	{ "smbus_alert", 0 },
-	{ /* LIST END */ }
-};
-MODULE_DEVICE_TABLE(i2c, smbalert_ids);
-
 static struct i2c_driver smbalert_driver = {
 	.driver = {
 		.name	= "smbus_alert",
 	},
-	.probe		= smbalert_probe,
+	.probe2 = smbalert_probe,
 	.remove		= smbalert_remove,
-	.id_table	= smbalert_ids,
 };
 
 /**

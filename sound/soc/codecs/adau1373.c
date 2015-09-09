@@ -1492,8 +1492,7 @@ static struct snd_soc_codec_driver adau1373_codec_driver = {
 	.num_dapm_routes = ARRAY_SIZE(adau1373_dapm_routes),
 };
 
-static int adau1373_i2c_probe(struct i2c_client *client,
-			      const struct i2c_device_id *id)
+static int adau1373_i2c_probe(struct i2c_client *client)
 {
 	struct adau1373 *adau1373;
 	int ret;
@@ -1522,19 +1521,12 @@ static int adau1373_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id adau1373_i2c_id[] = {
-	{ "adau1373", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, adau1373_i2c_id);
-
 static struct i2c_driver adau1373_i2c_driver = {
 	.driver = {
 		.name = "adau1373",
 	},
-	.probe = adau1373_i2c_probe,
+	.probe2 = adau1373_i2c_probe,
 	.remove = adau1373_i2c_remove,
-	.id_table = adau1373_i2c_id,
 };
 
 module_i2c_driver(adau1373_i2c_driver);

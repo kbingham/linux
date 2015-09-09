@@ -506,8 +506,7 @@ out:
 	return retval;
 }
 
-static int kxtj9_probe(struct i2c_client *client,
-				 const struct i2c_device_id *id)
+static int kxtj9_probe(struct i2c_client *client)
 {
 	const struct kxtj9_platform_data *pdata =
 			dev_get_platdata(&client->dev);
@@ -648,21 +647,13 @@ static int __maybe_unused kxtj9_resume(struct device *dev)
 
 static SIMPLE_DEV_PM_OPS(kxtj9_pm_ops, kxtj9_suspend, kxtj9_resume);
 
-static const struct i2c_device_id kxtj9_id[] = {
-	{ NAME, 0 },
-	{ },
-};
-
-MODULE_DEVICE_TABLE(i2c, kxtj9_id);
-
 static struct i2c_driver kxtj9_driver = {
 	.driver = {
 		.name	= NAME,
 		.pm	= &kxtj9_pm_ops,
 	},
-	.probe		= kxtj9_probe,
+	.probe2 = kxtj9_probe,
 	.remove		= kxtj9_remove,
-	.id_table	= kxtj9_id,
 };
 
 module_i2c_driver(kxtj9_driver);

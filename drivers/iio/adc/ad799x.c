@@ -770,8 +770,7 @@ static const struct ad799x_chip_info ad799x_chip_info_tbl[] = {
 	},
 };
 
-static int ad799x_probe(struct i2c_client *client,
-				   const struct i2c_device_id *id)
+static int ad799x_probe(struct i2c_client *client)
 {
 	int ret;
 	struct ad799x_state *st;
@@ -876,27 +875,12 @@ static int ad799x_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id ad799x_id[] = {
-	{ "ad7991", ad7991 },
-	{ "ad7995", ad7995 },
-	{ "ad7999", ad7999 },
-	{ "ad7992", ad7992 },
-	{ "ad7993", ad7993 },
-	{ "ad7994", ad7994 },
-	{ "ad7997", ad7997 },
-	{ "ad7998", ad7998 },
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, ad799x_id);
-
 static struct i2c_driver ad799x_driver = {
 	.driver = {
 		.name = "ad799x",
 	},
-	.probe = ad799x_probe,
+	.probe2 = ad799x_probe,
 	.remove = ad799x_remove,
-	.id_table = ad799x_id,
 };
 module_i2c_driver(ad799x_driver);
 

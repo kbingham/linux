@@ -1081,7 +1081,7 @@ static struct of_dev_auxdata twl_auxdata_lookup[] = {
 
 /* NOTE: This driver only handles a single twl4030/tps659x0 chip */
 static int
-twl_probe(struct i2c_client *client, const struct i2c_device_id *id)
+twl_probe(struct i2c_client *client)
 {
 	struct twl4030_platform_data	*pdata = dev_get_platdata(&client->dev);
 	struct device_node		*node = client->dev.of_node;
@@ -1247,26 +1247,10 @@ free:
 	return status;
 }
 
-static const struct i2c_device_id twl_ids[] = {
-	{ "twl4030", TWL4030_VAUX2 },	/* "Triton 2" */
-	{ "twl5030", 0 },		/* T2 updated */
-	{ "twl5031", TWL5031 },		/* TWL5030 updated */
-	{ "tps65950", 0 },		/* catalog version of twl5030 */
-	{ "tps65930", TPS_SUBSET },	/* fewer LDOs and DACs; no charger */
-	{ "tps65920", TPS_SUBSET },	/* fewer LDOs; no codec or charger */
-	{ "tps65921", TPS_SUBSET },	/* fewer LDOs; no codec, no LED
-					   and vibrator. Charger in USB module*/
-	{ "twl6030", TWL6030_CLASS },	/* "Phoenix power chip" */
-	{ "twl6032", TWL6030_CLASS | TWL6032_SUBCLASS }, /* "Phoenix lite" */
-	{ /* end of list */ },
-};
-MODULE_DEVICE_TABLE(i2c, twl_ids);
-
 /* One Client Driver , 4 Clients */
 static struct i2c_driver twl_driver = {
 	.driver.name	= DRIVER_NAME,
-	.id_table	= twl_ids,
-	.probe		= twl_probe,
+	.probe2 = twl_probe,
 	.remove		= twl_remove,
 };
 

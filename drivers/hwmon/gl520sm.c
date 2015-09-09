@@ -875,8 +875,7 @@ static void gl520_init_client(struct i2c_client *client)
 	gl520_write_value(client, GL520_REG_BEEP_MASK, data->beep_mask);
 }
 
-static int gl520_probe(struct i2c_client *client,
-		       const struct i2c_device_id *id)
+static int gl520_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device *hwmon_dev;
@@ -906,19 +905,12 @@ static int gl520_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id gl520_id[] = {
-	{ "gl520sm", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, gl520_id);
-
 static struct i2c_driver gl520_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver = {
 		.name	= "gl520sm",
 	},
-	.probe		= gl520_probe,
-	.id_table	= gl520_id,
+	.probe2 = gl520_probe,
 	.detect		= gl520_detect,
 	.address_list	= normal_i2c,
 };

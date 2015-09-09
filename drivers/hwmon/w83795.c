@@ -2147,8 +2147,7 @@ static void w83795_apply_temp_config(struct w83795_data *data, u8 config,
 	}
 }
 
-static int w83795_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int w83795_probe(struct i2c_client *client)
 {
 	int i;
 	u8 tmp;
@@ -2257,21 +2256,12 @@ static int w83795_remove(struct i2c_client *client)
 	return 0;
 }
 
-
-static const struct i2c_device_id w83795_id[] = {
-	{ "w83795g", w83795g },
-	{ "w83795adg", w83795adg },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, w83795_id);
-
 static struct i2c_driver w83795_driver = {
 	.driver = {
 		   .name = "w83795",
 	},
-	.probe		= w83795_probe,
+	.probe2 = w83795_probe,
 	.remove		= w83795_remove,
-	.id_table	= w83795_id,
 
 	.class		= I2C_CLASS_HWMON,
 	.detect		= w83795_detect,

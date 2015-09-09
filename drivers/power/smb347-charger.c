@@ -1210,8 +1210,7 @@ static const struct power_supply_desc smb347_battery_desc = {
 	.num_properties	= ARRAY_SIZE(smb347_battery_properties),
 };
 
-static int smb347_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int smb347_probe(struct i2c_client *client)
 {
 	static char *battery[] = { "smb347-battery" };
 	const struct smb347_charger_platform_data *pdata;
@@ -1311,19 +1310,12 @@ static int smb347_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id smb347_id[] = {
-	{ "smb347", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, smb347_id);
-
 static struct i2c_driver smb347_driver = {
 	.driver = {
 		.name = "smb347",
 	},
-	.probe        = smb347_probe,
+	.probe2 = smb347_probe,
 	.remove       = smb347_remove,
-	.id_table     = smb347_id,
 };
 
 module_i2c_driver(smb347_driver);

@@ -452,8 +452,7 @@ static const struct attribute_group ina226_group = {
 	.attrs = ina226_attrs,
 };
 
-static int ina2xx_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int ina2xx_probe(struct i2c_client *client)
 {
 	struct i2c_adapter *adapter = client->adapter;
 	struct ina2xx_platform_data *pdata;
@@ -522,22 +521,11 @@ static int ina2xx_probe(struct i2c_client *client,
 	return 0;
 }
 
-static const struct i2c_device_id ina2xx_id[] = {
-	{ "ina219", ina219 },
-	{ "ina220", ina219 },
-	{ "ina226", ina226 },
-	{ "ina230", ina226 },
-	{ "ina231", ina226 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ina2xx_id);
-
 static struct i2c_driver ina2xx_driver = {
 	.driver = {
 		.name	= "ina2xx",
 	},
-	.probe		= ina2xx_probe,
-	.id_table	= ina2xx_id,
+	.probe2 = ina2xx_probe,
 };
 
 module_i2c_driver(ina2xx_driver);

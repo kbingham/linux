@@ -1421,7 +1421,7 @@ static void adv7511_init_setup(struct v4l2_subdev *sd)
 	adv7511_s_audio_stream(sd, false);
 }
 
-static int adv7511_probe(struct i2c_client *client, const struct i2c_device_id *id)
+static int adv7511_probe(struct i2c_client *client)
 {
 	struct adv7511_state *state;
 	struct adv7511_platform_data *pdata = client->dev.platform_data;
@@ -1566,21 +1566,12 @@ static int adv7511_remove(struct i2c_client *client)
 	return 0;
 }
 
-/* ----------------------------------------------------------------------- */
-
-static struct i2c_device_id adv7511_id[] = {
-	{ "adv7511", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, adv7511_id);
-
 static struct i2c_driver adv7511_driver = {
 	.driver = {
 		.name = "adv7511",
 	},
-	.probe = adv7511_probe,
+	.probe2 = adv7511_probe,
 	.remove = adv7511_remove,
-	.id_table = adv7511_id,
 };
 
 module_i2c_driver(adv7511_driver);

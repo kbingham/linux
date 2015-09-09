@@ -164,8 +164,7 @@ static int tsl4531_check_id(struct i2c_client *client)
 	}
 }
 
-static int tsl4531_probe(struct i2c_client *client,
-			  const struct i2c_device_id *id)
+static int tsl4531_probe(struct i2c_client *client)
 {
 	struct tsl4531_data *data;
 	struct iio_dev *indio_dev;
@@ -237,20 +236,13 @@ static SIMPLE_DEV_PM_OPS(tsl4531_pm_ops, tsl4531_suspend, tsl4531_resume);
 #define TSL4531_PM_OPS NULL
 #endif
 
-static const struct i2c_device_id tsl4531_id[] = {
-	{ "tsl4531", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, tsl4531_id);
-
 static struct i2c_driver tsl4531_driver = {
 	.driver = {
 		.name   = TSL4531_DRV_NAME,
 		.pm	= TSL4531_PM_OPS,
 	},
-	.probe  = tsl4531_probe,
+	.probe2 = tsl4531_probe,
 	.remove = tsl4531_remove,
-	.id_table = tsl4531_id,
 };
 
 module_i2c_driver(tsl4531_driver);

@@ -350,8 +350,7 @@ static void adp5588_irq_teardown(struct adp5588_gpio *dev)
 }
 #endif /* CONFIG_GPIO_ADP5588_IRQ */
 
-static int adp5588_gpio_probe(struct i2c_client *client,
-					const struct i2c_device_id *id)
+static int adp5588_gpio_probe(struct i2c_client *client)
 {
 	struct adp5588_gpio_platform_data *pdata =
 			dev_get_platdata(&client->dev);
@@ -466,20 +465,12 @@ static int adp5588_gpio_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id adp5588_gpio_id[] = {
-	{DRV_NAME, 0},
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, adp5588_gpio_id);
-
 static struct i2c_driver adp5588_gpio_driver = {
 	.driver = {
 		   .name = DRV_NAME,
 		   },
-	.probe = adp5588_gpio_probe,
+	.probe2 = adp5588_gpio_probe,
 	.remove = adp5588_gpio_remove,
-	.id_table = adp5588_gpio_id,
 };
 
 module_i2c_driver(adp5588_gpio_driver);

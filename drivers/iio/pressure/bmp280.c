@@ -344,8 +344,7 @@ static int bmp280_chip_init(struct bmp280_data *data)
 	return ret;
 }
 
-static int bmp280_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int bmp280_probe(struct i2c_client *client)
 {
 	int ret;
 	struct iio_dev *indio_dev;
@@ -395,19 +394,12 @@ static const struct acpi_device_id bmp280_acpi_match[] = {
 };
 MODULE_DEVICE_TABLE(acpi, bmp280_acpi_match);
 
-static const struct i2c_device_id bmp280_id[] = {
-	{"bmp280", 0},
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, bmp280_id);
-
 static struct i2c_driver bmp280_driver = {
 	.driver = {
 		.name	= "bmp280",
 		.acpi_match_table = ACPI_PTR(bmp280_acpi_match),
 	},
-	.probe		= bmp280_probe,
-	.id_table	= bmp280_id,
+	.probe2 = bmp280_probe,
 };
 module_i2c_driver(bmp280_driver);
 

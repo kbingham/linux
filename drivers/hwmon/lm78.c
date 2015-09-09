@@ -642,8 +642,7 @@ static int lm78_i2c_detect(struct i2c_client *client,
 	return -ENODEV;
 }
 
-static int lm78_i2c_probe(struct i2c_client *client,
-			  const struct i2c_device_id *id)
+static int lm78_i2c_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device *hwmon_dev;
@@ -664,20 +663,12 @@ static int lm78_i2c_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id lm78_i2c_id[] = {
-	{ "lm78", lm78 },
-	{ "lm79", lm79 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, lm78_i2c_id);
-
 static struct i2c_driver lm78_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver = {
 		.name	= "lm78",
 	},
-	.probe		= lm78_i2c_probe,
-	.id_table	= lm78_i2c_id,
+	.probe2 = lm78_i2c_probe,
 	.detect		= lm78_i2c_detect,
 	.address_list	= normal_i2c,
 };

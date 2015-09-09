@@ -1104,8 +1104,7 @@ static const struct v4l2_subdev_ops tvp5150_ops = {
 			I2C Client & Driver
  ****************************************************************************/
 
-static int tvp5150_probe(struct i2c_client *c,
-			 const struct i2c_device_id *id)
+static int tvp5150_probe(struct i2c_client *c)
 {
 	struct tvp5150 *core;
 	struct v4l2_subdev *sd;
@@ -1205,21 +1204,12 @@ static int tvp5150_remove(struct i2c_client *c)
 	return 0;
 }
 
-/* ----------------------------------------------------------------------- */
-
-static const struct i2c_device_id tvp5150_id[] = {
-	{ "tvp5150", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, tvp5150_id);
-
 static struct i2c_driver tvp5150_driver = {
 	.driver = {
 		.name	= "tvp5150",
 	},
-	.probe		= tvp5150_probe,
+	.probe2 = tvp5150_probe,
 	.remove		= tvp5150_remove,
-	.id_table	= tvp5150_id,
 };
 
 module_i2c_driver(tvp5150_driver);

@@ -181,8 +181,7 @@ static int trickle_charger_of_init(struct device *dev, struct device_node *node)
 	return 0;
 }
 
-static int bq32k_probe(struct i2c_client *client,
-				const struct i2c_device_id *id)
+static int bq32k_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct rtc_device *rtc;
@@ -225,19 +224,12 @@ static int bq32k_probe(struct i2c_client *client,
 	return 0;
 }
 
-static const struct i2c_device_id bq32k_id[] = {
-	{ "bq32000", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, bq32k_id);
-
 static struct i2c_driver bq32k_driver = {
 	.driver = {
 		.name	= "bq32k",
 		.owner	= THIS_MODULE,
 	},
-	.probe		= bq32k_probe,
-	.id_table	= bq32k_id,
+	.probe2 = bq32k_probe,
 };
 
 module_i2c_driver(bq32k_driver);

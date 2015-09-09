@@ -1041,8 +1041,7 @@ static struct spi_driver wm8983_spi_driver = {
 #endif
 
 #if IS_ENABLED(CONFIG_I2C)
-static int wm8983_i2c_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *id)
+static int wm8983_i2c_probe(struct i2c_client *i2c)
 {
 	struct wm8983_priv *wm8983;
 	int ret;
@@ -1072,19 +1071,12 @@ static int wm8983_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id wm8983_i2c_id[] = {
-	{ "wm8983", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, wm8983_i2c_id);
-
 static struct i2c_driver wm8983_i2c_driver = {
 	.driver = {
 		.name = "wm8983",
 	},
-	.probe = wm8983_i2c_probe,
+	.probe2 = wm8983_i2c_probe,
 	.remove = wm8983_i2c_remove,
-	.id_table = wm8983_i2c_id
 };
 #endif
 

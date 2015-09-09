@@ -53,7 +53,7 @@ static int menf21bmc_wdt_exit_prod_mode(struct i2c_client *client)
 }
 
 static int
-menf21bmc_probe(struct i2c_client *client, const struct i2c_device_id *ids)
+menf21bmc_probe(struct i2c_client *client)
 {
 	int rev_major, rev_minor, rev_main;
 	int ret;
@@ -112,16 +112,9 @@ static int menf21bmc_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id menf21bmc_id_table[] = {
-	{ "menf21bmc" },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, menf21bmc_id_table);
-
 static struct i2c_driver menf21bmc_driver = {
 	.driver.name	= "menf21bmc",
-	.id_table	= menf21bmc_id_table,
-	.probe		= menf21bmc_probe,
+	.probe2 = menf21bmc_probe,
 	.remove		= menf21bmc_remove,
 };
 

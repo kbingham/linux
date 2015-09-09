@@ -848,8 +848,7 @@ static const struct ab_family_id ids[] = {
 	},
 };
 
-static int ab3100_probe(struct i2c_client *client,
-				  const struct i2c_device_id *id)
+static int ab3100_probe(struct i2c_client *client)
 {
 	struct ab3100 *ab3100;
 	struct ab3100_platform_data *ab3100_plf_data =
@@ -963,18 +962,11 @@ static int ab3100_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id ab3100_id[] = {
-	{ "ab3100", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ab3100_id);
-
 static struct i2c_driver ab3100_driver = {
 	.driver = {
 		.name	= "ab3100",
 	},
-	.id_table	= ab3100_id,
-	.probe		= ab3100_probe,
+	.probe2 = ab3100_probe,
 	.remove		= ab3100_remove,
 };
 

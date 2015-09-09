@@ -357,8 +357,7 @@ static const struct attribute_group ds1621_group = {
 };
 __ATTRIBUTE_GROUPS(ds1621);
 
-static int ds1621_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int ds1621_probe(struct i2c_client *client)
 {
 	struct ds1621_data *data;
 	struct device *hwmon_dev;
@@ -382,24 +381,13 @@ static int ds1621_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id ds1621_id[] = {
-	{ "ds1621", ds1621 },
-	{ "ds1625", ds1625 },
-	{ "ds1631", ds1631 },
-	{ "ds1721", ds1721 },
-	{ "ds1731", ds1731 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ds1621_id);
-
 /* This is the driver that will be inserted */
 static struct i2c_driver ds1621_driver = {
 	.class		= I2C_CLASS_HWMON,
 	.driver = {
 		.name	= "ds1621",
 	},
-	.probe		= ds1621_probe,
-	.id_table	= ds1621_id,
+	.probe2 = ds1621_probe,
 };
 
 module_i2c_driver(ds1621_driver);

@@ -880,8 +880,7 @@ static int bq27x00_read_i2c(struct bq27x00_device_info *di, u8 reg, bool single)
 	return ret;
 }
 
-static int bq27x00_battery_probe(struct i2c_client *client,
-				 const struct i2c_device_id *id)
+static int bq27x00_battery_probe(struct i2c_client *client)
 {
 	char *name;
 	struct bq27x00_device_info *di;
@@ -941,23 +940,12 @@ static int bq27x00_battery_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id bq27x00_id[] = {
-	{ "bq27200", BQ27000 },	/* bq27200 is same as bq27000, but with i2c */
-	{ "bq27500", BQ27500 },
-	{ "bq27425", BQ27425 },
-	{ "bq27742", BQ27742 },
-	{ "bq27510", BQ27510 },
-	{},
-};
-MODULE_DEVICE_TABLE(i2c, bq27x00_id);
-
 static struct i2c_driver bq27x00_battery_driver = {
 	.driver = {
 		.name = "bq27x00-battery",
 	},
-	.probe = bq27x00_battery_probe,
+	.probe2 = bq27x00_battery_probe,
 	.remove = bq27x00_battery_remove,
-	.id_table = bq27x00_id,
 };
 
 static inline int bq27x00_battery_i2c_init(void)

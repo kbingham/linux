@@ -434,8 +434,7 @@ static struct dvb_frontend_ops mn88472_ops = {
 	.read_status = mn88472_read_status,
 };
 
-static int mn88472_probe(struct i2c_client *client,
-		const struct i2c_device_id *id)
+static int mn88472_probe(struct i2c_client *client)
 {
 	struct mn88472_config *config = client->dev.platform_data;
 	struct mn88472_dev *dev;
@@ -553,19 +552,12 @@ static int mn88472_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id mn88472_id_table[] = {
-	{"mn88472", 0},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, mn88472_id_table);
-
 static struct i2c_driver mn88472_driver = {
 	.driver = {
 		.name	= "mn88472",
 	},
-	.probe		= mn88472_probe,
+	.probe2 = mn88472_probe,
 	.remove		= mn88472_remove,
-	.id_table	= mn88472_id_table,
 };
 
 module_i2c_driver(mn88472_driver);

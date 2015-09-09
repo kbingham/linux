@@ -27,11 +27,6 @@ struct isp1301 {
 
 #define phy_to_isp(p)		(container_of((p), struct isp1301, phy))
 
-static const struct i2c_device_id isp1301_id[] = {
-	{ "isp1301", 0 },
-	{ }
-};
-
 static struct i2c_client *isp1301_i2c_client;
 
 static int __isp1301_write(struct isp1301 *isp, u8 reg, u8 value, u8 clear)
@@ -88,8 +83,7 @@ static int isp1301_phy_set_vbus(struct usb_phy *phy, int on)
 	return 0;
 }
 
-static int isp1301_probe(struct i2c_client *client,
-			 const struct i2c_device_id *i2c_id)
+static int isp1301_probe(struct i2c_client *client)
 {
 	struct isp1301 *isp;
 	struct usb_phy *phy;
@@ -130,9 +124,8 @@ static struct i2c_driver isp1301_driver = {
 	.driver = {
 		.name = DRV_NAME,
 	},
-	.probe = isp1301_probe,
+	.probe2 = isp1301_probe,
 	.remove = isp1301_remove,
-	.id_table = isp1301_id,
 };
 
 module_i2c_driver(isp1301_driver);

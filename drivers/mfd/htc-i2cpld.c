@@ -615,19 +615,11 @@ static int htcpld_core_probe(struct platform_device *pdev)
 	return 0;
 }
 
-/* The I2C Driver -- used internally */
-static const struct i2c_device_id htcpld_chip_id[] = {
-	{ "htcpld-chip", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, htcpld_chip_id);
-
 
 static struct i2c_driver htcpld_chip_driver = {
 	.driver = {
 		.name	= "htcpld-chip",
 	},
-	.id_table = htcpld_chip_id,
 };
 
 /* The Core Driver */

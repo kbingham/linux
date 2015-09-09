@@ -407,8 +407,7 @@ static int fsa9480_irq_init(struct fsa9480_usbsw *usbsw)
 	return 0;
 }
 
-static int fsa9480_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int fsa9480_probe(struct i2c_client *client)
 {
 	struct i2c_adapter *adapter = to_i2c_adapter(client->dev.parent);
 	struct fsa9480_usbsw *usbsw;
@@ -524,22 +523,15 @@ static SIMPLE_DEV_PM_OPS(fsa9480_pm_ops, fsa9480_suspend, fsa9480_resume);
 
 #define FSA9480_PM_OPS NULL
 
-#endif /* CONFIG_PM_SLEEP */
-
-static const struct i2c_device_id fsa9480_id[] = {
-	{"fsa9480", 0},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, fsa9480_id);
+#endif
 
 static struct i2c_driver fsa9480_i2c_driver = {
 	.driver = {
 		.name = "fsa9480",
 		.pm = FSA9480_PM_OPS,
 	},
-	.probe = fsa9480_probe,
+	.probe2 = fsa9480_probe,
 	.remove = fsa9480_remove,
-	.id_table = fsa9480_id,
 };
 
 module_i2c_driver(fsa9480_i2c_driver);

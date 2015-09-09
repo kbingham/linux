@@ -59,16 +59,6 @@ static const u8 TMP421_TEMP_LSB[4]		= { 0x10, 0x11, 0x12, 0x13 };
 #define TMP441_DEVICE_ID			0x41
 #define TMP442_DEVICE_ID			0x42
 
-static const struct i2c_device_id tmp421_id[] = {
-	{ "tmp421", 2 },
-	{ "tmp422", 3 },
-	{ "tmp423", 4 },
-	{ "tmp441", 2 },
-	{ "tmp442", 3 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, tmp421_id);
-
 struct tmp421_data {
 	struct i2c_client *client;
 	struct mutex update_lock;
@@ -289,8 +279,7 @@ static int tmp421_detect(struct i2c_client *client,
 	return 0;
 }
 
-static int tmp421_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int tmp421_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device *hwmon_dev;
@@ -319,8 +308,7 @@ static struct i2c_driver tmp421_driver = {
 	.driver = {
 		.name	= "tmp421",
 	},
-	.probe = tmp421_probe,
-	.id_table = tmp421_id,
+	.probe2 = tmp421_probe,
 	.detect = tmp421_detect,
 	.address_list = normal_i2c,
 };

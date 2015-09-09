@@ -1123,20 +1123,13 @@ static const struct regmap_config rt298_regmap = {
 	.num_reg_defaults = ARRAY_SIZE(rt298_reg),
 };
 
-static const struct i2c_device_id rt298_i2c_id[] = {
-	{"rt298", 0},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, rt298_i2c_id);
-
 static const struct acpi_device_id rt298_acpi_match[] = {
 	{ "INT343A", 0 },
 	{},
 };
 MODULE_DEVICE_TABLE(acpi, rt298_acpi_match);
 
-static int rt298_i2c_probe(struct i2c_client *i2c,
-			   const struct i2c_device_id *id)
+static int rt298_i2c_probe(struct i2c_client *i2c)
 {
 	struct rt298_platform_data *pdata = dev_get_platdata(&i2c->dev);
 	struct rt298_priv *rt298;
@@ -1259,9 +1252,8 @@ static struct i2c_driver rt298_i2c_driver = {
 		   .name = "rt298",
 		   .acpi_match_table = ACPI_PTR(rt298_acpi_match),
 		   },
-	.probe = rt298_i2c_probe,
+	.probe2 = rt298_i2c_probe,
 	.remove = rt298_i2c_remove,
-	.id_table = rt298_i2c_id,
 };
 
 module_i2c_driver(rt298_i2c_driver);

@@ -101,8 +101,7 @@ static ssize_t show_in_input(struct device *dev, struct device_attribute *attr,
 
 static DEVICE_ATTR(in0_input, S_IRUGO, show_in_input, NULL);
 
-static int mcp3021_probe(struct i2c_client *client,
-				const struct i2c_device_id *id)
+static int mcp3021_probe(struct i2c_client *client)
 {
 	int err;
 	struct mcp3021_data *data = NULL;
@@ -166,20 +165,12 @@ static int mcp3021_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id mcp3021_id[] = {
-	{ "mcp3021", mcp3021 },
-	{ "mcp3221", mcp3221 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, mcp3021_id);
-
 static struct i2c_driver mcp3021_driver = {
 	.driver = {
 		.name = "mcp3021",
 	},
-	.probe = mcp3021_probe,
+	.probe2 = mcp3021_probe,
 	.remove = mcp3021_remove,
-	.id_table = mcp3021_id,
 };
 
 module_i2c_driver(mcp3021_driver);

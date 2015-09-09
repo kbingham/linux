@@ -211,8 +211,7 @@ static struct attribute *ltc4261_attrs[] = {
 };
 ATTRIBUTE_GROUPS(ltc4261);
 
-static int ltc4261_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int ltc4261_probe(struct i2c_client *client)
 {
 	struct i2c_adapter *adapter = client->adapter;
 	struct device *dev = &client->dev;
@@ -243,20 +242,12 @@ static int ltc4261_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
-static const struct i2c_device_id ltc4261_id[] = {
-	{"ltc4261", 0},
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, ltc4261_id);
-
 /* This is the driver that will be inserted */
 static struct i2c_driver ltc4261_driver = {
 	.driver = {
 		   .name = "ltc4261",
 		   },
-	.probe = ltc4261_probe,
-	.id_table = ltc4261_id,
+	.probe2 = ltc4261_probe,
 };
 
 module_i2c_driver(ltc4261_driver);

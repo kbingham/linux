@@ -1489,8 +1489,7 @@ static struct snd_soc_dai_driver dac33_dai = {
 	.ops = &dac33_dai_ops,
 };
 
-static int dac33_i2c_probe(struct i2c_client *client,
-			   const struct i2c_device_id *id)
+static int dac33_i2c_probe(struct i2c_client *client)
 {
 	struct tlv320dac33_platform_data *pdata;
 	struct tlv320dac33_priv *dac33;
@@ -1573,22 +1572,12 @@ static int dac33_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id tlv320dac33_i2c_id[] = {
-	{
-		.name = "tlv320dac33",
-		.driver_data = 0,
-	},
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, tlv320dac33_i2c_id);
-
 static struct i2c_driver tlv320dac33_i2c_driver = {
 	.driver = {
 		.name = "tlv320dac33-codec",
 	},
-	.probe		= dac33_i2c_probe,
+	.probe2 = dac33_i2c_probe,
 	.remove		= dac33_i2c_remove,
-	.id_table	= tlv320dac33_i2c_id,
 };
 
 module_i2c_driver(tlv320dac33_i2c_driver);

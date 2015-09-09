@@ -445,7 +445,7 @@ static int jc42_detect(struct i2c_client *client, struct i2c_board_info *info)
 	return -ENODEV;
 }
 
-static int jc42_probe(struct i2c_client *client, const struct i2c_device_id *id)
+static int jc42_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device *hwmon_dev;
@@ -529,13 +529,7 @@ static const struct dev_pm_ops jc42_dev_pm_ops = {
 #define JC42_DEV_PM_OPS (&jc42_dev_pm_ops)
 #else
 #define JC42_DEV_PM_OPS NULL
-#endif /* CONFIG_PM */
-
-static const struct i2c_device_id jc42_id[] = {
-	{ "jc42", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, jc42_id);
+#endif
 
 static struct i2c_driver jc42_driver = {
 	.class		= I2C_CLASS_SPD,
@@ -543,9 +537,8 @@ static struct i2c_driver jc42_driver = {
 		.name	= "jc42",
 		.pm = JC42_DEV_PM_OPS,
 	},
-	.probe		= jc42_probe,
+	.probe2 = jc42_probe,
 	.remove		= jc42_remove,
-	.id_table	= jc42_id,
 	.detect		= jc42_detect,
 	.address_list	= normal_i2c,
 };
