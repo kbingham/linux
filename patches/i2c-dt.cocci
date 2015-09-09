@@ -61,7 +61,7 @@ identifier client;
 identifier id;
 @@
 static int probefunc(
-	struct i2c_client *client,
--	const struct i2c_device_id *id
+	struct i2c_client *client
+-	, const struct i2c_device_id *id
 	)
 	{ ... }
