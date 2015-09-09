@@ -8,14 +8,14 @@
 @ of_dev_id_present @
 identifier arr;
 @@
-static const struct of_device_id arr[] = { ... };
+struct of_device_id arr[] = { ... };
 
 // Remove the i2c_device_id array
 
 @ dev_id depends on of_dev_id_present @
 identifier arr;
 @@
-- static const struct i2c_device_id arr[] = { ... };
+- struct i2c_device_id arr[] = { ... };
 
 
 // Now remove the MODULE_DEVICE_TABLE entry
