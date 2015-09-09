@@ -53,12 +53,6 @@
 #define DS1374_REG_SR_AF	0x01 /* Alarm Flag */
 #define DS1374_REG_TCR		0x09 /* Trickle Charge */
 
-static const struct i2c_device_id ds1374_id[] = {
-	{ "ds1374", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ds1374_id);
-
 #ifdef CONFIG_OF
 static const struct of_device_id ds1374_of_match[] = {
 	{ .compatible = "dallas,ds1374" },
@@ -606,8 +600,7 @@ static struct notifier_block ds1374_wdt_notifier = {
  *
  *****************************************************************************
  */
-static int ds1374_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int ds1374_probe(struct i2c_client *client)
 {
 	struct ds1374 *ds1374;
 	int ret;
@@ -708,9 +701,8 @@ static struct i2c_driver ds1374_driver = {
 		.name = "rtc-ds1374",
 		.pm = &ds1374_pm,
 	},
-	.probe = ds1374_probe,
+	.probe2 = ds1374_probe,
 	.remove = ds1374_remove,
-	.id_table = ds1374_id,
 };
 
 module_i2c_driver(ds1374_driver);

@@ -527,8 +527,7 @@ static int hym8563_resume(struct device *dev)
 
 static SIMPLE_DEV_PM_OPS(hym8563_pm_ops, hym8563_suspend, hym8563_resume);
 
-static int hym8563_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int hym8563_probe(struct i2c_client *client)
 {
 	struct hym8563 *hym8563;
 	int ret;
@@ -584,12 +583,6 @@ static int hym8563_probe(struct i2c_client *client,
 	return 0;
 }
 
-static const struct i2c_device_id hym8563_id[] = {
-	{ "hym8563", 0 },
-	{},
-};
-MODULE_DEVICE_TABLE(i2c, hym8563_id);
-
 static const struct of_device_id hym8563_dt_idtable[] = {
 	{ .compatible = "haoyu,hym8563" },
 	{},
@@ -602,8 +595,7 @@ static struct i2c_driver hym8563_driver = {
 		.pm	= &hym8563_pm_ops,
 		.of_match_table	= hym8563_dt_idtable,
 	},
-	.probe		= hym8563_probe,
-	.id_table	= hym8563_id,
+	.probe2 = hym8563_probe,
 };
 
 module_i2c_driver(hym8563_driver);

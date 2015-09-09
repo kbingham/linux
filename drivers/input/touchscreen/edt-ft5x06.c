@@ -955,8 +955,7 @@ static inline int edt_ft5x06_i2c_ts_probe_dt(struct device *dev,
 }
 #endif
 
-static int edt_ft5x06_ts_probe(struct i2c_client *client,
-					 const struct i2c_device_id *id)
+static int edt_ft5x06_ts_probe(struct i2c_client *client)
 {
 	const struct edt_ft5x06_platform_data *pdata =
 						dev_get_platdata(&client->dev);
@@ -1116,12 +1115,6 @@ static int __maybe_unused edt_ft5x06_ts_resume(struct device *dev)
 static SIMPLE_DEV_PM_OPS(edt_ft5x06_ts_pm_ops,
 			 edt_ft5x06_ts_suspend, edt_ft5x06_ts_resume);
 
-static const struct i2c_device_id edt_ft5x06_ts_id[] = {
-	{ "edt-ft5x06", 0, },
-	{ /* sentinel */ }
-};
-MODULE_DEVICE_TABLE(i2c, edt_ft5x06_ts_id);
-
 #ifdef CONFIG_OF
 static const struct of_device_id edt_ft5x06_of_match[] = {
 	{ .compatible = "edt,edt-ft5206", },
@@ -1138,8 +1131,7 @@ static struct i2c_driver edt_ft5x06_ts_driver = {
 		.of_match_table = of_match_ptr(edt_ft5x06_of_match),
 		.pm = &edt_ft5x06_ts_pm_ops,
 	},
-	.id_table = edt_ft5x06_ts_id,
-	.probe    = edt_ft5x06_ts_probe,
+	.probe2 = edt_ft5x06_ts_probe,
 	.remove   = edt_ft5x06_ts_remove,
 };
 

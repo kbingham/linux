@@ -330,8 +330,7 @@ static int cap11xx_init_leds(struct device *dev,
 }
 #endif
 
-static int cap11xx_i2c_probe(struct i2c_client *i2c_client,
-			     const struct i2c_device_id *id)
+static int cap11xx_i2c_probe(struct i2c_client *i2c_client)
 {
 	struct device *dev = &i2c_client->dev;
 	struct cap11xx_priv *priv;
@@ -488,21 +487,12 @@ static const struct of_device_id cap11xx_dt_ids[] = {
 };
 MODULE_DEVICE_TABLE(of, cap11xx_dt_ids);
 
-static const struct i2c_device_id cap11xx_i2c_ids[] = {
-	{ "cap1106", CAP1106 },
-	{ "cap1126", CAP1126 },
-	{ "cap1188", CAP1188 },
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, cap11xx_i2c_ids);
-
 static struct i2c_driver cap11xx_i2c_driver = {
 	.driver = {
 		.name	= "cap11xx",
 		.of_match_table = cap11xx_dt_ids,
 	},
-	.id_table	= cap11xx_i2c_ids,
-	.probe		= cap11xx_i2c_probe,
+	.probe2 = cap11xx_i2c_probe,
 };
 
 module_i2c_driver(cap11xx_i2c_driver);

@@ -294,8 +294,7 @@ static const struct regmap_config pca9685_regmap_i2c_config = {
 	.cache_type = REGCACHE_NONE,
 };
 
-static int pca9685_pwm_probe(struct i2c_client *client,
-				const struct i2c_device_id *id)
+static int pca9685_pwm_probe(struct i2c_client *client)
 {
 	struct device_node *np = client->dev.of_node;
 	struct pca9685 *pca;
@@ -357,12 +356,6 @@ static int pca9685_pwm_remove(struct i2c_client *client)
 	return pwmchip_remove(&pca->chip);
 }
 
-static const struct i2c_device_id pca9685_id[] = {
-	{ "pca9685", 0 },
-	{ /* sentinel */ },
-};
-MODULE_DEVICE_TABLE(i2c, pca9685_id);
-
 static const struct of_device_id pca9685_dt_ids[] = {
 	{ .compatible = "nxp,pca9685-pwm", },
 	{ /* sentinel */ }
@@ -374,9 +367,8 @@ static struct i2c_driver pca9685_i2c_driver = {
 		.name = "pca9685-pwm",
 		.of_match_table = pca9685_dt_ids,
 	},
-	.probe = pca9685_pwm_probe,
+	.probe2 = pca9685_pwm_probe,
 	.remove = pca9685_pwm_remove,
-	.id_table = pca9685_id,
 };
 
 module_i2c_driver(pca9685_i2c_driver);

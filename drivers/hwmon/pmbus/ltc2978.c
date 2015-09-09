@@ -498,24 +498,6 @@ static int ltc2978_write_word_data(struct i2c_client *client, int page,
 	return ret;
 }
 
-static const struct i2c_device_id ltc2978_id[] = {
-	{"ltc2974", ltc2974},
-	{"ltc2975", ltc2975},
-	{"ltc2977", ltc2977},
-	{"ltc2978", ltc2978},
-	{"ltc2980", ltc2980},
-	{"ltc3880", ltc3880},
-	{"ltc3882", ltc3882},
-	{"ltc3883", ltc3883},
-	{"ltc3886", ltc3886},
-	{"ltc3887", ltc3887},
-	{"ltm2987", ltm2987},
-	{"ltm4675", ltm4675},
-	{"ltm4676", ltm4676},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, ltc2978_id);
-
 #if IS_ENABLED(CONFIG_SENSORS_LTC2978_REGULATOR)
 static const struct regulator_desc ltc2978_reg_desc[] = {
 	PMBUS_REGULATOR("vout", 0),
@@ -593,8 +575,7 @@ static int ltc2978_get_id(struct i2c_client *client)
 	return -ENODEV;
 }
 
-static int ltc2978_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int ltc2978_probe(struct i2c_client *client)
 {
 	int i, chip_id;
 	struct ltc2978_data *data;
@@ -780,9 +761,8 @@ static struct i2c_driver ltc2978_driver = {
 		   .name = "ltc2978",
 		   .of_match_table = of_match_ptr(ltc2978_of_match),
 		   },
-	.probe = ltc2978_probe,
+	.probe2 = ltc2978_probe,
 	.remove = pmbus_do_remove,
-	.id_table = ltc2978_id,
 };
 
 module_i2c_driver(ltc2978_driver);

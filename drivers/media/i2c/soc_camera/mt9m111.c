@@ -928,8 +928,7 @@ done:
 	return ret;
 }
 
-static int mt9m111_probe(struct i2c_client *client,
-			 const struct i2c_device_id *did)
+static int mt9m111_probe(struct i2c_client *client)
 {
 	struct mt9m111 *mt9m111;
 	struct i2c_adapter *adapter = to_i2c_adapter(client->dev.parent);
@@ -1031,20 +1030,13 @@ static const struct of_device_id mt9m111_of_match[] = {
 };
 MODULE_DEVICE_TABLE(of, mt9m111_of_match);
 
-static const struct i2c_device_id mt9m111_id[] = {
-	{ "mt9m111", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, mt9m111_id);
-
 static struct i2c_driver mt9m111_i2c_driver = {
 	.driver = {
 		.name = "mt9m111",
 		.of_match_table = of_match_ptr(mt9m111_of_match),
 	},
-	.probe		= mt9m111_probe,
+	.probe2 = mt9m111_probe,
 	.remove		= mt9m111_remove,
-	.id_table	= mt9m111_id,
 };
 
 module_i2c_driver(mt9m111_i2c_driver);

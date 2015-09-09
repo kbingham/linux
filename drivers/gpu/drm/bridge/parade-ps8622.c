@@ -555,8 +555,7 @@ static const struct of_device_id ps8622_devices[] = {
 };
 MODULE_DEVICE_TABLE(of, ps8622_devices);
 
-static int ps8622_probe(struct i2c_client *client,
-					const struct i2c_device_id *id)
+static int ps8622_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device_node *endpoint, *panel_node;
@@ -654,17 +653,8 @@ static int ps8622_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id ps8622_i2c_table[] = {
-	/* Device type, max_lane_count */
-	{"ps8622", 1},
-	{"ps8625", 2},
-	{},
-};
-MODULE_DEVICE_TABLE(i2c, ps8622_i2c_table);
-
 static struct i2c_driver ps8622_driver = {
-	.id_table	= ps8622_i2c_table,
-	.probe		= ps8622_probe,
+	.probe2 = ps8622_probe,
 	.remove		= ps8622_remove,
 	.driver		= {
 		.name	= "ps8622",

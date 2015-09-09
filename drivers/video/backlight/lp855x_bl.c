@@ -390,7 +390,7 @@ static int lp855x_parse_dt(struct lp855x *lp)
 }
 #endif
 
-static int lp855x_probe(struct i2c_client *cl, const struct i2c_device_id *id)
+static int lp855x_probe(struct i2c_client *cl)
 {
 	struct lp855x *lp;
 	int ret;
@@ -484,26 +484,13 @@ static const struct of_device_id lp855x_dt_ids[] = {
 };
 MODULE_DEVICE_TABLE(of, lp855x_dt_ids);
 
-static const struct i2c_device_id lp855x_ids[] = {
-	{"lp8550", LP8550},
-	{"lp8551", LP8551},
-	{"lp8552", LP8552},
-	{"lp8553", LP8553},
-	{"lp8555", LP8555},
-	{"lp8556", LP8556},
-	{"lp8557", LP8557},
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, lp855x_ids);
-
 static struct i2c_driver lp855x_driver = {
 	.driver = {
 		   .name = "lp855x",
 		   .of_match_table = of_match_ptr(lp855x_dt_ids),
 		   },
-	.probe = lp855x_probe,
+	.probe2 = lp855x_probe,
 	.remove = lp855x_remove,
-	.id_table = lp855x_ids,
 };
 
 module_i2c_driver(lp855x_driver);

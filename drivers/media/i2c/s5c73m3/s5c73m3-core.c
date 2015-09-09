@@ -1656,8 +1656,7 @@ static int s5c73m3_get_platform_data(struct s5c73m3 *state)
 	return 0;
 }
 
-static int s5c73m3_probe(struct i2c_client *client,
-				const struct i2c_device_id *id)
+static int s5c73m3_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct v4l2_subdev *sd;
@@ -1792,12 +1791,6 @@ static int s5c73m3_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id s5c73m3_id[] = {
-	{ DRIVER_NAME, 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, s5c73m3_id);
-
 #ifdef CONFIG_OF
 static const struct of_device_id s5c73m3_of_match[] = {
 	{ .compatible = "samsung,s5c73m3" },
@@ -1811,9 +1804,8 @@ static struct i2c_driver s5c73m3_i2c_driver = {
 		.of_match_table = of_match_ptr(s5c73m3_of_match),
 		.name	= DRIVER_NAME,
 	},
-	.probe		= s5c73m3_probe,
+	.probe2 = s5c73m3_probe,
 	.remove		= s5c73m3_remove,
-	.id_table	= s5c73m3_id,
 };
 
 module_i2c_driver(s5c73m3_i2c_driver);

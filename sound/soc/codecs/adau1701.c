@@ -785,8 +785,7 @@ static const struct regmap_config adau1701_regmap = {
 	.reg_read		= adau1701_reg_read,
 };
 
-static int adau1701_i2c_probe(struct i2c_client *client,
-			      const struct i2c_device_id *id)
+static int adau1701_i2c_probe(struct i2c_client *client)
 {
 	struct adau1701 *adau1701;
 	struct device *dev = &client->dev;
@@ -903,23 +902,13 @@ static int adau1701_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id adau1701_i2c_id[] = {
-	{ "adau1401", 0 },
-	{ "adau1401a", 0 },
-	{ "adau1701", 0 },
-	{ "adau1702", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, adau1701_i2c_id);
-
 static struct i2c_driver adau1701_i2c_driver = {
 	.driver = {
 		.name	= "adau1701",
 		.of_match_table	= of_match_ptr(adau1701_dt_ids),
 	},
-	.probe		= adau1701_i2c_probe,
+	.probe2 = adau1701_i2c_probe,
 	.remove		= adau1701_i2c_remove,
-	.id_table	= adau1701_i2c_id,
 };
 
 module_i2c_driver(adau1701_i2c_driver);

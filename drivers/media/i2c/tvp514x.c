@@ -1043,7 +1043,7 @@ done:
  * device.
  */
 static int
-tvp514x_probe(struct i2c_client *client, const struct i2c_device_id *id)
+tvp514x_probe(struct i2c_client *client)
 {
 	struct tvp514x_platform_data *pdata = tvp514x_get_pdata(client);
 	struct tvp514x_decoder *decoder;
@@ -1201,22 +1201,6 @@ static const struct tvp514x_reg tvp514xm_init_reg_seq[] = {
 	{TOK_TERM, 0, 0},
 };
 
-/**
- * I2C Device Table -
- *
- * name - Name of the actual device/chip.
- * driver_data - Driver data
- */
-static const struct i2c_device_id tvp514x_id[] = {
-	{"tvp5146", (unsigned long)tvp5146_init_reg_seq},
-	{"tvp5146m2", (unsigned long)tvp514xm_init_reg_seq},
-	{"tvp5147", (unsigned long)tvp5147_init_reg_seq},
-	{"tvp5147m1", (unsigned long)tvp514xm_init_reg_seq},
-	{},
-};
-
-MODULE_DEVICE_TABLE(i2c, tvp514x_id);
-
 #if IS_ENABLED(CONFIG_OF)
 static const struct of_device_id tvp514x_of_match[] = {
 	{ .compatible = "ti,tvp5146", },
@@ -1234,9 +1218,8 @@ static struct i2c_driver tvp514x_driver = {
 		.owner = THIS_MODULE,
 		.name = TVP514X_MODULE_NAME,
 	},
-	.probe = tvp514x_probe,
+	.probe2 = tvp514x_probe,
 	.remove = tvp514x_remove,
-	.id_table = tvp514x_id,
 };
 
 module_i2c_driver(tvp514x_driver);

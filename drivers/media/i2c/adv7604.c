@@ -2778,14 +2778,6 @@ static const struct adv76xx_chip_info adv76xx_chip_info[] = {
 	},
 };
 
-static const struct i2c_device_id adv76xx_i2c_id[] = {
-	{ "adv7604", (kernel_ulong_t)&adv76xx_chip_info[ADV7604] },
-	{ "adv7611", (kernel_ulong_t)&adv76xx_chip_info[ADV7611] },
-	{ "adv7612", (kernel_ulong_t)&adv76xx_chip_info[ADV7612] },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, adv76xx_i2c_id);
-
 static const struct of_device_id adv76xx_of_id[] __maybe_unused = {
 	{ .compatible = "adi,adv7611", .data = &adv76xx_chip_info[ADV7611] },
 	{ .compatible = "adi,adv7612", .data = &adv76xx_chip_info[ADV7612] },
@@ -3003,8 +2995,7 @@ static int configure_regmaps(struct adv76xx_state *state)
 	return 0;
 }
 
-static int adv76xx_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int adv76xx_probe(struct i2c_client *client)
 {
 	static const struct v4l2_dv_timings cea640x480 =
 		V4L2_DV_BT_CEA_640X480P59_94;
@@ -3265,9 +3256,8 @@ static struct i2c_driver adv76xx_driver = {
 		.name = "adv7604",
 		.of_match_table = of_match_ptr(adv76xx_of_id),
 	},
-	.probe = adv76xx_probe,
+	.probe2 = adv76xx_probe,
 	.remove = adv76xx_remove,
-	.id_table = adv76xx_i2c_id,
 };
 
 module_i2c_driver(adv76xx_driver);

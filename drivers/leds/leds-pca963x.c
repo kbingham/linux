@@ -87,15 +87,6 @@ static struct pca963x_chipdef pca963x_chipdefs[] = {
 #define PCA963X_BLINK_PERIOD_MIN	42
 #define PCA963X_BLINK_PERIOD_MAX	10667
 
-static const struct i2c_device_id pca963x_id[] = {
-	{ "pca9632", pca9633 },
-	{ "pca9633", pca9633 },
-	{ "pca9634", pca9634 },
-	{ "pca9635", pca9635 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, pca963x_id);
-
 enum pca963x_cmd {
 	BRIGHTNESS_SET,
 	BLINK_SET,
@@ -341,8 +332,7 @@ pca963x_dt_init(struct i2c_client *client, struct pca963x_chipdef *chip)
 }
 #endif
 
-static int pca963x_probe(struct i2c_client *client,
-					const struct i2c_device_id *id)
+static int pca963x_probe(struct i2c_client *client)
 {
 	struct pca963x *pca963x_chip;
 	struct pca963x_led *pca963x;
@@ -461,9 +451,8 @@ static struct i2c_driver pca963x_driver = {
 		.name	= "leds-pca963x",
 		.of_match_table = of_match_ptr(of_pca963x_match),
 	},
-	.probe	= pca963x_probe,
+	.probe2 = pca963x_probe,
 	.remove	= pca963x_remove,
-	.id_table = pca963x_id,
 };
 
 module_i2c_driver(pca963x_driver);

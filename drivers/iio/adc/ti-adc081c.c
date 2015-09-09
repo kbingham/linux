@@ -65,8 +65,7 @@ static const struct iio_info adc081c_info = {
 	.driver_module = THIS_MODULE,
 };
 
-static int adc081c_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int adc081c_probe(struct i2c_client *client)
 {
 	struct iio_dev *iio;
 	struct adc081c *adc;
@@ -123,12 +122,6 @@ static int adc081c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id adc081c_id[] = {
-	{ "adc081c", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, adc081c_id);
-
 #ifdef CONFIG_OF
 static const struct of_device_id adc081c_of_match[] = {
 	{ .compatible = "ti,adc081c" },
@@ -142,9 +135,8 @@ static struct i2c_driver adc081c_driver = {
 		.name = "adc081c",
 		.of_match_table = of_match_ptr(adc081c_of_match),
 	},
-	.probe = adc081c_probe,
+	.probe2 = adc081c_probe,
 	.remove = adc081c_remove,
-	.id_table = adc081c_id,
 };
 module_i2c_driver(adc081c_driver);
 

@@ -841,8 +841,7 @@ static int mma8452_reset(struct i2c_client *client)
 	return -ETIMEDOUT;
 }
 
-static int mma8452_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int mma8452_probe(struct i2c_client *client)
 {
 	struct mma8452_data *data;
 	struct iio_dev *indio_dev;
@@ -986,12 +985,6 @@ static SIMPLE_DEV_PM_OPS(mma8452_pm_ops, mma8452_suspend, mma8452_resume);
 #define MMA8452_PM_OPS NULL
 #endif
 
-static const struct i2c_device_id mma8452_id[] = {
-	{ "mma8452", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, mma8452_id);
-
 static const struct of_device_id mma8452_dt_ids[] = {
 	{ .compatible = "fsl,mma8452" },
 	{ }
@@ -1004,9 +997,8 @@ static struct i2c_driver mma8452_driver = {
 		.of_match_table = of_match_ptr(mma8452_dt_ids),
 		.pm	= MMA8452_PM_OPS,
 	},
-	.probe = mma8452_probe,
+	.probe2 = mma8452_probe,
 	.remove = mma8452_remove,
-	.id_table = mma8452_id,
 };
 module_i2c_driver(mma8452_driver);
 

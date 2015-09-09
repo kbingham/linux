@@ -188,8 +188,7 @@ static const struct rtc_class_ops pcf2127_rtc_ops = {
 	.set_time	= pcf2127_rtc_set_time,
 };
 
-static int pcf2127_probe(struct i2c_client *client,
-				const struct i2c_device_id *id)
+static int pcf2127_probe(struct i2c_client *client)
 {
 	struct pcf2127 *pcf2127;
 
@@ -214,12 +213,6 @@ static int pcf2127_probe(struct i2c_client *client,
 	return PTR_ERR_OR_ZERO(pcf2127->rtc);
 }
 
-static const struct i2c_device_id pcf2127_id[] = {
-	{ "pcf2127", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, pcf2127_id);
-
 #ifdef CONFIG_OF
 static const struct of_device_id pcf2127_of_match[] = {
 	{ .compatible = "nxp,pcf2127" },
@@ -233,8 +226,7 @@ static struct i2c_driver pcf2127_driver = {
 		.name	= "rtc-pcf2127",
 		.of_match_table = of_match_ptr(pcf2127_of_match),
 	},
-	.probe		= pcf2127_probe,
-	.id_table	= pcf2127_id,
+	.probe2 = pcf2127_probe,
 };
 
 module_i2c_driver(pcf2127_driver);

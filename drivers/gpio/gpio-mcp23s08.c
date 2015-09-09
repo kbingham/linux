@@ -775,8 +775,7 @@ MODULE_DEVICE_TABLE(of, mcp23s08_i2c_of_match);
 
 #if IS_ENABLED(CONFIG_I2C)
 
-static int mcp230xx_probe(struct i2c_client *client,
-				    const struct i2c_device_id *id)
+static int mcp230xx_probe(struct i2c_client *client)
 {
 	struct mcp23s08_platform_data *pdata, local_pdata;
 	struct mcp23s08 *mcp;
@@ -838,22 +837,14 @@ static int mcp230xx_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id mcp230xx_id[] = {
-	{ "mcp23008", MCP_TYPE_008 },
-	{ "mcp23017", MCP_TYPE_017 },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, mcp230xx_id);
-
 static struct i2c_driver mcp230xx_driver = {
 	.driver = {
 		.name	= "mcp230xx",
 		.owner	= THIS_MODULE,
 		.of_match_table = of_match_ptr(mcp23s08_i2c_of_match),
 	},
-	.probe		= mcp230xx_probe,
+	.probe2 = mcp230xx_probe,
 	.remove		= mcp230xx_remove,
-	.id_table	= mcp230xx_id,
 };
 
 static int __init mcp23s08_i2c_init(void)

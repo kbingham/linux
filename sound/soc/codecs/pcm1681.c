@@ -297,14 +297,7 @@ static struct snd_soc_codec_driver soc_codec_dev_pcm1681 = {
 	.num_dapm_routes	= ARRAY_SIZE(pcm1681_dapm_routes),
 };
 
-static const struct i2c_device_id pcm1681_i2c_id[] = {
-	{"pcm1681", 0},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, pcm1681_i2c_id);
-
-static int pcm1681_i2c_probe(struct i2c_client *client,
-			      const struct i2c_device_id *id)
+static int pcm1681_i2c_probe(struct i2c_client *client)
 {
 	int ret;
 	struct pcm1681_private *priv;
@@ -337,8 +330,7 @@ static struct i2c_driver pcm1681_i2c_driver = {
 		.name	= "pcm1681",
 		.of_match_table = of_match_ptr(pcm1681_dt_ids),
 	},
-	.id_table	= pcm1681_i2c_id,
-	.probe		= pcm1681_i2c_probe,
+	.probe2 = pcm1681_i2c_probe,
 	.remove		= pcm1681_i2c_remove,
 };
 

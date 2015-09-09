@@ -1158,8 +1158,7 @@ out_unlock:
 	return ret;
 }
 
-static int adv7180_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int adv7180_probe(struct i2c_client *client)
 {
 	struct adv7180_state *state;
 	struct v4l2_subdev *sd;
@@ -1276,20 +1275,6 @@ static int adv7180_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id adv7180_id[] = {
-	{ "adv7180", (kernel_ulong_t)&adv7180_info },
-	{ "adv7182", (kernel_ulong_t)&adv7182_info },
-	{ "adv7280", (kernel_ulong_t)&adv7280_info },
-	{ "adv7280-m", (kernel_ulong_t)&adv7280_m_info },
-	{ "adv7281", (kernel_ulong_t)&adv7281_info },
-	{ "adv7281-m", (kernel_ulong_t)&adv7281_m_info },
-	{ "adv7281-ma", (kernel_ulong_t)&adv7281_ma_info },
-	{ "adv7282", (kernel_ulong_t)&adv7282_info },
-	{ "adv7282-m", (kernel_ulong_t)&adv7282_m_info },
-	{},
-};
-MODULE_DEVICE_TABLE(i2c, adv7180_id);
-
 #ifdef CONFIG_PM_SLEEP
 static int adv7180_suspend(struct device *dev)
 {
@@ -1340,9 +1325,8 @@ static struct i2c_driver adv7180_driver = {
 		   .pm = ADV7180_PM_OPS,
 		   .of_match_table = of_match_ptr(adv7180_of_id),
 		   },
-	.probe = adv7180_probe,
+	.probe2 = adv7180_probe,
 	.remove = adv7180_remove,
-	.id_table = adv7180_id,
 };
 
 module_i2c_driver(adv7180_driver);

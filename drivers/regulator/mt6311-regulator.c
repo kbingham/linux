@@ -99,8 +99,7 @@ static const struct regulator_desc mt6311_regulators[] = {
 /*
  * I2C driver interface functions
  */
-static int mt6311_i2c_probe(struct i2c_client *i2c,
-		const struct i2c_device_id *id)
+static int mt6311_i2c_probe(struct i2c_client *i2c)
 {
 	struct regulator_config config = { };
 	struct regulator_dev *rdev;
@@ -148,12 +147,6 @@ static int mt6311_i2c_probe(struct i2c_client *i2c,
 	return 0;
 }
 
-static const struct i2c_device_id mt6311_i2c_id[] = {
-	{"mt6311", 0},
-	{},
-};
-MODULE_DEVICE_TABLE(i2c, mt6311_i2c_id);
-
 #ifdef CONFIG_OF
 static const struct of_device_id mt6311_dt_ids[] = {
 	{ .compatible = "mediatek,mt6311-regulator",
@@ -168,8 +161,7 @@ static struct i2c_driver mt6311_regulator_driver = {
 		.name = "mt6311",
 		.of_match_table = of_match_ptr(mt6311_dt_ids),
 	},
-	.probe = mt6311_i2c_probe,
-	.id_table = mt6311_i2c_id,
+	.probe2 = mt6311_i2c_probe,
 };
 
 module_i2c_driver(mt6311_regulator_driver);

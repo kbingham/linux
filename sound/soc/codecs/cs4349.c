@@ -277,8 +277,7 @@ static const struct regmap_config cs4349_regmap = {
 	.cache_type		= REGCACHE_RBTREE,
 };
 
-static int cs4349_i2c_probe(struct i2c_client *client,
-				      const struct i2c_device_id *id)
+static int cs4349_i2c_probe(struct i2c_client *client)
 {
 	struct cs4349_private *cs4349;
 	int ret;
@@ -368,20 +367,12 @@ static const struct of_device_id cs4349_of_match[] = {
 
 MODULE_DEVICE_TABLE(of, cs4349_of_match);
 
-static const struct i2c_device_id cs4349_i2c_id[] = {
-	{"cs4349", 0},
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, cs4349_i2c_id);
-
 static struct i2c_driver cs4349_i2c_driver = {
 	.driver = {
 		.name		= "cs4349",
 		.of_match_table	= cs4349_of_match,
 	},
-	.id_table	= cs4349_i2c_id,
-	.probe		= cs4349_i2c_probe,
+	.probe2 = cs4349_i2c_probe,
 	.remove		= cs4349_i2c_remove,
 };
 

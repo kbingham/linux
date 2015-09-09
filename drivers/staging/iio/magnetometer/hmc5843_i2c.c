@@ -56,8 +56,7 @@ static const struct regmap_config hmc5843_i2c_regmap_config = {
 	.cache_type = REGCACHE_RBTREE,
 };
 
-static int hmc5843_i2c_probe(struct i2c_client *cli,
-			     const struct i2c_device_id *id)
+static int hmc5843_i2c_probe(struct i2c_client *cli)
 {
 	return hmc5843_common_probe(&cli->dev,
 			devm_regmap_init_i2c(cli, &hmc5843_i2c_regmap_config),
@@ -68,15 +67,6 @@ static int hmc5843_i2c_remove(struct i2c_client *client)
 {
 	return hmc5843_common_remove(&client->dev);
 }
-
-static const struct i2c_device_id hmc5843_id[] = {
-	{ "hmc5843", HMC5843_ID },
-	{ "hmc5883", HMC5883_ID },
-	{ "hmc5883l", HMC5883L_ID },
-	{ "hmc5983", HMC5983_ID },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, hmc5843_id);
 
 static const struct of_device_id hmc5843_of_match[] = {
 	{ .compatible = "honeywell,hmc5843", .data = (void *)HMC5843_ID },
@@ -93,8 +83,7 @@ static struct i2c_driver hmc5843_driver = {
 		.pm	= HMC5843_PM_OPS,
 		.of_match_table = hmc5843_of_match,
 	},
-	.id_table	= hmc5843_id,
-	.probe		= hmc5843_i2c_probe,
+	.probe2 = hmc5843_i2c_probe,
 	.remove		= hmc5843_i2c_remove,
 };
 module_i2c_driver(hmc5843_driver);

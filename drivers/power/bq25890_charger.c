@@ -792,8 +792,7 @@ static int bq25890_fw_probe(struct bq25890_device *bq)
 	return 0;
 }
 
-static int bq25890_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int bq25890_probe(struct i2c_client *client)
 {
 	struct i2c_adapter *adapter = to_i2c_adapter(client->dev.parent);
 	struct device *dev = &client->dev;
@@ -958,12 +957,6 @@ static const struct dev_pm_ops bq25890_pm = {
 	SET_SYSTEM_SLEEP_PM_OPS(bq25890_suspend, bq25890_resume)
 };
 
-static const struct i2c_device_id bq25890_i2c_ids[] = {
-	{ "bq25890", 0 },
-	{},
-};
-MODULE_DEVICE_TABLE(i2c, bq25890_i2c_ids);
-
 static const struct of_device_id bq25890_of_match[] = {
 	{ .compatible = "ti,bq25890", },
 	{ },
@@ -983,9 +976,8 @@ static struct i2c_driver bq25890_driver = {
 		.acpi_match_table = ACPI_PTR(bq25890_acpi_match),
 		.pm = &bq25890_pm,
 	},
-	.probe = bq25890_probe,
+	.probe2 = bq25890_probe,
 	.remove = bq25890_remove,
-	.id_table = bq25890_i2c_ids,
 };
 module_i2c_driver(bq25890_driver);
 

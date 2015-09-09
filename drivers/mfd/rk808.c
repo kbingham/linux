@@ -167,8 +167,7 @@ static void rk808_device_shutdown(void)
 		dev_err(&rk808_i2c_client->dev, "power off error!\n");
 }
 
-static int rk808_probe(struct i2c_client *client,
-		       const struct i2c_device_id *id)
+static int rk808_probe(struct i2c_client *client)
 {
 	struct device_node *np = client->dev.of_node;
 	struct rk808 *rk808;
@@ -252,20 +251,13 @@ static const struct of_device_id rk808_of_match[] = {
 };
 MODULE_DEVICE_TABLE(of, rk808_of_match);
 
-static const struct i2c_device_id rk808_ids[] = {
-	{ "rk808" },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, rk808_ids);
-
 static struct i2c_driver rk808_i2c_driver = {
 	.driver = {
 		.name = "rk808",
 		.of_match_table = rk808_of_match,
 	},
-	.probe    = rk808_probe,
+	.probe2 = rk808_probe,
 	.remove   = rk808_remove,
-	.id_table = rk808_ids,
 };
 
 module_i2c_driver(rk808_i2c_driver);

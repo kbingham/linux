@@ -509,8 +509,7 @@ static struct lp55xx_device_config lp5562_cfg = {
 	.dev_attr_group     = &lp5562_group,
 };
 
-static int lp5562_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int lp5562_probe(struct i2c_client *client)
 {
 	int ret;
 	struct lp55xx_chip *chip;
@@ -584,12 +583,6 @@ static int lp5562_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id lp5562_id[] = {
-	{ "lp5562", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, lp5562_id);
-
 #ifdef CONFIG_OF
 static const struct of_device_id of_lp5562_leds_match[] = {
 	{ .compatible = "ti,lp5562", },
@@ -604,9 +597,8 @@ static struct i2c_driver lp5562_driver = {
 		.name	= "lp5562",
 		.of_match_table = of_match_ptr(of_lp5562_leds_match),
 	},
-	.probe		= lp5562_probe,
+	.probe2 = lp5562_probe,
 	.remove		= lp5562_remove,
-	.id_table	= lp5562_id,
 };
 
 module_i2c_driver(lp5562_driver);

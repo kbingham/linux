@@ -435,8 +435,7 @@ static struct regmap_config da9062_regmap_config = {
 	.volatile_table = &da9062_aa_volatile_table,
 };
 
-static int da9062_i2c_probe(struct i2c_client *i2c,
-	const struct i2c_device_id *id)
+static int da9062_i2c_probe(struct i2c_client *i2c)
 {
 	struct da9062 *chip;
 	unsigned int irq_base;
@@ -504,12 +503,6 @@ static int da9062_i2c_remove(struct i2c_client *i2c)
 	return 0;
 }
 
-static const struct i2c_device_id da9062_i2c_id[] = {
-	{ "da9062", 0 },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, da9062_i2c_id);
-
 static const struct of_device_id da9062_dt_ids[] = {
 	{ .compatible = "dlg,da9062", },
 	{ }
@@ -521,9 +514,8 @@ static struct i2c_driver da9062_i2c_driver = {
 		.name = "da9062",
 		.of_match_table = of_match_ptr(da9062_dt_ids),
 	},
-	.probe    = da9062_i2c_probe,
+	.probe2 = da9062_i2c_probe,
 	.remove   = da9062_i2c_remove,
-	.id_table = da9062_i2c_id,
 };
 
 module_i2c_driver(da9062_i2c_driver);

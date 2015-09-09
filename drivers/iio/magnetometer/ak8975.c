@@ -724,8 +724,7 @@ static const char *ak8975_match_acpi_device(struct device *dev,
 	return dev_name(dev);
 }
 
-static int ak8975_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int ak8975_probe(struct i2c_client *client)
 {
 	struct ak8975_data *data;
 	struct iio_dev *indio_dev;
@@ -810,17 +809,6 @@ static int ak8975_probe(struct i2c_client *client,
 	return devm_iio_device_register(&client->dev, indio_dev);
 }
 
-static const struct i2c_device_id ak8975_id[] = {
-	{"ak8975", AK8975},
-	{"ak8963", AK8963},
-	{"AK8963", AK8963},
-	{"ak09911", AK09911},
-	{"ak09912", AK09912},
-	{}
-};
-
-MODULE_DEVICE_TABLE(i2c, ak8975_id);
-
 static const struct of_device_id ak8975_of_match[] = {
 	{ .compatible = "asahi-kasei,ak8975", },
 	{ .compatible = "ak8975", },
@@ -840,8 +828,7 @@ static struct i2c_driver ak8975_driver = {
 		.of_match_table = of_match_ptr(ak8975_of_match),
 		.acpi_match_table = ACPI_PTR(ak_acpi_match),
 	},
-	.probe		= ak8975_probe,
-	.id_table	= ak8975_id,
+	.probe2 = ak8975_probe,
 };
 module_i2c_driver(ak8975_driver);
 

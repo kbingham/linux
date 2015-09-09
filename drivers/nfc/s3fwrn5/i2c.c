@@ -222,8 +222,7 @@ static int s3fwrn5_i2c_parse_dt(struct i2c_client *client)
 	return 0;
 }
 
-static int s3fwrn5_i2c_probe(struct i2c_client *client,
-				  const struct i2c_device_id *id)
+static int s3fwrn5_i2c_probe(struct i2c_client *client)
 {
 	struct s3fwrn5_i2c_phy *phy;
 	int ret;
@@ -276,12 +275,6 @@ static int s3fwrn5_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static struct i2c_device_id s3fwrn5_i2c_id_table[] = {
-	{S3FWRN5_I2C_DRIVER_NAME, 0},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, s3fwrn5_i2c_id_table);
-
 static const struct of_device_id of_s3fwrn5_i2c_match[] = {
 	{ .compatible = "samsung,s3fwrn5-i2c", },
 	{}
@@ -294,9 +287,8 @@ static struct i2c_driver s3fwrn5_i2c_driver = {
 		.name = S3FWRN5_I2C_DRIVER_NAME,
 		.of_match_table = of_match_ptr(of_s3fwrn5_i2c_match),
 	},
-	.probe = s3fwrn5_i2c_probe,
+	.probe2 = s3fwrn5_i2c_probe,
 	.remove = s3fwrn5_i2c_remove,
-	.id_table = s3fwrn5_i2c_id_table,
 };
 
 module_i2c_driver(s3fwrn5_i2c_driver);

@@ -581,8 +581,7 @@ static const struct ak4642_drvdata ak4648_drvdata = {
 };
 
 static const struct of_device_id ak4642_of_match[];
-static int ak4642_i2c_probe(struct i2c_client *i2c,
-			    const struct i2c_device_id *id)
+static int ak4642_i2c_probe(struct i2c_client *i2c)
 {
 	struct device_node *np = i2c->dev.of_node;
 	const struct ak4642_drvdata *drvdata = NULL;
@@ -634,22 +633,13 @@ static const struct of_device_id ak4642_of_match[] = {
 };
 MODULE_DEVICE_TABLE(of, ak4642_of_match);
 
-static const struct i2c_device_id ak4642_i2c_id[] = {
-	{ "ak4642", (kernel_ulong_t)&ak4642_drvdata },
-	{ "ak4643", (kernel_ulong_t)&ak4643_drvdata },
-	{ "ak4648", (kernel_ulong_t)&ak4648_drvdata },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ak4642_i2c_id);
-
 static struct i2c_driver ak4642_i2c_driver = {
 	.driver = {
 		.name = "ak4642-codec",
 		.of_match_table = ak4642_of_match,
 	},
-	.probe		= ak4642_i2c_probe,
+	.probe2 = ak4642_i2c_probe,
 	.remove		= ak4642_i2c_remove,
-	.id_table	= ak4642_i2c_id,
 };
 
 module_i2c_driver(ak4642_i2c_driver);

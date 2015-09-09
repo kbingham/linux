@@ -485,8 +485,7 @@ static const struct regmap_config mmc35240_regmap_config = {
 	.num_reg_defaults = ARRAY_SIZE(mmc35240_reg_defaults),
 };
 
-static int mmc35240_probe(struct i2c_client *client,
-			  const struct i2c_device_id *id)
+static int mmc35240_probe(struct i2c_client *client)
 {
 	struct mmc35240_data *data;
 	struct iio_dev *indio_dev;
@@ -571,12 +570,6 @@ static const struct acpi_device_id mmc35240_acpi_match[] = {
 };
 MODULE_DEVICE_TABLE(acpi, mmc35240_acpi_match);
 
-static const struct i2c_device_id mmc35240_id[] = {
-	{"mmc35240", 0},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, mmc35240_id);
-
 static struct i2c_driver mmc35240_driver = {
 	.driver = {
 		.name = MMC35240_DRV_NAME,
@@ -584,8 +577,7 @@ static struct i2c_driver mmc35240_driver = {
 		.pm = &mmc35240_pm_ops,
 		.acpi_match_table = ACPI_PTR(mmc35240_acpi_match),
 	},
-	.probe		= mmc35240_probe,
-	.id_table	= mmc35240_id,
+	.probe2 = mmc35240_probe,
 };
 
 module_i2c_driver(mmc35240_driver);

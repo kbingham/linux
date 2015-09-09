@@ -618,8 +618,7 @@ static const struct of_device_id wm8994_of_match[] = {
 };
 MODULE_DEVICE_TABLE(of, wm8994_of_match);
 
-static int wm8994_i2c_probe(struct i2c_client *i2c,
-				      const struct i2c_device_id *id)
+static int wm8994_i2c_probe(struct i2c_client *i2c)
 {
 	const struct of_device_id *of_id;
 	struct wm8994 *wm8994;
@@ -661,15 +660,6 @@ static int wm8994_i2c_remove(struct i2c_client *i2c)
 	return 0;
 }
 
-static const struct i2c_device_id wm8994_i2c_id[] = {
-	{ "wm1811", WM1811 },
-	{ "wm1811a", WM1811 },
-	{ "wm8994", WM8994 },
-	{ "wm8958", WM8958 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, wm8994_i2c_id);
-
 static const struct dev_pm_ops wm8994_pm_ops = {
 	SET_RUNTIME_PM_OPS(wm8994_suspend, wm8994_resume, NULL)
 };
@@ -680,9 +670,8 @@ static struct i2c_driver wm8994_i2c_driver = {
 		.pm = &wm8994_pm_ops,
 		.of_match_table = of_match_ptr(wm8994_of_match),
 	},
-	.probe = wm8994_i2c_probe,
+	.probe2 = wm8994_i2c_probe,
 	.remove = wm8994_i2c_remove,
-	.id_table = wm8994_i2c_id,
 };
 
 module_i2c_driver(wm8994_i2c_driver);

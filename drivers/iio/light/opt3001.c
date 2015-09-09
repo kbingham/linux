@@ -690,8 +690,7 @@ out:
 	return IRQ_HANDLED;
 }
 
-static int opt3001_probe(struct i2c_client *client,
-		const struct i2c_device_id *id)
+static int opt3001_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 
@@ -774,21 +773,14 @@ static int opt3001_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id opt3001_id[] = {
-	{ "opt3001", 0 },
-	{ } /* Terminating Entry */
-};
-MODULE_DEVICE_TABLE(i2c, opt3001_id);
-
 static const struct of_device_id opt3001_of_match[] = {
 	{ .compatible = "ti,opt3001" },
 	{ }
 };
 
 static struct i2c_driver opt3001_driver = {
-	.probe = opt3001_probe,
+	.probe2 = opt3001_probe,
 	.remove = opt3001_remove,
-	.id_table = opt3001_id,
 
 	.driver = {
 		.name = "opt3001",

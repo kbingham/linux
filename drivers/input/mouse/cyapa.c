@@ -1250,8 +1250,7 @@ static void cyapa_disable_regulator(void *data)
 	regulator_disable(cyapa->vcc);
 }
 
-static int cyapa_probe(struct i2c_client *client,
-		       const struct i2c_device_id *dev_id)
+static int cyapa_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct cyapa *cyapa;
@@ -1472,12 +1471,6 @@ static const struct dev_pm_ops cyapa_pm_ops = {
 	SET_RUNTIME_PM_OPS(cyapa_runtime_suspend, cyapa_runtime_resume, NULL)
 };
 
-static const struct i2c_device_id cyapa_id_table[] = {
-	{ "cyapa", 0 },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, cyapa_id_table);
-
 #ifdef CONFIG_ACPI
 static const struct acpi_device_id cyapa_acpi_id[] = {
 	{ "CYAP0000", 0 },  /* Gen3 trackpad with 0x67 I2C address. */
@@ -1504,8 +1497,7 @@ static struct i2c_driver cyapa_driver = {
 		.of_match_table = of_match_ptr(cyapa_of_match),
 	},
 
-	.probe = cyapa_probe,
-	.id_table = cyapa_id_table,
+	.probe2 = cyapa_probe,
 };
 
 module_i2c_driver(cyapa_driver);

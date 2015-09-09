@@ -372,8 +372,7 @@ static struct snd_soc_dai_driver tas571x_dai = {
 
 static const struct of_device_id tas571x_of_match[];
 
-static int tas571x_i2c_probe(struct i2c_client *client,
-			     const struct i2c_device_id *id)
+static int tas571x_i2c_probe(struct i2c_client *client)
 {
 	struct tas571x_private *priv;
 	struct device *dev = &client->dev;
@@ -490,22 +489,13 @@ static const struct of_device_id tas571x_of_match[] = {
 };
 MODULE_DEVICE_TABLE(of, tas571x_of_match);
 
-static const struct i2c_device_id tas571x_i2c_id[] = {
-	{ "tas5711", 0 },
-	{ "tas5717", 0 },
-	{ "tas5719", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, tas571x_i2c_id);
-
 static struct i2c_driver tas571x_i2c_driver = {
 	.driver = {
 		.name = "tas571x",
 		.of_match_table = of_match_ptr(tas571x_of_match),
 	},
-	.probe = tas571x_i2c_probe,
+	.probe2 = tas571x_i2c_probe,
 	.remove = tas571x_i2c_remove,
-	.id_table = tas571x_i2c_id,
 };
 module_i2c_driver(tas571x_i2c_driver);
 

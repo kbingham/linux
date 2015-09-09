@@ -390,8 +390,7 @@ static const struct iio_info nau7802_info = {
 	.attrs = &nau7802_attribute_group,
 };
 
-static int nau7802_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int nau7802_probe(struct i2c_client *client)
 {
 	struct iio_dev *indio_dev;
 	struct nau7802_state *st;
@@ -552,12 +551,6 @@ static int nau7802_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id nau7802_i2c_id[] = {
-	{ "nau7802", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, nau7802_i2c_id);
-
 static const struct of_device_id nau7802_dt_ids[] = {
 	{ .compatible = "nuvoton,nau7802" },
 	{},
@@ -565,9 +558,8 @@ static const struct of_device_id nau7802_dt_ids[] = {
 MODULE_DEVICE_TABLE(of, nau7802_dt_ids);
 
 static struct i2c_driver nau7802_driver = {
-	.probe = nau7802_probe,
+	.probe2 = nau7802_probe,
 	.remove = nau7802_remove,
-	.id_table = nau7802_i2c_id,
 	.driver = {
 		   .name = "nau7802",
 		   .of_match_table = nau7802_dt_ids,

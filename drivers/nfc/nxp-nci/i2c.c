@@ -340,8 +340,7 @@ static int nxp_nci_i2c_acpi_config(struct nxp_nci_i2c_phy *phy)
 	return 0;
 }
 
-static int nxp_nci_i2c_probe(struct i2c_client *client,
-			    const struct i2c_device_id *id)
+static int nxp_nci_i2c_probe(struct i2c_client *client)
 {
 	struct nxp_nci_i2c_phy *phy;
 	struct nxp_nci_nfc_platform_data *pdata;
@@ -423,12 +422,6 @@ static int nxp_nci_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-static struct i2c_device_id nxp_nci_i2c_id_table[] = {
-	{"nxp-nci_i2c", 0},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, nxp_nci_i2c_id_table);
-
 static const struct of_device_id of_nxp_nci_i2c_match[] = {
 	{ .compatible = "nxp,nxp-nci-i2c", },
 	{},
@@ -450,8 +443,7 @@ static struct i2c_driver nxp_nci_i2c_driver = {
 		   .acpi_match_table = ACPI_PTR(acpi_id),
 		   .of_match_table = of_match_ptr(of_nxp_nci_i2c_match),
 		  },
-	.probe = nxp_nci_i2c_probe,
-	.id_table = nxp_nci_i2c_id_table,
+	.probe2 = nxp_nci_i2c_probe,
 	.remove = nxp_nci_i2c_remove,
 };
 

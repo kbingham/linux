@@ -967,14 +967,6 @@ static int adv7511_encoder_init(struct i2c_client *i2c, struct drm_device *dev,
 	return 0;
 }
 
-static const struct i2c_device_id adv7511_i2c_ids[] = {
-	{ "adv7511", 0 },
-	{ "adv7511w", 0 },
-	{ "adv7513", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, adv7511_i2c_ids);
-
 static const struct of_device_id adv7511_of_ids[] = {
 	{ .compatible = "adi,adv7511", },
 	{ .compatible = "adi,adv7511w", },

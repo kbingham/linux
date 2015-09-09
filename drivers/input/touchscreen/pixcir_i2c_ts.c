@@ -447,8 +447,7 @@ static int pixcir_parse_dt(struct device *dev,
 }
 #endif
 
-static int pixcir_i2c_ts_probe(struct i2c_client *client,
-			       const struct i2c_device_id *id)
+static int pixcir_i2c_ts_probe(struct i2c_client *client)
 {
 	const struct pixcir_ts_platform_data *pdata =
 			dev_get_platdata(&client->dev);
@@ -576,13 +575,6 @@ static int pixcir_i2c_ts_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id pixcir_i2c_ts_id[] = {
-	{ "pixcir_ts", 0 },
-	{ "pixcir_tangoc", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, pixcir_i2c_ts_id);
-
 #ifdef CONFIG_OF
 static const struct pixcir_i2c_chip_data pixcir_ts_data = {
 	.max_fingers = 2,
@@ -608,9 +600,8 @@ static struct i2c_driver pixcir_i2c_ts_driver = {
 		.pm	= &pixcir_dev_pm_ops,
 		.of_match_table = of_match_ptr(pixcir_of_match),
 	},
-	.probe		= pixcir_i2c_ts_probe,
+	.probe2 = pixcir_i2c_ts_probe,
 	.remove		= pixcir_i2c_ts_remove,
-	.id_table	= pixcir_i2c_ts_id,
 };
 
 module_i2c_driver(pixcir_i2c_ts_driver);

@@ -564,8 +564,7 @@ static struct regmap_bus regmap_cdce925_bus = {
 	.read = cdce925_regmap_i2c_read,
 };
 
-static int cdce925_probe(struct i2c_client *client,
-		const struct i2c_device_id *id)
+static int cdce925_probe(struct i2c_client *client)
 {
 	struct clk_cdce925_chip *data;
 	struct device_node *node = client->dev.of_node;
@@ -723,12 +722,6 @@ error:
 	return err;
 }
 
-static const struct i2c_device_id cdce925_id[] = {
-	{ "cdce925", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, cdce925_id);
-
 static const struct of_device_id clk_cdce925_of_match[] = {
 	{ .compatible = "ti,cdce925" },
 	{ },
@@ -740,8 +733,7 @@ static struct i2c_driver cdce925_driver = {
 		.name = "cdce925",
 		.of_match_table = of_match_ptr(clk_cdce925_of_match),
 	},
-	.probe		= cdce925_probe,
-	.id_table	= cdce925_id,
+	.probe2 = cdce925_probe,
 };
 module_i2c_driver(cdce925_driver);
 

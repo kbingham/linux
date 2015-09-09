@@ -538,8 +538,7 @@ static void auo_pixcir_reset(void *data)
 	gpio_set_value(ts->pdata->gpio_rst, 0);
 }
 
-static int auo_pixcir_probe(struct i2c_client *client,
-			    const struct i2c_device_id *id)
+static int auo_pixcir_probe(struct i2c_client *client)
 {
 	const struct auo_pixcir_ts_platdata *pdata;
 	struct auo_pixcir_ts *ts;
@@ -670,12 +669,6 @@ static int auo_pixcir_probe(struct i2c_client *client,
 	return 0;
 }
 
-static const struct i2c_device_id auo_pixcir_idtable[] = {
-	{ "auo_pixcir_ts", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, auo_pixcir_idtable);
-
 #ifdef CONFIG_OF
 static const struct of_device_id auo_pixcir_ts_dt_idtable[] = {
 	{ .compatible = "auo,auo_pixcir_ts" },
@@ -690,8 +683,7 @@ static struct i2c_driver auo_pixcir_driver = {
 		.pm	= &auo_pixcir_pm_ops,
 		.of_match_table	= of_match_ptr(auo_pixcir_ts_dt_idtable),
 	},
-	.probe		= auo_pixcir_probe,
-	.id_table	= auo_pixcir_idtable,
+	.probe2 = auo_pixcir_probe,
 };
 
 module_i2c_driver(auo_pixcir_driver);

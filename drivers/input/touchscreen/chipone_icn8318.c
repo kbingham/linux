@@ -196,8 +196,7 @@ static int icn8318_resume(struct device *dev)
 
 static SIMPLE_DEV_PM_OPS(icn8318_pm_ops, icn8318_suspend, icn8318_resume);
 
-static int icn8318_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int icn8318_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device_node *np = dev->of_node;
@@ -292,20 +291,13 @@ static const struct of_device_id icn8318_of_match[] = {
 };
 MODULE_DEVICE_TABLE(of, icn8318_of_match);
 
-/* This is useless for OF-enabled devices, but it is needed by I2C subsystem */
-static const struct i2c_device_id icn8318_i2c_id[] = {
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, icn8318_i2c_id);
-
 static struct i2c_driver icn8318_driver = {
 	.driver = {
 		.name	= "chipone_icn8318",
 		.pm	= &icn8318_pm_ops,
 		.of_match_table = icn8318_of_match,
 	},
-	.probe = icn8318_probe,
-	.id_table = icn8318_i2c_id,
+	.probe2 = icn8318_probe,
 };
 
 module_i2c_driver(icn8318_driver);

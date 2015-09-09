@@ -103,20 +103,6 @@ static uint64_t max732x_features[] = {
 	[MAX7327] = GROUP_A(IO_4P4O) | GROUP_B(IO_8O) | INT_CAPS(INT_NO_MASK),
 };
 
-static const struct i2c_device_id max732x_id[] = {
-	{ "max7319", MAX7319 },
-	{ "max7320", MAX7320 },
-	{ "max7321", MAX7321 },
-	{ "max7322", MAX7322 },
-	{ "max7323", MAX7323 },
-	{ "max7324", MAX7324 },
-	{ "max7325", MAX7325 },
-	{ "max7326", MAX7326 },
-	{ "max7327", MAX7327 },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, max732x_id);
-
 #ifdef CONFIG_OF
 static const struct of_device_id max732x_of_table[] = {
 	{ .compatible = "maxim,max7319" },
@@ -622,8 +608,7 @@ static struct max732x_platform_data *of_gpio_max732x(struct device *dev)
 	return pdata;
 }
 
-static int max732x_probe(struct i2c_client *client,
-				   const struct i2c_device_id *id)
+static int max732x_probe(struct i2c_client *client)
 {
 	struct max732x_platform_data *pdata;
 	struct device_node *node;
@@ -752,9 +737,8 @@ static struct i2c_driver max732x_driver = {
 		.owner		= THIS_MODULE,
 		.of_match_table	= of_match_ptr(max732x_of_table),
 	},
-	.probe		= max732x_probe,
+	.probe2 = max732x_probe,
 	.remove		= max732x_remove,
-	.id_table	= max732x_id,
 };
 
 static int __init max732x_init(void)

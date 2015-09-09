@@ -745,8 +745,7 @@ static struct zforce_ts_platdata *zforce_parse_dt(struct device *dev)
 	return pdata;
 }
 
-static int zforce_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int zforce_probe(struct i2c_client *client)
 {
 	const struct zforce_ts_platdata *pdata = dev_get_platdata(&client->dev);
 	struct zforce_ts *ts;
@@ -938,12 +937,6 @@ static int zforce_probe(struct i2c_client *client,
 	return 0;
 }
 
-static struct i2c_device_id zforce_idtable[] = {
-	{ "zforce-ts", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, zforce_idtable);
-
 #ifdef CONFIG_OF
 static const struct of_device_id zforce_dt_idtable[] = {
 	{ .compatible = "neonode,zforce" },
@@ -958,8 +951,7 @@ static struct i2c_driver zforce_driver = {
 		.pm	= &zforce_pm_ops,
 		.of_match_table	= of_match_ptr(zforce_dt_idtable),
 	},
-	.probe		= zforce_probe,
-	.id_table	= zforce_idtable,
+	.probe2 = zforce_probe,
 };
 
 module_i2c_driver(zforce_driver);

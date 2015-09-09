@@ -1349,8 +1349,7 @@ out:
 	return -1;
 }
 
-static int bq24190_probe(struct i2c_client *client,
-		const struct i2c_device_id *id)
+static int bq24190_probe(struct i2c_client *client)
 {
 	struct i2c_adapter *adapter = to_i2c_adapter(client->dev.parent);
 	struct device *dev = &client->dev;
@@ -1506,17 +1505,6 @@ static int bq24190_pm_resume(struct device *dev)
 
 static SIMPLE_DEV_PM_OPS(bq24190_pm_ops, bq24190_pm_suspend, bq24190_pm_resume);
 
-/*
- * Only support the bq24190 right now.  The bq24192, bq24192i, and bq24193
- * are similar but not identical so the driver needs to be extended to
- * support them.
- */
-static const struct i2c_device_id bq24190_i2c_ids[] = {
-	{ "bq24190", BQ24190_REG_VPRS_PN_24190 },
-	{ },
-};
-MODULE_DEVICE_TABLE(i2c, bq24190_i2c_ids);
-
 #ifdef CONFIG_OF
 static const struct of_device_id bq24190_of_match[] = {
 	{ .compatible = "ti,bq24190", },
@@ -1530,9 +1518,8 @@ static const struct of_device_id bq24190_of_match[] = {
 #endif
 
 static struct i2c_driver bq24190_driver = {
-	.probe		= bq24190_probe,
+	.probe2 = bq24190_probe,
 	.remove		= bq24190_remove,
-	.id_table	= bq24190_i2c_ids,
 	.driver = {
 		.name		= "bq24190-charger",
 		.pm		= &bq24190_pm_ops,

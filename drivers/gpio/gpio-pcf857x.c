@@ -31,26 +31,6 @@
 #include <linux/slab.h>
 #include <linux/spinlock.h>
 
-
-static const struct i2c_device_id pcf857x_id[] = {
-	{ "pcf8574", 8 },
-	{ "pcf8574a", 8 },
-	{ "pca8574", 8 },
-	{ "pca9670", 8 },
-	{ "pca9672", 8 },
-	{ "pca9674", 8 },
-	{ "pcf8575", 16 },
-	{ "pca8575", 16 },
-	{ "pca9671", 16 },
-	{ "pca9673", 16 },
-	{ "pca9675", 16 },
-	{ "max7328", 8 },
-	{ "max7329", 8 },
-	{ "tca9554", 8 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, pcf857x_id);
-
 #ifdef CONFIG_OF
 static const struct of_device_id pcf857x_of_table[] = {
 	{ .compatible = "nxp,pcf8574" },
@@ -268,8 +248,7 @@ static struct irq_chip pcf857x_irq_chip = {
 
 /*-------------------------------------------------------------------------*/
 
-static int pcf857x_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int pcf857x_probe(struct i2c_client *client)
 {
 	struct pcf857x_platform_data	*pdata = dev_get_platdata(&client->dev);
 	struct device_node		*np = client->dev.of_node;
@@ -450,9 +429,8 @@ static struct i2c_driver pcf857x_driver = {
 		.owner	= THIS_MODULE,
 		.of_match_table = of_match_ptr(pcf857x_of_table),
 	},
-	.probe	= pcf857x_probe,
+	.probe2 = pcf857x_probe,
 	.remove	= pcf857x_remove,
-	.id_table = pcf857x_id,
 };
 
 static int __init pcf857x_init(void)

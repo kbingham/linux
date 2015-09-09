@@ -193,12 +193,6 @@ struct tca6507_chip {
 #endif
 };
 
-static const struct i2c_device_id tca6507_id[] = {
-	{ "tca6507" },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, tca6507_id);
-
 static int choose_times(int msec, int *c1p, int *c2p)
 {
 	/*
@@ -746,8 +740,7 @@ tca6507_led_dt_init(struct i2c_client *client)
 
 #endif
 
-static int tca6507_probe(struct i2c_client *client,
-		const struct i2c_device_id *id)
+static int tca6507_probe(struct i2c_client *client)
 {
 	struct tca6507_chip *tca;
 	struct i2c_adapter *adapter;
@@ -833,9 +826,8 @@ static struct i2c_driver tca6507_driver = {
 		.name    = "leds-tca6507",
 		.of_match_table = of_match_ptr(of_tca6507_leds_match),
 	},
-	.probe    = tca6507_probe,
+	.probe2 = tca6507_probe,
 	.remove   = tca6507_remove,
-	.id_table = tca6507_id,
 };
 
 module_i2c_driver(tca6507_driver);

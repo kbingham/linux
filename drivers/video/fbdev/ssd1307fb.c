@@ -512,8 +512,7 @@ static const struct of_device_id ssd1307fb_of_match[] = {
 };
 MODULE_DEVICE_TABLE(of, ssd1307fb_of_match);
 
-static int ssd1307fb_probe(struct i2c_client *client,
-			   const struct i2c_device_id *id)
+static int ssd1307fb_probe(struct i2c_client *client)
 {
 	struct backlight_device *bl;
 	char bl_name[12];
@@ -705,18 +704,9 @@ static int ssd1307fb_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id ssd1307fb_i2c_id[] = {
-	{ "ssd1305fb", 0 },
-	{ "ssd1306fb", 0 },
-	{ "ssd1307fb", 0 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, ssd1307fb_i2c_id);
-
 static struct i2c_driver ssd1307fb_driver = {
-	.probe = ssd1307fb_probe,
+	.probe2 = ssd1307fb_probe,
 	.remove = ssd1307fb_remove,
-	.id_table = ssd1307fb_i2c_id,
 	.driver = {
 		.name = "ssd1307fb",
 		.of_match_table = ssd1307fb_of_match,
