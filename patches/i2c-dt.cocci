@@ -12,7 +12,7 @@ struct of_device_id arr[] = { ... };
 
 // Remove the i2c_device_id array
 
-@ dev_id depends on of_dev_id_present @
+@ dev_id @
 identifier arr;
 @@
 - struct i2c_device_id arr[] = { ... };
