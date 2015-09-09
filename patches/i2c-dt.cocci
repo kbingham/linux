@@ -32,7 +32,7 @@ identifier dev_id.arr;
 identifier drv;
 identifier dev_id.arr;
 @@
-static struct i2c_driver drv = {
+struct i2c_driver drv = {
 	...,
 -	.id_table	= arr,
 	...,
@@ -45,7 +45,7 @@ static struct i2c_driver drv = {
 identifier drv;
 identifier probefunc;
 @@
-static struct i2c_driver drv = {
+struct i2c_driver drv = {
 	...,
 -	.probe 		= probefunc,
 +	.probe2 	= probefunc,
