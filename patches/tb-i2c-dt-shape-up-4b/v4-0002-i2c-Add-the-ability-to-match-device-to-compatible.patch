@@ -1,0 +1,69 @@
+From 779a249ac30a489cba4a3747b64453922b335f90 Mon Sep 17 00:00:00 2001
+From: Lee Jones <lee.jones@linaro.org>
+Date: Wed, 4 Jun 2014 11:47:42 +0100
+Subject: [RESEND PATCH v4 2/8] i2c: Add the ability to match device to compatible
+ string without an of_node
+To: Wolfram Sang <wsa@the-dreams.de>,
+    Samuel Ortiz <sameo@linux.intel.com>,
+    Lee Jones <lee.jones@linaro.org>
+Cc: linux-i2c@vger.kernel.org,
+    linux-kernel@vger.kernel.org,
+    grant.likely@linaro.org,
+    javier@osg.samsung.com
+
+A great deal of I2C devices are currently matched via DT node name, and
+as such the compatible naming convention of '<vendor>,<device>' has gone
+somewhat awry - some nodes don't supply one, some supply an arbitrary
+string and others the correct device name with an arbitrary vendor prefix.
+
+In an effort to correct this problem we have to supply a mechanism to
+match a device by compatible string AND by simple device name.  This
+function strips off the '<vendor>,' part of a supplied compatible string
+and attempts to match without it.
+
+The plan is to remove this function once all of the compatible strings
+for each device have been brought into line.
+
+Acked-by: Grant Likely <grant.likely@linaro.org>
+Signed-off-by: Lee Jones <lee.jones@linaro.org>
+[Kieran: strnicmp to strncasecmp]
+Signed-off-by: Kieran Bingham <kieranbingham@gmail.com>
+---
+ drivers/i2c/i2c-core.c | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+diff --git a/drivers/i2c/i2c-core.c b/drivers/i2c/i2c-core.c
+index 30d8a77..0788c1f 100644
+--- a/drivers/i2c/i2c-core.c
++++ b/drivers/i2c/i2c-core.c
+@@ -1373,6 +1373,27 @@ struct i2c_adapter *of_find_i2c_adapter_by_node(struct device_node *node)
+ 	return adapter;
+ }
+ EXPORT_SYMBOL(of_find_i2c_adapter_by_node);
++
++static const struct of_device_id*
++i2c_of_match_device_strip_vendor(const struct of_device_id *matches,
++				  struct i2c_client *client)
++{
++	const char *name;
++
++	for (; matches->compatible[0]; matches++) {
++		name = strchr(matches->compatible, ',');
++		if (!name)
++			name = matches->compatible;
++		else
++			name++;
++
++		if (!strncasecmp(client->name, name, strlen(client->name)))
++			return matches;
++	}
++
++	return NULL;
++}
++
+ #else
+ static void of_i2c_register_devices(struct i2c_adapter *adap) { }
+ #endif /* CONFIG_OF */
+-- 
+2.1.4
+
