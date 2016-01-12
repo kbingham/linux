@@ -12,7 +12,11 @@
  *
  */
 
+#include <linux/fs.h>
+#include <linux/mount.h>
+
 /* We need to stringify expanded macros so that they can be parsed */
+
 #define STRING(x) #x
 #define XSTRING(x) STRING(x)
 
@@ -20,3 +24,20 @@
 <!-- end-c-headers -->
 
 import gdb
+
+/* linux/fs.h */
+LX_MS_RDONLY = MS_RDONLY
+LX_MS_SYNCHRONOUS = MS_SYNCHRONOUS
+LX_MS_MANDLOCK = MS_MANDLOCK
+LX_MS_DIRSYNC = MS_DIRSYNC
+LX_MS_NOATIME = MS_NOATIME
+LX_MS_NODIRATIME = MS_NODIRATIME
+
+/* linux/mount.h */
+LX_MNT_NOSUID = MNT_NOSUID
+LX_MNT_NODEV = MNT_NODEV
+LX_MNT_NOEXEC = MNT_NOEXEC
+LX_MNT_NOATIME = MNT_NOATIME
+LX_MNT_NODIRATIME = MNT_NODIRATIME
+LX_MNT_RELATIME = MNT_RELATIME
+
