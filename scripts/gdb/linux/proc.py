@@ -379,3 +379,16 @@ Equivalent to cat /proc/meminfo on a running target """
             )
 
 LxMeminfo()
+
+
+class LxInterrupts(gdb.Command):
+    """ Report the Linux Version of the current kernel.
+        Equivalent to cat /proc/interrupts on a running target """
+
+    def __init__(self):
+        super(LxInterrupts, self).__init__("lx-interrupts", gdb.COMMAND_DATA)
+
+    def invoke(self, arg, from_tty):
+        gdb.write("Not Yet Implemented\n")
+
+LxInterrupts()
