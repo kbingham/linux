@@ -12,8 +12,15 @@
  *
  */
 
+#include <asm/page.h>
+#include <asm/pgtable.h>
+#include <asm/thread_info.h>
+
 #include <linux/fs.h>
+#include <linux/swap.h>
 #include <linux/mount.h>
+#include <linux/vmalloc.h>
+
 
 /* We need to stringify expanded macros so that they can be parsed */
 
@@ -41,3 +48,18 @@ LX_MNT_NOATIME = MNT_NOATIME
 LX_MNT_NODIRATIME = MNT_NODIRATIME
 LX_MNT_RELATIME = MNT_RELATIME
 
+/* asm/page.h */
+LX_PAGE_SHIFT = XSTRING(PAGE_SHIFT)
+lx_page_shift = gdb.parse_and_eval(LX_PAGE_SHIFT)
+
+/* asm/thread_info.h */
+LX_THREAD_SIZE = XSTRING(THREAD_SIZE)
+lx_thread_size = gdb.parse_and_eval(LX_THREAD_SIZE)
+
+/* linux/vmalloc.h */
+LX_VMALLOC_TOTAL = XSTRING(VMALLOC_TOTAL)
+lx_vmalloc_total = gdb.parse_and_eval(LX_VMALLOC_TOTAL)
+
+/* linux/swap.h */
+LX_MAX_SWAPFILES = XSTRING(MAX_SWAPFILES)
+lx_max_swapfiles = gdb.parse_and_eval(LX_MAX_SWAPFILES)

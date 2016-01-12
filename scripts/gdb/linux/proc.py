@@ -206,3 +206,176 @@ values of that process namespace"""
                         info_opts(MNT_INFO, m_flags)))
 
 LxMounts()
+
+
+bdev_type = utils.CachedType("struct block_device")
+
+
+class LxMeminfo(gdb.Command):
+    """ Identify the memory usage, statistics, and availability
+
+Equivalent to cat /proc/meminfo on a running target """
+
+    def __init__(self):
+        super(LxMeminfo, self).__init__("lx-meminfo", gdb.COMMAND_DATA)
+
+    def K(self, val):
+        # Convert from PAGES to KB
+        return int(val << (constants.lx_page_shift - 10))
+
+    def page_K(self, remote_value):
+        # Obtain page value, and Convert from PAGES to KB
+        val = int(gdb.parse_and_eval(remote_value))
+        return self.K(val)
+
+    def gps(self, enum_zone_stat_item):
+        # Access the Global Page State structure
+        # I would prefer to read this structure in one go and then index
+        # from the enum. But we can't determine the enum values with out
+        # a call to GDB anyway so we may as well take the easy route and
+        # get the value.
+        remote_value = "vm_stat[" + enum_zone_stat_item + "].counter"
+        return int(gdb.parse_and_eval(remote_value))
+
+    def gps_K(self, enum_zone_stat_item):
+        return self.K(self.gps(enum_zone_stat_item))
+
+    def nr_blockdev_pages(self):
+        bdevs_head = gdb.parse_and_eval("all_bdevs")
+        pages = 0
+        for bdev in lists.items(bdev_type, "bd_list", bdevs_head):
+            pages += bdev['bd_inode']['i_mapping']['nrpages']
+        return pages
+
+    def total_swapcache_pages(self):
+        pages = 0
+        for i in range(0, constants.lx_max_swapfiles):
+            swap_space = "swapper_spaces[" + str(i) + "].nrpages"
+            pages += int(gdb.parse_and_eval(swap_space))
+        return pages
+
+    def vm_commit_limit(self, totalram_pages):
+        overcommit = int(gdb.parse_and_eval("sysctl_overcommit_kbytes"))
+        overcommit_ratio = int(gdb.parse_and_eval("sysctl_overcommit_ratio"))
+        total_swap_pages = int(gdb.parse_and_eval("total_swap_pages"))
+        hugetlb_total_pages = 0  # hugetlb_total_pages()
+
+        if overcommit:
+            allowed = overcommit >> (constants.lx_page_shift - 10)
+        else:
+            allowed = ((totalram_pages - hugetlb_total_pages *
+                       overcommit_ratio / 100))
+
+        allowed += total_swap_pages
+        return allowed
+
+    # Main lx-meminfo command execution
+    def invoke(self, arg, from_tty):
+        totalram = int(gdb.parse_and_eval("totalram_pages"))
+        freeram = self.gps("NR_FREE_PAGES")
+        reclaimable = self.gps("NR_SLAB_RECLAIMABLE")
+        unreclaimable = self.gps("NR_SLAB_UNRECLAIMABLE")
+        slab = reclaimable + unreclaimable
+        # for_each_zone(zone)
+        #     wmark_low += zone->watermark[WMARK_LOW];
+        wmark_low = 0   # Zone parsing is unimplemented
+
+        available = freeram - wmark_low
+        available += reclaimable - min(reclaimable / 2, wmark_low)
+
+        bufferram = self.nr_blockdev_pages()
+        total_swapcache_pages = self.total_swapcache_pages()
+
+        file_pages = self.gps("NR_FILE_PAGES")
+        cached = file_pages - total_swapcache_pages - bufferram
+
+        # LRU Pages
+        active_pages_anon = self.gps("NR_ACTIVE_ANON")
+        inactive_pages_anon = self.gps("NR_INACTIVE_ANON")
+        active_pages_file = self.gps("NR_ACTIVE_FILE")
+        inactive_pages_file = self.gps("NR_INACTIVE_FILE")
+        unevictable_pages = self.gps("NR_UNEVICTABLE")
+        active_pages = active_pages_anon + active_pages_file
+        inactive_pages = inactive_pages_anon + inactive_pages_file
+
+        totalhigh = int(gdb.parse_and_eval("totalhigh_pages"))
+        # We can't run this on a core dump file ...
+        # if running target ()
+        freehigh = int(gdb.parse_and_eval("nr_free_highpages()"))
+        # else freehigh = 0
+
+        kernelstack = int(self.gps("NR_KERNEL_STACK") *
+                          constants.lx_thread_size / 1024)
+
+        commitlimit = self.vm_commit_limit(totalram)
+        committed_as = int(gdb.parse_and_eval("vm_committed_as.count"))
+
+        vmalloc_total = int(constants.lx_vmalloc_total >> 10)
+
+        gdb.write(
+            "MemTotal:       {:8d} kB\n".format(self.K(totalram)) +
+            "MemFree:        {:8d} kB\n".format(self.K(freeram)) +
+            "MemAvailable:   {:8d} kB\n".format(self.K(available)) +
+            "Buffers:        {:8d} kB\n".format(self.K(bufferram)) +
+            "Cached:         {:8d} kB\n".format(self.K(cached)) +
+            "SwapCached:     {:8d} kB\n".format(self.K(total_swapcache_pages)) +
+            "Active:         {:8d} kB\n".format(self.K(active_pages)) +
+            "Inactive:       {:8d} kB\n".format(self.K(inactive_pages)) +
+            "Active(anon):   {:8d} kB\n".format(self.K(active_pages_anon)) +
+            "Inactive(anon): {:8d} kB\n".format(self.K(inactive_pages_anon)) +
+            "Active(file):   {:8d} kB\n".format(self.K(active_pages_file)) +
+            "Inactive(file): {:8d} kB\n".format(self.K(inactive_pages_file)) +
+            "Unevictable:    {:8d} kB\n".format(self.K(unevictable_pages)) +
+            "Mlocked:        {:8d} kB\n".format(self.gps_K("NR_MLOCK"))
+            )
+        # ifdef CONFIG_HIGHMEM || core dump?
+        gdb.write(
+            "HighTotal:      {:8d} kB\n".format(self.K(totalhigh)) +
+            "HighFree:       {:8d} kB\n".format(self.K(freehigh)) +
+            "LowTotal:       {:8d} kB\n".format(self.K(totalram-totalhigh)) +
+            "LowFree:        {:8d} kB\n".format(self.K(freeram-freehigh))
+            )
+        # endif
+        # ifndef CONFIG_MMU
+        # gdb.write(
+        #    mmap_pages_allocated
+        #    )
+        # endif
+        gdb.write(
+            "SwapTotal:      {:8d} kB\n".format(self.K(0)) +
+            "SwapFree:       {:8d} kB\n".format(self.K(0)) +
+            "Dirty:          {:8d} kB\n".format(self.gps_K("NR_FILE_DIRTY")) +
+            "Writeback:      {:8d} kB\n".format(self.gps_K("NR_WRITEBACK")) +
+            "AnonPages:      {:8d} kB\n".format(self.gps_K("NR_ANON_PAGES")) +
+            "Mapped:         {:8d} kB\n".format(self.gps_K("NR_FILE_MAPPED")) +
+            "Shmem:          {:8d} kB\n".format(self.gps_K("NR_SHMEM")) +
+            "Slab:           {:8d} kB\n".format(self.K(slab)) +
+            "SReclaimable:   {:8d} kB\n".format(self.K(reclaimable)) +
+            "SUnreclaim:     {:8d} kB\n".format(self.K(unreclaimable)) +
+            "KernelStack:    {:8d} kB\n".format(kernelstack) +
+            "PageTables:     {:8d} kB\n".format(self.gps_K("NR_PAGETABLE"))
+            )
+
+        #  if CONFIG_QUICKLIST
+        #   "Quicklists:     {:8d} kB\n".format(self.K(quicklist)))
+
+        gdb.write(
+            "NFS_Unstable:   {:8d} kB\n".format(self.gps_K("NR_UNSTABLE_NFS")) +
+            "Bounce:         {:8d} kB\n".format(self.gps_K("NR_BOUNCE")) +
+            "WritebackTmp:   {:8d} kB\n".format(self.gps_K("NR_WRITEBACK_TEMP")) +
+            "CommitLimit:    {:8d} kB\n".format(self.K(commitlimit)) +
+            "Committed_AS:   {:8d} kB\n".format(self.K(committed_as)) +
+            "VmallocTotal:   {:8d} kB\n".format(vmalloc_total) +
+            "VmallocUsed:    {:8d} kB\n".format(0) +
+            "VmallocChunk:   {:8d} kB\n".format(0)
+            )
+        # if CONFIG_MEMORY_FAILURE
+        #   "HardwareCorrupted: %5lu kB\n"
+        # ifdef CONFIG_CMA
+        totalcma_pages = int(gdb.parse_and_eval("totalcma_pages"))
+        gdb.write(
+            "CmaTotal:       {:8d} kB\n".format(self.K(totalcma_pages)) +
+            "CmaFree:        {:8d} kB\n".format(self.gps_K("NR_FREE_CMA_PAGES"))
+            )
+
+LxMeminfo()
