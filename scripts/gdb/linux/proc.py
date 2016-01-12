@@ -16,6 +16,8 @@ from linux import constants
 from linux import utils
 from linux import tasks
 from linux import lists
+from linux import cpus
+from linux import radixtree
 
 
 class LxCmdLine(gdb.Command):
@@ -454,3 +456,66 @@ Equivalent to cat /proc/meminfo on a running target """
         gdb.write("* items may not be based on full information\n")
 
 LxMeminfo()
+
+irq_desc = None
+irq_desc_type = utils.CachedType("struct irq_desc")
+
+
+class LxInterrupts(gdb.Command):
+    """ Report the interrupt counters of each CPU.
+        Equivalent to cat /proc/interrupts on a running target """
+
+    def __init__(self):
+        super(LxInterrupts, self).__init__("lx-interrupts", gdb.COMMAND_DATA)
+
+    def irq_to_desc(self, irq):
+        if constants.LX_CONFIG_SPARSE_IRQ:
+            irq_desc_tree = gdb.parse_and_eval("irq_desc_tree")
+            irq_desc_addr = radixtree.lookup(irq_desc_tree, irq)
+
+            if irq_desc_addr is None:
+                return None
+
+            if irq_desc_addr.address:
+                return irq_desc_addr.cast(irq_desc_type.get_type())
+            return None
+        else:
+            irq_desc_array = "irq_desc[{}]".format(irq)
+            return gdb.parse_and_eval(irq_desc_array)
+
+    def kstat_irqs_cpu(self, irq_desc, cpu):
+        return int(cpus.per_cpu(irq_desc['kstat_irqs'], cpu))
+
+    def invoke(self, arg, from_tty):
+        nr_irqs = int(gdb.parse_and_eval("nr_irqs"))
+
+        # Calculate the width of the first column
+        prec = 3
+        j = nr_irqs
+        while (j <= nr_irqs):
+            j *= 10
+            prec += 1
+
+        title = "{:{}}".format(" ", prec+8)
+        for cpu in cpus.each_online_cpu():
+            title += "CPU{:<8d}".format(cpu)
+        gdb.write(title + "\n")
+
+        for irq in range(0, nr_irqs):
+            desc = self.irq_to_desc(irq)
+            if desc is None:
+                continue
+
+            anycount = 0
+            for cpu in cpus.each_online_cpu():
+                anycount += self.kstat_irqs_cpu(desc, cpu)
+            if (anycount == 0):
+                continue
+
+            irq_line = "{:{}d}: ".format(irq, prec)
+            for cpu in cpus.each_online_cpu():
+                count = self.kstat_irqs_cpu(desc, cpu)
+                irq_line += "{:10d} ".format(count)
+            gdb.write(irq_line + "\n")
+
+LxInterrupts()
