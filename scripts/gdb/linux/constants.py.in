@@ -12,8 +12,15 @@
  *
  */
 
+#include <asm/page.h>
+#include <asm/pgtable.h>
+#include <asm/thread_info.h>
+
 #include <linux/fs.h>
+#include <linux/swap.h>
 #include <linux/mount.h>
+#include <linux/huge_mm.h>
+#include <linux/vmalloc.h>
 
 /* We need to stringify expanded macros so that they can be parsed */
 
@@ -50,3 +57,32 @@ LX_VALUE(MNT_NOEXEC)
 LX_VALUE(MNT_NOATIME)
 LX_VALUE(MNT_NODIRATIME)
 LX_VALUE(MNT_RELATIME)
+
+
+/* asm/page.h */
+LX_GDBPARSED(PAGE_SHIFT)
+
+/* asm/thread_info.h */
+LX_GDBPARSED(THREAD_SIZE)
+
+/* linux/vmalloc.h */
+LX_GDBPARSED(VMALLOC_TOTAL)
+
+/* linux/swap.h */
+LX_GDBPARSED(MAX_SWAPFILES)
+
+
+/* Kernel Configs */
+LX_CONFIG(CONFIG_HIGHMEM)
+LX_CONFIG(CONFIG_MEMORY_FAILURE)
+LX_CONFIG(CONFIG_TRANSPARENT_HUGEPAGE)
+LX_CONFIG(CONFIG_HUGETLB_PAGE)
+LX_CONFIG(CONFIG_CMA)
+LX_CONFIG(CONFIG_MMU)
+LX_CONFIG(CONFIG_SWAP)
+
+#ifndef CONFIG_NR_QUICK
+#define CONFIG_NR_QUICK 0
+#endif
+LX_VALUE(CONFIG_NR_QUICK)
+LX_CONFIG(CONFIG_QUICKLIST)

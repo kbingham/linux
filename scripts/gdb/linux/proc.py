@@ -195,3 +195,260 @@ values of that process namespace"""
                         info_opts(MNT_INFO, m_flags)))
 
 LxMounts()
+
+
+bdev_type = utils.CachedType("struct block_device")
+bdev_ptr_type = bdev_type.get_type().pointer()
+
+
+class LxMeminfo(gdb.Command):
+    """ Identify the memory usage, statistics, and availability
+
+Equivalent to cat /proc/meminfo on a running target """
+
+    def __init__(self):
+        super(LxMeminfo, self).__init__("lx-meminfo", gdb.COMMAND_DATA)
+
+    def K(self, val):
+        # Convert from PAGES to KB
+        return int(val << (constants.LX_PAGE_SHIFT - 10))
+
+    def page_K(self, remote_value):
+        # Obtain page value, and Convert from PAGES to KB
+        val = int(gdb.parse_and_eval(remote_value))
+        return self.K(val)
+
+    def gps(self, enum_zone_stat_item):
+        # Access the Global Page State structure
+        # I would prefer to read this structure in one go and then index
+        # from the enum. But we can't determine the enum values with out
+        # a call to GDB anyway so we may as well take the easy route and
+        # get the value.
+        remote_value = "vm_stat[" + enum_zone_stat_item + "].counter"
+        return int(gdb.parse_and_eval(remote_value))
+
+    def gps_K(self, enum_zone_stat_item):
+        return self.K(self.gps(enum_zone_stat_item))
+
+    def nr_blockdev_pages(self):
+        bdevs_head = gdb.parse_and_eval("all_bdevs")
+        pages = 0
+        for bdev in lists.list_for_each_entry(bdevs_head,
+                                              bdev_ptr_type,
+                                              "bd_list"):
+            try:
+                pages += bdev['bd_inode']['i_mapping']['nrpages']
+            except:
+                # Any memory read failures are simply not counted
+                pass
+        return pages
+
+    def total_swapcache_pages(self):
+        pages = 0
+        if not constants.LX_CONFIG_SWAP:
+            return 0
+
+        for i in range(0, int(constants.LX_MAX_SWAPFILES)):
+            swap_space = "swapper_spaces[" + str(i) + "].nrpages"
+            pages += int(gdb.parse_and_eval(swap_space))
+        return pages
+
+    def for_each_hstate(self):
+        hugetlb_max_hstate = gdb.parse_and_eval("hugetlb_max_hstate")
+        for i in range(0, hugetlb_max_hstate):
+            yield gdb.parse_and_eval("hstates[" + str(i) + "]")
+
+    def hugetlb_total_pages(self):
+        if not constants.LX_CONFIG_HUGETLB_PAGE:
+            return 0
+        pages = 0
+        for h in self.for_each_hstate():
+            pages += h['nr_huge_pages'] * (1 << h['order'])
+        return pages
+
+    def vm_commit_limit(self, totalram_pages):
+        total_swap_pages = 0
+        overcommit = int(gdb.parse_and_eval("sysctl_overcommit_kbytes"))
+        overcommit_ratio = int(gdb.parse_and_eval("sysctl_overcommit_ratio"))
+
+        if constants.LX_CONFIG_SWAP:
+            total_swap_pages = int(gdb.parse_and_eval("total_swap_pages"))
+
+        hugetlb_total_pages = self.hugetlb_total_pages()
+
+        if overcommit:
+            allowed = overcommit >> (constants.LX_PAGE_SHIFT - 10)
+        else:
+            allowed = ((totalram_pages - hugetlb_total_pages *
+                       overcommit_ratio / 100))
+
+        allowed += total_swap_pages
+        return allowed
+
+    def quicklist_total_size(self):
+        count = 0
+        quicklist = utils.gdb_eval_or_none("quicklist")
+        if quicklist is None:
+            return 0
+
+        for cpu in cpus.each_online_cpu():
+            ql = cpus.per_cpu(quicklist, cpu)
+            for q in range(0, constants.LX_CONFIG_NR_QUICK):
+                count += ql[q]['nr_pages']
+
+        return count
+
+    # Main lx-meminfo command execution
+    # See fs/proc/meminfo.c:meminfo_proc_show()
+    def invoke(self, arg, from_tty):
+        totalram = int(gdb.parse_and_eval("totalram_pages"))
+        freeram = self.gps("NR_FREE_PAGES")
+        reclaimable = self.gps("NR_SLAB_RECLAIMABLE")
+        unreclaimable = self.gps("NR_SLAB_UNRECLAIMABLE")
+        slab = reclaimable + unreclaimable
+        # for_each_zone(zone)
+        #     wmark_low += zone->watermark[WMARK_LOW];
+        wmark_low = 0   # Zone parsing is unimplemented
+
+        available = freeram - wmark_low
+        available += reclaimable - min(reclaimable / 2, wmark_low)
+
+        bufferram = self.nr_blockdev_pages()
+        swapcached = self.total_swapcache_pages()
+
+        file_pages = self.gps("NR_FILE_PAGES")
+        cached = file_pages - swapcached - bufferram
+
+        # LRU Pages
+        active_pages_anon = self.gps("NR_ACTIVE_ANON")
+        inactive_pages_anon = self.gps("NR_INACTIVE_ANON")
+        active_pages_file = self.gps("NR_ACTIVE_FILE")
+        inactive_pages_file = self.gps("NR_INACTIVE_FILE")
+        unevictable_pages = self.gps("NR_UNEVICTABLE")
+        active_pages = active_pages_anon + active_pages_file
+        inactive_pages = inactive_pages_anon + inactive_pages_file
+
+        kernelstack = int(self.gps("NR_KERNEL_STACK") *
+                          constants.LX_THREAD_SIZE / 1024)
+
+        commitlimit = int(self.vm_commit_limit(totalram))
+        committed_as = int(gdb.parse_and_eval("vm_committed_as.count"))
+
+        vmalloc_total = int(constants.LX_VMALLOC_TOTAL >> 10)
+
+        gdb.write(
+            "MemTotal:       {:8d} kB\n".format(self.K(totalram)) +
+            "MemFree:        {:8d} kB\n".format(self.K(freeram)) +
+            "MemAvailable:*  {:8d} kB\n".format(self.K(available)) +
+            "Buffers:        {:8d} kB\n".format(self.K(bufferram)) +
+            "Cached:         {:8d} kB\n".format(self.K(cached)) +
+            "SwapCached:     {:8d} kB\n".format(self.K(swapcached)) +
+            "Active:         {:8d} kB\n".format(self.K(active_pages)) +
+            "Inactive:       {:8d} kB\n".format(self.K(inactive_pages)) +
+            "Active(anon):   {:8d} kB\n".format(self.K(active_pages_anon)) +
+            "Inactive(anon): {:8d} kB\n".format(self.K(inactive_pages_anon)) +
+            "Active(file):   {:8d} kB\n".format(self.K(active_pages_file)) +
+            "Inactive(file): {:8d} kB\n".format(self.K(inactive_pages_file)) +
+            "Unevictable:    {:8d} kB\n".format(self.K(unevictable_pages)) +
+            "Mlocked:        {:8d} kB\n".format(self.gps_K("NR_MLOCK"))
+            )
+
+        if constants.LX_CONFIG_HIGHMEM:
+            totalhigh = int(gdb.parse_and_eval("totalhigh_pages"))
+            freehigh = int(gdb.parse_and_eval("nr_free_highpages()"))
+            lowtotal = totalram - totalhigh
+            lowfree = freeram - freehigh
+            gdb.write(
+                "HighTotal:      {:8d} kB\n".format(self.K(totalhigh)) +
+                "HighFree:       {:8d} kB\n".format(self.K(freehigh)) +
+                "LowTotal:       {:8d} kB\n".format(self.K(lowtotal)) +
+                "LowFree:        {:8d} kB\n".format(self.K(lowfree))
+                )
+
+        if not constants.LX_CONFIG_MMU:
+            mmap_pg_alloc = gdb.parse_and_eval("mmap_pages_allocated.counter")
+            gdb.write(
+                "MmapCopy:       {:8d} kB\n".format(self.K(mmap_pg_alloc))
+                )
+
+        gdb.write(
+            "SwapTotal:      {:8d} kB\n".format(self.K(0)) +
+            "SwapFree:       {:8d} kB\n".format(self.K(0)) +
+            "Dirty:          {:8d} kB\n".format(self.gps_K("NR_FILE_DIRTY")) +
+            "Writeback:      {:8d} kB\n".format(self.gps_K("NR_WRITEBACK")) +
+            "AnonPages:      {:8d} kB\n".format(self.gps_K("NR_ANON_PAGES")) +
+            "Mapped:         {:8d} kB\n".format(self.gps_K("NR_FILE_MAPPED")) +
+            "Shmem:          {:8d} kB\n".format(self.gps_K("NR_SHMEM")) +
+            "Slab:           {:8d} kB\n".format(self.K(slab)) +
+            "SReclaimable:   {:8d} kB\n".format(self.K(reclaimable)) +
+            "SUnreclaim:     {:8d} kB\n".format(self.K(unreclaimable)) +
+            "KernelStack:    {:8d} kB\n".format(kernelstack) +
+            "PageTables:     {:8d} kB\n".format(self.gps_K("NR_PAGETABLE"))
+            )
+
+        if constants.LX_CONFIG_QUICKLIST:
+            quicklist = self.quicklist_total_size()
+            gdb.write(
+                "Quicklists:     {:8d} kB\n".format(self.K(quicklist))
+                )
+
+        nfsunstable = self.gps("NR_UNSTABLE_NFS")
+        nr_bounce = self.gps("NR_BOUNCE")
+        writebacktmp = self.gps("NR_WRITEBACK_TEMP")
+        gdb.write(
+            "NFS_Unstable:   {:8d} kB\n".format(self.K(nfsunstable)) +
+            "Bounce:         {:8d} kB\n".format(self.K(nr_bounce)) +
+            "WritebackTmp:   {:8d} kB\n".format(self.K(writebacktmp))
+            )
+
+        gdb.write(
+            "CommitLimit:    {:8d} kB\n".format(self.K(commitlimit)) +
+            "Committed_AS:   {:8d} kB\n".format(self.K(committed_as)) +
+            "VmallocTotal:   {:8d} kB\n".format(vmalloc_total)
+            )
+
+        # These are always zero now
+        gdb.write(
+            "VmallocUsed:    {:8d} kB\n".format(0) +
+            "VmallocChunk:   {:8d} kB\n".format(0)
+            )
+
+        if constants.LX_CONFIG_MEMORY_FAILURE:
+            gdb.write(
+                "HardwareCorrupted: {:8d} kB\n"
+                )
+
+        if constants.LX_CONFIG_TRANSPARENT_HUGEPAGE:
+            huge = self.gps("NR_ANON_TRANSPARENT_HUGEPAGES")
+            # HPAGE_PMD_NR can not be determined in constants.py
+            gdb.write(
+                "AnonHugePages:* {:8d} kB ( * HPAGE_PMD_NR )\n"
+                .format(self.K(huge))
+                )
+        if constants.LX_CONFIG_CMA:
+            totalcma_pages = int(gdb.parse_and_eval("totalcma_pages"))
+            cmafree = self.gps("NR_FREE_CMA_PAGES")
+            gdb.write(
+                "CmaTotal:       {:8d} kB\n".format(self.K(totalcma_pages)) +
+                "CmaFree:        {:8d} kB\n".format(self.K(cmafree))
+                )
+
+        if constants.LX_CONFIG_HUGETLB_PAGE:
+            h = gdb.parse_and_eval("hstates[default_hstate_idx]")
+            nr_huge_pages = int(h['nr_huge_pages'])
+            free_huge_pages = int(h['free_huge_pages'])
+            resv_huge_pages = int(h['resv_huge_pages'])
+            surplus_huge_pages = int(h['surplus_huge_pages'])
+            huge_page_shift = int(h['order'] + constants.LX_PAGE_SHIFT - 10)
+            huge_page_size = int(1 << huge_page_shift)
+            gdb.write(
+                "HugePages_Total:   {:5d}\n".format(nr_huge_pages) +
+                "HugePages_Free:    {:5d}\n".format(free_huge_pages) +
+                "HugePages_Rsvd:    {:5d}\n".format(resv_huge_pages) +
+                "HugePages_Surp:    {:5d}\n".format(surplus_huge_pages) +
+                "Hugepagesize:   {:8d} kB\n".format(huge_page_size)
+                )
+
+        gdb.write("* items may not be based on full information\n")
+
+LxMeminfo()
