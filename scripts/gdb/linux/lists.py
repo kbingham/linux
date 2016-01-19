@@ -18,6 +18,15 @@ from linux import utils
 list_head = utils.CachedType("struct list_head")
 
 
+def items(list_type, list_location, item_list):
+    """items Generator return items from a kernel linked list"""
+    item_list_head = item_list
+    next_item = item_list_head['next'].dereference()
+    while next_item != item_list_head:
+        yield utils.container_of(next_item, list_type, list_location)
+        next_item = next_item['next'].dereference()
+
+
 def list_check(head):
     nb = 0
     if (head.type == list_head.get_type().pointer()):
