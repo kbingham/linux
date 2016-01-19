@@ -1,0 +1,66 @@
+From de53e0f4e37c2dfae41a6dfc8f1d9033ed17df7b Mon Sep 17 00:00:00 2001
+From: Kieran Bingham <kieran.bingham@linaro.org>
+Date: Tue, 19 Jan 2016 18:23:36 +0000
+Subject: [RFC PATCH 0/5] scripts/gdb: Linux awareness debug commands
+To: jan.kiszka@siemens.com
+Cc: linux-kernel@vger.kernel.org,
+    maxime.coquelin@st.com,
+    peter.griffin@linaro.org,
+    lee.jones@linaro.org
+
+Hi Jan,
+
+Following on from the initial commands provided earlier, I wanted to send an
+early set of patches for review, feedback and iteration.
+
+There is an /proc/interrupts command on the way too but that will be later,
+and I wanted to get these started.
+
+Particular commentry is either in the comments area of the patch, or in the
+code itself.
+
+A particular coding-style question is on the docstrings. Most of the existing
+commands do not indent their multiline docstrings. Is this preferred?
+
+And also, what is your take on line-length.
+Should it be hard and fast always < 79, or OK > if it keeps things readable?:
+
+pep8 proc.py
+proc.py:321:80: E501 line too long (80 > 79 characters)
+proc.py:363:80: E501 line too long (80 > 79 characters)
+proc.py:365:80: E501 line too long (82 > 79 characters)
+proc.py:378:80: E501 line too long (80 > 79 characters)
+
+These 4 lines come from [PATCH 5/5] scripts/gdb: Add meminfo command
+If I move the helper class functions out to file scope, that could trim
+the 'self.' keyword, and make the lines a little shorter ...
+
+Anyway, I look forward to hearing your comments, and any input from any other
+interested parties too!
+
+If anyone has any ideas for commands that they would like to see available,
+or useful kernel parsers, now is a great time to get involved!
+
+
+Regards
+--
+Kieran
+
+Kieran Bingham (5):
+  scripts/gdb: Provide linux constants
+  scripts/gdb: Provide a kernel list item generator
+  scripts/gdb: Add io resource readers
+  scripts/gdb: Add mount point list command
+  scripts/gdb: Add meminfo command
+
+ scripts/gdb/linux/Makefile        |   9 +-
+ scripts/gdb/linux/constants.py.in |  65 ++++++++
+ scripts/gdb/linux/lists.py        |   9 +
+ scripts/gdb/linux/proc.py         | 340 ++++++++++++++++++++++++++++++++++++++
+ scripts/gdb/vmlinux-gdb.py        |   1 +
+ 5 files changed, 422 insertions(+), 2 deletions(-)
+ create mode 100644 scripts/gdb/linux/constants.py.in
+
+-- 
+2.5.0
+
