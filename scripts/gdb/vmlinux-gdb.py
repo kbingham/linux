@@ -31,3 +31,9 @@ else:
     import linux.lists
     import linux.proc
     import linux.constants
+
+    # Awareness target class depends on GDB built in implementation
+    if hasattr(gdb, 'Target'):
+        import linux.awareness_target
+    else:
+        gdb.write("LxAwareness disabled: gdb.Target unavailable\n")
