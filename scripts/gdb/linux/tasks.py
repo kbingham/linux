@@ -15,7 +15,6 @@ import gdb
 
 from linux import utils
 
-
 task_type = utils.CachedType("struct task_struct")
 
 
@@ -44,6 +43,19 @@ def get_task_by_pid(pid):
         if int(task['pid']) == pid:
             return task
     return None
+
+
+def arg_to_pid(arg):
+    argv = gdb.string_to_argv(arg)
+    if len(argv) >= 1:
+        try:
+            pid = int(argv[0])
+        except:
+            raise gdb.GdbError("Provide a PID as integer value")
+    else:
+        pid = 1
+
+    return pid
 
 
 class LxTaskByPidFunc(gdb.Function):
@@ -133,3 +145,42 @@ variable."""
             raise gdb.GdbError("No task of PID " + str(pid))
 
 LxThreadInfoByPidFunc()
+
+
+class LxPsInfo(gdb.Command):
+    """Report extra information regarding a process."""
+
+    def exe_file(self, mm):
+        dentry = mm['exe_file']['f_path']['dentry']
+        filename = files.dentry_name(dentry)
+        gdb.write("Executable: {}\n".format(filename))
+
+    def arguments(self, mm):
+        arg_start = mm['arg_start']
+        arg_end = mm['arg_end']
+        arg_len = arg_end - arg_start
+        gdb.write("Command Line:\n")
+
+    def environment(self, mm):
+        gdb.write("Environment:\n")
+
+    def __init__(self):
+        super(LxPsInfo, self).__init__("lx-psinfo", gdb.COMMAND_DATA)
+
+    def invoke(self, arg, from_tty):
+        pid = arg_to_pid(arg)
+        task = get_task_by_pid(pid)
+
+        gdb.write("Comm: {}\n".format(task['comm'].string()))
+
+        if task['mm']:  # Userspace process
+            # Report useful information about the user process
+            mm = task['mm']
+            self.exe_file(mm)
+            self.arguments(mm)
+            self.environment(mm)
+        else:
+            gdb.write("Kernel Thread\n")
+
+
+LxPsInfo()
