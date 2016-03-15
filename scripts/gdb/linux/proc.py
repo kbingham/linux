@@ -199,6 +199,53 @@ values of that process namespace"""
 LxMounts()
 
 
+class Mount(gdb.Function):
+
+    def __init__(self):
+        super(Mount, self).__init__("lx_mount")
+
+    def invoke(self, mount):
+        pid = 1
+        task = tasks.get_task_by_pid(pid)
+
+        if not task:
+            raise gdb.GdbError("Couldn't find a process with PID {}"
+                               .format(pid))
+
+        namespace = task['nsproxy']['mnt_ns']
+        if not namespace:
+            raise gdb.GdbError("No namespace for current process")
+
+        for vfs in lists.list_for_each_entry(namespace['list'],
+                                             mount_ptr_type, "mnt_list"):
+            devname = vfs['mnt_devname'].string()
+            devname = devname if devname else "none"
+
+            pathname = ""
+            parent = vfs
+            while True:
+                mntpoint = parent['mnt_mountpoint']
+                pathname = utils.dentry_name(mntpoint) + pathname
+                if (parent == parent['mnt_parent']):
+                    break
+                parent = parent['mnt_parent']
+
+            if (pathname == ""):
+                pathname = "/"
+
+            # gdb.write("Pathname {} : Mount {} vfs {}\n".format(pathname, mount, vfs))
+            s_options = vfs['mnt']['mnt_root']['d_sb']['s_options']
+            if s_options:
+                gdb.write("s_options: {}\n".format(s_options))
+
+            if pathname == mount.string():
+                return vfs
+
+        return vfs
+
+Mount()
+
+
 bdev_type = utils.CachedType("struct block_device")
 bdev_ptr_type = bdev_type.get_type().pointer()
 
