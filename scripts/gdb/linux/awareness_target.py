@@ -92,7 +92,7 @@ extra architecture specific target layers to handle memory """
         self.shortname = "LxThreads"
         self.longname = "Linux Thread Integration Layer"
         super(LxAwarenessTarget, self).__init__("Kernel Thread Awareness")
-        self.setup_tasks()
+        # self.setup_tasks()
 
     def setup_tasks(self):
         self.pid_to_task_struct = {}
@@ -124,32 +124,40 @@ extra architecture specific target layers to handle memory """
     def to_extra_thread_info(self, gdbthread):
         return "LinuxExtra"
 
-    def to_update_thread_list_old(self):
+    def to_update_thread_list_simple(self):
+        self.setup_tasks()
+
+    def to_update_thread_list(self):
         gdb.write("LX.to_update_thread_list\n")
         inferior = gdb.selected_inferior()
         threads = inferior.threads()
 
         for task in tasks.task_lists():
             # Build ptid_t ... class object better here still
-            ptid = (inferior.pid, 0, task['pid'])  # (pid, lwp, tid)
+            ptid = [inferior.pid, int(task['pid']), 0]  # (pid, lwp, tid)
+            print ("PTID = {}".format(ptid))
+            for t in threads:
+                print (str(t))
+
             #ptid = (1, 0, task['pid'])  # (pid, lwp, tid)
             if ptid not in threads:
-                gdb.write("- New Task [{} {}]\n"
-                          .format(task['pid'], task['comm'].string()))
-                inferior.add_thread(ptid)
+                thread = inferior.new_thread(ptid, task)
+                thread.name = task['comm'].string()
+                # Setup Threads must have been set by the init
+                self.setup_threads(thread, task)
 
-    def to_update_thread_list(self):
+    def to_update_thread_list_pass(self):
         pass
 
     def to_thread_alive(self, ptid):
         return 1
 
     def to_fetch_registers(self, register):
-        pass
-        #thread = gdb.selected_thread()
+        thread = gdb.selected_thread()
         # setup_thread_amd64(thread, thread.info)
-        #setup_thread_armv7(thread, thread.info)
-        return True
+        # setup_thread_armv7(thread, thread.info)
+        self.setup_threads(thread, thread.info)
+        # return True
 
     def to_prepare_to_store(self, thread):
         pass
@@ -158,5 +166,10 @@ extra architecture specific target layers to handle memory """
     def to_store_registers(self, thread):
         pass
 
+# We need to postpone adding our target until after the inferior is added
+# Perhaps some sort of a hook, or observer registration which calls into
+# this python layer is needed!
+# Then in the same way as the C version there should be some checks to see if
+# we are happy to load this target layer in! (Compare vmlinux-banner somehow)
 def load():
     LxAwarenessTarget()
