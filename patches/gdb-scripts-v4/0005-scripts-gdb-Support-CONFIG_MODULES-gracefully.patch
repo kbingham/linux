@@ -1,0 +1,52 @@
+From aeadb1d67cba0c4836f4fec448a7e0164cf590ea Mon Sep 17 00:00:00 2001
+From: Kieran Bingham <kieran.bingham@linaro.org>
+Date: Thu, 18 Feb 2016 12:11:05 +0000
+Subject: [PATCHv4 05/12] scripts/gdb: Support !CONFIG_MODULES gracefully
+
+If CONFIG_MODULES is not enabled, lx-lsmod tries to find
+a non-existent symbol and generates an unfriendly traceback:
+
+(gdb) lx-lsmod
+Address    Module                  Size  Used by
+Traceback (most recent call last):
+  File "scripts/gdb/linux/modules.py", line 75, in invoke
+    for module in module_list():
+  File "scripts/gdb/linux/modules.py", line 24, in module_list
+    module_ptr_type = module_type.get_type().pointer()
+  File "scripts/gdb/linux/utils.py", line 28, in get_type
+    self._type = gdb.lookup_type(self._name)
+gdb.error: No struct type named module.
+Error occurred in Python command: No struct type named module.
+
+Catch the error and return an empty module_list() for a clean command
+output as follows:
+
+(gdb) lx-lsmod
+Address    Module                  Size  Used by
+(gdb)
+
+Signed-off-by: Kieran Bingham <kieran.bingham@linaro.org>
+---
+ scripts/gdb/linux/modules.py | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/scripts/gdb/linux/modules.py b/scripts/gdb/linux/modules.py
+index 6d9e1199ce57..61cc8a533cd8 100644
+--- a/scripts/gdb/linux/modules.py
++++ b/scripts/gdb/linux/modules.py
+@@ -21,8 +21,11 @@ module_type = utils.CachedType("struct module")
+ 
+ def module_list():
+     global module_type
++    modules = utils.gdb_eval_or_none("modules")
++    if modules is None:
++        return
++
+     module_ptr_type = module_type.get_type().pointer()
+-    modules = gdb.parse_and_eval("modules")
+ 
+     for module in lists.list_for_each_entry(modules, module_ptr_type, "list"):
+         yield module
+-- 
+2.5.0
+

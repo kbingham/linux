@@ -1,0 +1,86 @@
+From a7962c119eb9677ec62ef01d3ea2b3ff77c2f0d9 Mon Sep 17 00:00:00 2001
+From: Kieran Bingham <kieran.bingham@linaro.org>
+Date: Wed, 30 Mar 2016 12:27:33 +0100
+Subject: [PATCHv4 00/12] gdb/scripts: Linux awareness debug commands
+
+Hopefully, version 4 of this patchset now starts to look like a useful set of
+additions. Whilst this set drops the lx-interrupts command, I am actually quite
+pleased with the effectiveness of the $lx_radix_tree_lookup function which
+will be more generically useful across multiple subsystems.
+
+I have also dropped lx-meminfo (for now) as it is just not in a viable state
+for integration, whereas the other patches in this set (hopefully) are.
+
+I believe that being able to identify the memory profiles of a crashed system
+is a useful debug feature, however currently the command is presenting more
+inaccurate information than I deem acceptable, and it will need to be worked
+on separately. I will likely post this current state separately for reference
+or if anyone is interested in it, but I don't want it's state to block these
+patches.
+
+I have run these against PEP8 for both version 1.4.6 (Ubuntu 14.04), and 1.6.2
+(Ubuntu 15.10) which hopefully means we won't come across the issues of the
+previous set, but I did not have easy access to v1.5.7.
+
+I haven't yet discovered why lx-mounts prints a root / root line, where
+/proc/mounts does not, but the ST implementation appears to also print this.
+
+For convenience, this patch set submission can be found at
+ http://git.linaro.org/people/kieran.bingham/linux.git gdb-scripts-v4
+
+v4:
+ - list generator improved after review comments
+ - Alternate PEP8 warnings fixed
+ - lx_radix_tree_lookup added as function with example in Documentation
+ - lx-cpus command added
+ - lx-interrupts dropped
+ - lx-meminfo dropped from this set (TBC separately)
+
+v3:
+ - dentry_name moved to utils package
+ - PEP8 warnings fixed
+ - CPU iterators added
+ - Radix Tree parser added
+ - lx-interrupts added
+ - lx_thread_info_by_pid added
+
+v2:
+ - constants.py integrated to KBuild
+ - Linked lists added from Jeff Mahoneys implementation
+ - Modules converted to use list generators
+ - !CONFIG_MODULES supported gracefully
+ - lx-meminfo command improved for !CONFIG_MMU targets
+
+Kieran Bingham (12):
+  scripts/gdb: Provide linux constants
+  scripts/gdb: Provide kernel list item generators
+  scripts/gdb: Convert modules usage to lists functions
+  scripts/gdb: Provide exception catching parser
+  scripts/gdb: Support !CONFIG_MODULES gracefully
+  scripts/gdb: Provide a dentry_name VFS path helper
+  scripts/gdb: Add io resource readers
+  scripts/gdb: Add mount point list command
+  scripts/gdb: Add cpu iterators
+  scripts/gdb: Add a Radix Tree Parser
+  scripts/gdb: Add documentation example for radix tree
+  scripts/gdb: Add lx_thread_info_by_pid helper
+
+ Documentation/gdb-kernel-debugging.txt |  21 +++++
+ Kbuild                                 |  10 +++
+ scripts/gdb/linux/Makefile             |  12 ++-
+ scripts/gdb/linux/constants.py.in      |  59 +++++++++++++
+ scripts/gdb/linux/cpus.py              |  38 ++++++++
+ scripts/gdb/linux/lists.py             |  21 +++++
+ scripts/gdb/linux/modules.py           |  22 +++--
+ scripts/gdb/linux/proc.py              | 156 +++++++++++++++++++++++++++++++++
+ scripts/gdb/linux/radixtree.py         |  97 ++++++++++++++++++++
+ scripts/gdb/linux/tasks.py             |  19 ++++
+ scripts/gdb/linux/utils.py             |  15 ++++
+ scripts/gdb/vmlinux-gdb.py             |   2 +
+ 12 files changed, 459 insertions(+), 13 deletions(-)
+ create mode 100644 scripts/gdb/linux/constants.py.in
+ create mode 100644 scripts/gdb/linux/radixtree.py
+
+-- 
+2.5.0
+

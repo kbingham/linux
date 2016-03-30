@@ -1,0 +1,47 @@
+From a7962c119eb9677ec62ef01d3ea2b3ff77c2f0d9 Mon Sep 17 00:00:00 2001
+From: Kieran Bingham <kieran.bingham@linaro.org>
+Date: Tue, 23 Feb 2016 18:13:07 +0000
+Subject: [PATCHv4 12/12] scripts/gdb: Add lx_thread_info_by_pid helper
+
+The tasks module already provides helpers to find the task struct by
+pid, and the thread_info by task struct; however this is cumbersome to
+utilise on the gdb commandline.
+
+Wrap these two functionalities together in an extra single helper to
+allow exploring the thread info, from a PID value
+
+Signed-off-by: Kieran Bingham <kieran.bingham@linaro.org>
+---
+ scripts/gdb/linux/tasks.py | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/scripts/gdb/linux/tasks.py b/scripts/gdb/linux/tasks.py
+index 862a4ae24d49..1bf949c43b76 100644
+--- a/scripts/gdb/linux/tasks.py
++++ b/scripts/gdb/linux/tasks.py
+@@ -114,3 +114,22 @@ variable."""
+ 
+ 
+ LxThreadInfoFunc()
++
++
++class LxThreadInfoByPidFunc (gdb.Function):
++    """Calculate Linux thread_info from task variable found by pid
++
++$lx_thread_info_by_pid(PID): Given PID, return the corresponding thread_info
++variable."""
++
++    def __init__(self):
++        super(LxThreadInfoByPidFunc, self).__init__("lx_thread_info_by_pid")
++
++    def invoke(self, pid):
++        task = get_task_by_pid(pid)
++        if task:
++            return get_thread_info(task.dereference())
++        else:
++            raise gdb.GdbError("No task of PID " + str(pid))
++
++LxThreadInfoByPidFunc()
+-- 
+2.5.0
+

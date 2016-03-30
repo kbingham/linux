@@ -1,0 +1,59 @@
+From 7dd377b8009d3460dd9e868261abfaa7a25d9018 Mon Sep 17 00:00:00 2001
+From: Kieran Bingham <kieran.bingham@linaro.org>
+Date: Tue, 19 Jan 2016 15:43:17 +0000
+Subject: [PATCHv4 02/12] scripts/gdb: Provide kernel list item generators
+
+Facilitate linked-list items by providing a generator to return
+the dereferenced, and type-cast objects from a kernel linked list
+
+CC: Jeff Mahoney <jeffm@suse.com>
+
+Signed-off-by: Kieran Bingham <kieran.bingham@linaro.org>
+---
+Changes since v1:
+ - items function removed, and replaced with Jeff Mahoney's cleaner
+   implementations of list_for_each, and list_for_each_entry
+
+Changes since v3:
+ - GdbError strings formatted on single line
+ - list_head type corrected to head.type
+ - .format() style preferred over %
+---
+ scripts/gdb/linux/lists.py | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+diff --git a/scripts/gdb/linux/lists.py b/scripts/gdb/linux/lists.py
+index 3a3775bc162b..2f335fbd86fd 100644
+--- a/scripts/gdb/linux/lists.py
++++ b/scripts/gdb/linux/lists.py
+@@ -18,6 +18,27 @@ from linux import utils
+ list_head = utils.CachedType("struct list_head")
+ 
+ 
++def list_for_each(head):
++    if head.type == list_head.get_type().pointer():
++        head = head.dereference()
++    elif head.type != list_head.get_type():
++        raise gdb.GdbError("Must be struct list_head not {}"
++                           .format(head.type))
++
++    node = head['next'].dereference()
++    while node.address != head.address:
++        yield node.address
++        node = node['next'].dereference()
++
++
++def list_for_each_entry(head, gdbtype, member):
++    for node in list_for_each(head):
++        if node.type != list_head.get_type().pointer():
++            raise TypeError("Type {} found. Expected struct list_head *."
++                            .format(node.type))
++        yield utils.container_of(node, gdbtype, member)
++
++
+ def list_check(head):
+     nb = 0
+     if (head.type == list_head.get_type().pointer()):
+-- 
+2.5.0
+

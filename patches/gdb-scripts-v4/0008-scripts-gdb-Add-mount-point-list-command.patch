@@ -1,0 +1,186 @@
+From 49e87bb998f65f521a985bf115da14955aa230ec Mon Sep 17 00:00:00 2001
+From: Kieran Bingham <kieran.bingham@linaro.org>
+Date: Tue, 12 Jan 2016 16:46:29 +0000
+Subject: [PATCHv4 08/12] scripts/gdb: Add mount point list command
+
+lx-mounts will identify current mount points based on the 'init_task'
+namespace by default, as we do not yet have a kernel thread list
+implementation to select the current running thread.
+
+Optionally, a user can specify a PID to list from that process'
+namespace
+
+Signed-off-by: Kieran Bingham <kieran.bingham@linaro.org>
+
+---
+Changes from v1:
+ - Updated to use LX_ constant macros
+ - Adjusted for new list_for_each_item() function
+ - Removed unnecessary Null check in vfs['mnt_parent']
+   - Tested and not needed. It probably occurred in early testing
+     with a bad iterator
+
+Changes since v2:
+ - dentry path helper moved to utils module
+
+Changes since v3
+ - Adjust vfs list_for_each_entry code alignments
+---
+ scripts/gdb/linux/constants.py.in | 21 +++++++++
+ scripts/gdb/linux/proc.py         | 99 +++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 120 insertions(+)
+
+diff --git a/scripts/gdb/linux/constants.py.in b/scripts/gdb/linux/constants.py.in
+index 79d9d0092452..57213ad8cf75 100644
+--- a/scripts/gdb/linux/constants.py.in
++++ b/scripts/gdb/linux/constants.py.in
+@@ -12,7 +12,11 @@
+  *
+  */
+ 
++#include <linux/fs.h>
++#include <linux/mount.h>
++
+ /* We need to stringify expanded macros so that they can be parsed */
++
+ #define STRING(x) #x
+ #define XSTRING(x) STRING(x)
+ 
+@@ -30,3 +34,20 @@
+ <!-- end-c-headers -->
+ 
+ import gdb
++
++/* linux/fs.h */
++LX_VALUE(MS_RDONLY)
++LX_VALUE(MS_SYNCHRONOUS)
++LX_VALUE(MS_MANDLOCK)
++LX_VALUE(MS_DIRSYNC)
++LX_VALUE(MS_NOATIME)
++LX_VALUE(MS_NODIRATIME)
++
++/* linux/mount.h */
++LX_VALUE(MNT_NOSUID)
++LX_VALUE(MNT_NODEV)
++LX_VALUE(MNT_NOEXEC)
++LX_VALUE(MNT_NOATIME)
++LX_VALUE(MNT_NODIRATIME)
++LX_VALUE(MNT_RELATIME)
++
+diff --git a/scripts/gdb/linux/proc.py b/scripts/gdb/linux/proc.py
+index d855b2fd9a06..38b1f09d1cd9 100644
+--- a/scripts/gdb/linux/proc.py
++++ b/scripts/gdb/linux/proc.py
+@@ -12,6 +12,10 @@
+ #
+ 
+ import gdb
++from linux import constants
++from linux import utils
++from linux import tasks
++from linux import lists
+ 
+ 
+ class LxCmdLine(gdb.Command):
+@@ -96,3 +100,98 @@ Equivalent to cat /proc/ioports on a running target"""
+         return show_lx_resources("ioport_resource")
+ 
+ LxIOPorts()
++
++
++# Mount namespace viewer
++#  /proc/mounts
++
++def info_opts(lst, opt):
++    opts = ""
++    for key, string in lst.items():
++        if opt & key:
++            opts += string
++    return opts
++
++
++FS_INFO = {constants.LX_MS_SYNCHRONOUS: ",sync",
++           constants.LX_MS_MANDLOCK: ",mand",
++           constants.LX_MS_DIRSYNC: ",dirsync",
++           constants.LX_MS_NOATIME: ",noatime",
++           constants.LX_MS_NODIRATIME: ",nodiratime"}
++
++MNT_INFO = {constants.LX_MNT_NOSUID: ",nosuid",
++            constants.LX_MNT_NODEV: ",nodev",
++            constants.LX_MNT_NOEXEC: ",noexec",
++            constants.LX_MNT_NOATIME: ",noatime",
++            constants.LX_MNT_NODIRATIME: ",nodiratime",
++            constants.LX_MNT_RELATIME: ",relatime"}
++
++mount_type = utils.CachedType("struct mount")
++mount_ptr_type = mount_type.get_type().pointer()
++
++
++class LxMounts(gdb.Command):
++    """Report the VFS mounts of the current process namespace.
++
++Equivalent to cat /proc/mounts on a running target
++An integer value can be supplied to display the mount
++values of that process namespace"""
++
++    def __init__(self):
++        super(LxMounts, self).__init__("lx-mounts", gdb.COMMAND_DATA)
++
++    # Equivalent to proc_namespace.c:show_vfsmnt
++    # However, that has the ability to call into s_op functions
++    # whereas we cannot and must make do with the information we can obtain.
++    def invoke(self, arg, from_tty):
++        argv = gdb.string_to_argv(arg)
++        if len(argv) >= 1:
++            try:
++                pid = int(argv[0])
++            except:
++                raise gdb.GdbError("Provide a PID as integer value")
++        else:
++            pid = 1
++
++        task = tasks.get_task_by_pid(pid)
++        if not task:
++            raise gdb.GdbError("Couldn't find a process with PID {}"
++                               .format(pid))
++
++        namespace = task['nsproxy']['mnt_ns']
++        if not namespace:
++            raise gdb.GdbError("No namespace for current process")
++
++        for vfs in lists.list_for_each_entry(namespace['list'],
++                                             mount_ptr_type, "mnt_list"):
++            devname = vfs['mnt_devname'].string()
++            devname = devname if devname else "none"
++
++            pathname = ""
++            parent = vfs
++            while True:
++                mntpoint = parent['mnt_mountpoint']
++                pathname = utils.dentry_name(mntpoint) + pathname
++                if (parent == parent['mnt_parent']):
++                    break
++                parent = parent['mnt_parent']
++
++            if (pathname == ""):
++                pathname = "/"
++
++            superblock = vfs['mnt']['mnt_sb']
++            fstype = superblock['s_type']['name'].string()
++            s_flags = int(superblock['s_flags'])
++            m_flags = int(vfs['mnt']['mnt_flags'])
++            rd = "ro" if (s_flags & constants.LX_MS_RDONLY) else "rw"
++
++            gdb.write(
++                "{} {} {} {}{}{} 0 0\n"
++                .format(devname,
++                        pathname,
++                        fstype,
++                        rd,
++                        info_opts(FS_INFO, s_flags),
++                        info_opts(MNT_INFO, m_flags)))
++
++LxMounts()
+-- 
+2.5.0
+
