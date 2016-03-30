@@ -355,14 +355,16 @@ Equivalent to cat /proc/meminfo on a running target """
 
         if constants.LX_CONFIG_HIGHMEM:
             totalhigh = int(gdb.parse_and_eval("totalhigh_pages"))
-            freehigh = int(gdb.parse_and_eval("nr_free_highpages()"))
+            # This really gets in the way.
+            # Implementing free_highpages locally needs to walk all mm_zones
+            freehigh = 0 # int(gdb.parse_and_eval("nr_free_highpages()"))
             lowtotal = totalram - totalhigh
             lowfree = freeram - freehigh
             gdb.write(
                 "HighTotal:      {:8d} kB\n".format(self.K(totalhigh)) +
-                "HighFree:       {:8d} kB\n".format(self.K(freehigh)) +
+                "HighFree:*      {:8d} kB\n".format(self.K(freehigh)) +
                 "LowTotal:       {:8d} kB\n".format(self.K(lowtotal)) +
-                "LowFree:        {:8d} kB\n".format(self.K(lowfree))
+                "LowFree:*       {:8d} kB\n".format(self.K(lowfree))
                 )
 
         if not constants.LX_CONFIG_MMU:
