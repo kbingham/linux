@@ -497,8 +497,11 @@ const struct i2c_device_id *i2c_match_id(const struct i2c_device_id *id,
 		return NULL;
 
 	while (id->name[0]) {
-		if (strcmp(client->name, id->name) == 0)
+		if (strcmp(client->name, id->name) == 0) 
+		{
+			printk("i2c_match_id: Found an ID for %s\n", id->name);
 			return id;
+		}
 		id++;
 	}
 	return NULL;
@@ -513,7 +516,10 @@ static int i2c_device_match(struct device *dev, struct device_driver *drv)
 
 	/* Attempt an OF style match */
 	if (i2c_of_match_device(drv->of_match_table, client))
+	{
+		printk("OF Match on %s\n", drv->name);
 		return 1;
+	}
 
 	/* Then ACPI style match */
 	if (acpi_driver_match_device(dev, drv))
@@ -523,7 +529,10 @@ static int i2c_device_match(struct device *dev, struct device_driver *drv)
 
 	/* Finally an I2C match */
 	if (i2c_match_id(driver->id_table, client))
+	{
+		printk("I2C Match on %s\n", drv->name);
 		return 1;
+	}
 
 	return 0;
 }
