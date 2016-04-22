@@ -1,0 +1,28 @@
+From d6e247b43cdbc41f757ed4409637613ea3c1e968 Mon Sep 17 00:00:00 2001
+From: Kieran Bingham <kieran@bingham.xyz>
+Date: Fri, 22 Apr 2016 11:49:43 +0100
+Subject: [PATCHv5 0/8] *** SUBJECT HERE ***
+
+*** BLURB HERE ***
+
+Lee Jones (8):
+  i2c: Add pointer dereference protection to i2c_match_id()
+  i2c: Add the ability to match device to compatible string without an
+    of_node
+  i2c: Match using traditional OF methods, then by vendor-less
+    compatible strings
+  i2c: Make I2C ID tables non-mandatory for DT'ed devices
+  i2c: Export i2c_match_id() for direct use by device drivers
+  i2c: Provide a temporary .probe_new() call-back type
+  mfd: 88pm860x: Move over to new I2C device .probe() call
+  mfd: as3722: Rid driver of superfluous I2C device ID structure
+
+ drivers/i2c/i2c-core.c      | 75 +++++++++++++++++++++++++++++++++++++++------
+ drivers/mfd/88pm860x-core.c |  5 ++-
+ drivers/mfd/as3722.c        | 12 ++------
+ include/linux/i2c.h         | 22 ++++++++++++-
+ 4 files changed, 91 insertions(+), 23 deletions(-)
+
+-- 
+2.5.0
+
