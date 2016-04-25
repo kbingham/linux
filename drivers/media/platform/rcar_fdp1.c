@@ -1035,11 +1035,20 @@ static int vim2m_remove(struct platform_device *pdev)
 	return 0;
 }
 
+static const struct of_device_id vim2m_dt_ids[] = {
+	{ .compatible = "renesas,fdp1-r8a7795" }, /* H3 */
+	{ .compatible = "renesas,fdp1-r8a7796" }, /* M3-W */
+	{ .compatible = "renesas,rcar-gen3-fdp1" },
+	{ },
+};
+MODULE_DEVICE_TABLE(of, vim2m_dt_ids);
+
 static struct platform_driver fdp1_pdrv = {
 	.probe		= vim2m_probe,
 	.remove		= vim2m_remove,
 	.driver		= {
 		.name	= MEM2MEM_NAME,
+		.of_match_table = vim2m_dt_ids,
 	},
 };
 
