@@ -66,14 +66,14 @@ MODULE_PARM_DESC(debug, "activate debug info");
 	v4l2_dbg(1, debug, &dev->v4l2_dev, "%s: " fmt, __func__, ## arg)
 
 
-struct vim2m_fmt {
+struct fdp1_fmt {
 	u32	fourcc;
 	int	depth;
 	/* Types the format can be used for */
 	u32	types;
 };
 
-static struct vim2m_fmt formats[] = {
+static struct fdp1_fmt formats[] = {
 	{
 		.fourcc	= V4L2_PIX_FMT_RGB565X, /* rrrrrggg gggbbbbb */
 		.depth	= 16,
@@ -91,12 +91,12 @@ static struct vim2m_fmt formats[] = {
 #define NUM_FORMATS ARRAY_SIZE(formats)
 
 /* Per-queue, driver-specific private data */
-struct vim2m_q_data {
+struct fdp1_q_data {
 	unsigned int		width;
 	unsigned int		height;
 	unsigned int		sizeimage;
 	unsigned int		sequence;
-	struct vim2m_fmt	*fmt;
+	struct fdp1_fmt	*fmt;
 };
 
 enum {
@@ -107,9 +107,9 @@ enum {
 #define V4L2_CID_TRANS_TIME_MSEC	(V4L2_CID_USER_BASE + 0x1000)
 #define V4L2_CID_TRANS_NUM_BUFS		(V4L2_CID_USER_BASE + 0x1001)
 
-static struct vim2m_fmt *find_format(struct v4l2_format *f)
+static struct fdp1_fmt *find_format(struct v4l2_format *f)
 {
-	struct vim2m_fmt *fmt;
+	struct fdp1_fmt *fmt;
 	unsigned int k;
 
 	for (k = 0; k < NUM_FORMATS; k++) {
@@ -124,7 +124,7 @@ static struct vim2m_fmt *find_format(struct v4l2_format *f)
 	return &formats[k];
 }
 
-struct vim2m_dev {
+struct fdp1_dev {
 	struct v4l2_device	v4l2_dev;
 	struct video_device	vfd;
 
@@ -137,9 +137,9 @@ struct vim2m_dev {
 	struct v4l2_m2m_dev	*m2m_dev;
 };
 
-struct vim2m_ctx {
+struct fdp1_ctx {
 	struct v4l2_fh		fh;
-	struct vim2m_dev	*dev;
+	struct fdp1_dev	*dev;
 
 	struct v4l2_ctrl_handler hdl;
 
@@ -160,15 +160,15 @@ struct vim2m_ctx {
 	enum v4l2_colorspace	colorspace;
 
 	/* Source and destination queue data */
-	struct vim2m_q_data   q_data[2];
+	struct fdp1_q_data   q_data[2];
 };
 
-static inline struct vim2m_ctx *file2ctx(struct file *file)
+static inline struct fdp1_ctx *file2ctx(struct file *file)
 {
-	return container_of(file->private_data, struct vim2m_ctx, fh);
+	return container_of(file->private_data, struct fdp1_ctx, fh);
 }
 
-static struct vim2m_q_data *get_q_data(struct vim2m_ctx *ctx,
+static struct fdp1_q_data *get_q_data(struct fdp1_ctx *ctx,
 					 enum v4l2_buf_type type)
 {
 	switch (type) {
@@ -182,13 +182,12 @@ static struct vim2m_q_data *get_q_data(struct vim2m_ctx *ctx,
 	return NULL;
 }
 
-
-static int device_process(struct vim2m_ctx *ctx,
+static int device_process(struct fdp1_ctx *ctx,
 			  struct vb2_v4l2_buffer *in_vb,
 			  struct vb2_v4l2_buffer *out_vb)
 {
-	struct vim2m_dev *dev = ctx->dev;
-	struct vim2m_q_data *q_data;
+	struct fdp1_dev *dev = ctx->dev;
+	struct fdp1_q_data *q_data;
 	u8 *p_in, *p_out;
 	int x, y, t, w;
 	int tile_w, bytes_left;
@@ -317,7 +316,7 @@ static int device_process(struct vim2m_ctx *ctx,
 	return 0;
 }
 
-static void schedule_irq(struct vim2m_dev *dev, int msec_timeout)
+static void schedule_irq(struct fdp1_dev *dev, int msec_timeout)
 {
 	dprintk(dev, "Scheduling a simulated irq\n");
 	mod_timer(&dev->timer, jiffies + msecs_to_jiffies(msec_timeout));
@@ -332,7 +331,7 @@ static void schedule_irq(struct vim2m_dev *dev, int msec_timeout)
  */
 static int job_ready(void *priv)
 {
-	struct vim2m_ctx *ctx = priv;
+	struct fdp1_ctx *ctx = priv;
 
 	if (v4l2_m2m_num_src_bufs_ready(ctx->fh.m2m_ctx) < ctx->translen
 	    || v4l2_m2m_num_dst_bufs_ready(ctx->fh.m2m_ctx) < ctx->translen) {
@@ -345,7 +344,7 @@ static int job_ready(void *priv)
 
 static void job_abort(void *priv)
 {
-	struct vim2m_ctx *ctx = priv;
+	struct fdp1_ctx *ctx = priv;
 
 	/* Will cancel the transaction in the next interrupt handler */
 	ctx->aborting = 1;
@@ -359,8 +358,8 @@ static void job_abort(void *priv)
  */
 static void device_run(void *priv)
 {
-	struct vim2m_ctx *ctx = priv;
-	struct vim2m_dev *dev = ctx->dev;
+	struct fdp1_ctx *ctx = priv;
+	struct fdp1_dev *dev = ctx->dev;
 	struct vb2_v4l2_buffer *src_buf, *dst_buf;
 
 	src_buf = v4l2_m2m_next_src_buf(ctx->fh.m2m_ctx);
@@ -374,12 +373,12 @@ static void device_run(void *priv)
 
 static void device_isr(unsigned long priv)
 {
-	struct vim2m_dev *vim2m_dev = (struct vim2m_dev *)priv;
-	struct vim2m_ctx *curr_ctx;
+	struct fdp1_dev *fdp1_dev = (struct fdp1_dev *)priv;
+	struct fdp1_ctx *curr_ctx;
 	struct vb2_v4l2_buffer *src_vb, *dst_vb;
 	unsigned long flags;
 
-	curr_ctx = v4l2_m2m_get_curr_priv(vim2m_dev->m2m_dev);
+	curr_ctx = v4l2_m2m_get_curr_priv(fdp1_dev->m2m_dev);
 
 	if (NULL == curr_ctx) {
 		pr_err("Instance released before the end of transaction\n");
@@ -391,16 +390,16 @@ static void device_isr(unsigned long priv)
 
 	curr_ctx->num_processed++;
 
-	spin_lock_irqsave(&vim2m_dev->irqlock, flags);
+	spin_lock_irqsave(&fdp1_dev->irqlock, flags);
 	v4l2_m2m_buf_done(src_vb, VB2_BUF_STATE_DONE);
 	v4l2_m2m_buf_done(dst_vb, VB2_BUF_STATE_DONE);
-	spin_unlock_irqrestore(&vim2m_dev->irqlock, flags);
+	spin_unlock_irqrestore(&fdp1_dev->irqlock, flags);
 
 	if (curr_ctx->num_processed == curr_ctx->translen
 	    || curr_ctx->aborting) {
 		dprintk(curr_ctx->dev, "Finishing transaction\n");
 		curr_ctx->num_processed = 0;
-		v4l2_m2m_job_finish(vim2m_dev->m2m_dev, curr_ctx->fh.m2m_ctx);
+		v4l2_m2m_job_finish(fdp1_dev->m2m_dev, curr_ctx->fh.m2m_ctx);
 	} else {
 		device_run(curr_ctx);
 	}
@@ -424,7 +423,7 @@ static int vidioc_querycap(struct file *file, void *priv,
 static int enum_fmt(struct v4l2_fmtdesc *f, u32 type)
 {
 	int i, num;
-	struct vim2m_fmt *fmt;
+	struct fdp1_fmt *fmt;
 
 	num = 0;
 
@@ -462,10 +461,10 @@ static int vidioc_enum_fmt_vid_out(struct file *file, void *priv,
 	return enum_fmt(f, MEM2MEM_OUTPUT);
 }
 
-static int vidioc_g_fmt(struct vim2m_ctx *ctx, struct v4l2_format *f)
+static int vidioc_g_fmt(struct fdp1_ctx *ctx, struct v4l2_format *f)
 {
 	struct vb2_queue *vq;
-	struct vim2m_q_data *q_data;
+	struct fdp1_q_data *q_data;
 
 	vq = v4l2_m2m_get_vq(ctx->fh.m2m_ctx, f->type);
 	if (!vq)
@@ -496,7 +495,7 @@ static int vidioc_g_fmt_vid_cap(struct file *file, void *priv,
 	return vidioc_g_fmt(file2ctx(file), f);
 }
 
-static int vidioc_try_fmt(struct v4l2_format *f, struct vim2m_fmt *fmt)
+static int vidioc_try_fmt(struct v4l2_format *f, struct fdp1_fmt *fmt)
 {
 	/* V4L2 specification suggests the driver corrects the format struct
 	 * if any of the dimensions is unsupported */
@@ -521,8 +520,8 @@ static int vidioc_try_fmt(struct v4l2_format *f, struct vim2m_fmt *fmt)
 static int vidioc_try_fmt_vid_cap(struct file *file, void *priv,
 				  struct v4l2_format *f)
 {
-	struct vim2m_fmt *fmt;
-	struct vim2m_ctx *ctx = file2ctx(file);
+	struct fdp1_fmt *fmt;
+	struct fdp1_ctx *ctx = file2ctx(file);
 
 	fmt = find_format(f);
 	if (!fmt) {
@@ -543,8 +542,8 @@ static int vidioc_try_fmt_vid_cap(struct file *file, void *priv,
 static int vidioc_try_fmt_vid_out(struct file *file, void *priv,
 				  struct v4l2_format *f)
 {
-	struct vim2m_fmt *fmt;
-	struct vim2m_ctx *ctx = file2ctx(file);
+	struct fdp1_fmt *fmt;
+	struct fdp1_ctx *ctx = file2ctx(file);
 
 	fmt = find_format(f);
 	if (!fmt) {
@@ -563,9 +562,9 @@ static int vidioc_try_fmt_vid_out(struct file *file, void *priv,
 	return vidioc_try_fmt(f, fmt);
 }
 
-static int vidioc_s_fmt(struct vim2m_ctx *ctx, struct v4l2_format *f)
+static int vidioc_s_fmt(struct fdp1_ctx *ctx, struct v4l2_format *f)
 {
-	struct vim2m_q_data *q_data;
+	struct fdp1_q_data *q_data;
 	struct vb2_queue *vq;
 
 	vq = v4l2_m2m_get_vq(ctx->fh.m2m_ctx, f->type);
@@ -609,7 +608,7 @@ static int vidioc_s_fmt_vid_cap(struct file *file, void *priv,
 static int vidioc_s_fmt_vid_out(struct file *file, void *priv,
 				struct v4l2_format *f)
 {
-	struct vim2m_ctx *ctx = file2ctx(file);
+	struct fdp1_ctx *ctx = file2ctx(file);
 	int ret;
 
 	ret = vidioc_try_fmt_vid_out(file, priv, f);
@@ -622,10 +621,10 @@ static int vidioc_s_fmt_vid_out(struct file *file, void *priv,
 	return ret;
 }
 
-static int vim2m_s_ctrl(struct v4l2_ctrl *ctrl)
+static int fdp1_s_ctrl(struct v4l2_ctrl *ctrl)
 {
-	struct vim2m_ctx *ctx =
-		container_of(ctrl->handler, struct vim2m_ctx, hdl);
+	struct fdp1_ctx *ctx =
+		container_of(ctrl->handler, struct fdp1_ctx, hdl);
 
 	switch (ctrl->id) {
 	case V4L2_CID_HFLIP:
@@ -658,12 +657,12 @@ static int vim2m_s_ctrl(struct v4l2_ctrl *ctrl)
 	return 0;
 }
 
-static const struct v4l2_ctrl_ops vim2m_ctrl_ops = {
-	.s_ctrl = vim2m_s_ctrl,
+static const struct v4l2_ctrl_ops fdp1_ctrl_ops = {
+	.s_ctrl = fdp1_s_ctrl,
 };
 
 
-static const struct v4l2_ioctl_ops vim2m_ioctl_ops = {
+static const struct v4l2_ioctl_ops fdp1_ioctl_ops = {
 	.vidioc_querycap	= vidioc_querycap,
 
 	.vidioc_enum_fmt_vid_cap = vidioc_enum_fmt_vid_cap,
@@ -696,12 +695,12 @@ static const struct v4l2_ioctl_ops vim2m_ioctl_ops = {
  * Queue operations
  */
 
-static int vim2m_queue_setup(struct vb2_queue *vq,
+static int fdp1_queue_setup(struct vb2_queue *vq,
 				unsigned int *nbuffers, unsigned int *nplanes,
 				unsigned int sizes[], void *alloc_ctxs[])
 {
-	struct vim2m_ctx *ctx = vb2_get_drv_priv(vq);
-	struct vim2m_q_data *q_data;
+	struct fdp1_ctx *ctx = vb2_get_drv_priv(vq);
+	struct fdp1_q_data *q_data;
 	unsigned int size, count = *nbuffers;
 
 	q_data = get_q_data(ctx, vq->type);
@@ -728,11 +727,11 @@ static int vim2m_queue_setup(struct vb2_queue *vq,
 	return 0;
 }
 
-static int vim2m_buf_prepare(struct vb2_buffer *vb)
+static int fdp1_buf_prepare(struct vb2_buffer *vb)
 {
 	struct vb2_v4l2_buffer *vbuf = to_vb2_v4l2_buffer(vb);
-	struct vim2m_ctx *ctx = vb2_get_drv_priv(vb->vb2_queue);
-	struct vim2m_q_data *q_data;
+	struct fdp1_ctx *ctx = vb2_get_drv_priv(vb->vb2_queue);
+	struct fdp1_q_data *q_data;
 
 	dprintk(ctx->dev, "type: %d\n", vb->vb2_queue->type);
 
@@ -758,26 +757,26 @@ static int vim2m_buf_prepare(struct vb2_buffer *vb)
 	return 0;
 }
 
-static void vim2m_buf_queue(struct vb2_buffer *vb)
+static void fdp1_buf_queue(struct vb2_buffer *vb)
 {
 	struct vb2_v4l2_buffer *vbuf = to_vb2_v4l2_buffer(vb);
-	struct vim2m_ctx *ctx = vb2_get_drv_priv(vb->vb2_queue);
+	struct fdp1_ctx *ctx = vb2_get_drv_priv(vb->vb2_queue);
 
 	v4l2_m2m_buf_queue(ctx->fh.m2m_ctx, vbuf);
 }
 
-static int vim2m_start_streaming(struct vb2_queue *q, unsigned count)
+static int fdp1_start_streaming(struct vb2_queue *q, unsigned count)
 {
-	struct vim2m_ctx *ctx = vb2_get_drv_priv(q);
-	struct vim2m_q_data *q_data = get_q_data(ctx, q->type);
+	struct fdp1_ctx *ctx = vb2_get_drv_priv(q);
+	struct fdp1_q_data *q_data = get_q_data(ctx, q->type);
 
 	q_data->sequence = 0;
 	return 0;
 }
 
-static void vim2m_stop_streaming(struct vb2_queue *q)
+static void fdp1_stop_streaming(struct vb2_queue *q)
 {
-	struct vim2m_ctx *ctx = vb2_get_drv_priv(q);
+	struct fdp1_ctx *ctx = vb2_get_drv_priv(q);
 	struct vb2_v4l2_buffer *vbuf;
 	unsigned long flags;
 
@@ -794,26 +793,26 @@ static void vim2m_stop_streaming(struct vb2_queue *q)
 	}
 }
 
-static struct vb2_ops vim2m_qops = {
-	.queue_setup	 = vim2m_queue_setup,
-	.buf_prepare	 = vim2m_buf_prepare,
-	.buf_queue	 = vim2m_buf_queue,
-	.start_streaming = vim2m_start_streaming,
-	.stop_streaming  = vim2m_stop_streaming,
+static struct vb2_ops fdp1_qops = {
+	.queue_setup	 = fdp1_queue_setup,
+	.buf_prepare	 = fdp1_buf_prepare,
+	.buf_queue	 = fdp1_buf_queue,
+	.start_streaming = fdp1_start_streaming,
+	.stop_streaming  = fdp1_stop_streaming,
 	.wait_prepare	 = vb2_ops_wait_prepare,
 	.wait_finish	 = vb2_ops_wait_finish,
 };
 
 static int queue_init(void *priv, struct vb2_queue *src_vq, struct vb2_queue *dst_vq)
 {
-	struct vim2m_ctx *ctx = priv;
+	struct fdp1_ctx *ctx = priv;
 	int ret;
 
 	src_vq->type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
 	src_vq->io_modes = VB2_MMAP | VB2_USERPTR | VB2_DMABUF;
 	src_vq->drv_priv = ctx;
 	src_vq->buf_struct_size = sizeof(struct v4l2_m2m_buffer);
-	src_vq->ops = &vim2m_qops;
+	src_vq->ops = &fdp1_qops;
 	src_vq->mem_ops = &vb2_vmalloc_memops;
 	src_vq->timestamp_flags = V4L2_BUF_FLAG_TIMESTAMP_COPY;
 	src_vq->lock = &ctx->dev->dev_mutex;
@@ -826,7 +825,7 @@ static int queue_init(void *priv, struct vb2_queue *src_vq, struct vb2_queue *ds
 	dst_vq->io_modes = VB2_MMAP | VB2_USERPTR | VB2_DMABUF;
 	dst_vq->drv_priv = ctx;
 	dst_vq->buf_struct_size = sizeof(struct v4l2_m2m_buffer);
-	dst_vq->ops = &vim2m_qops;
+	dst_vq->ops = &fdp1_qops;
 	dst_vq->mem_ops = &vb2_vmalloc_memops;
 	dst_vq->timestamp_flags = V4L2_BUF_FLAG_TIMESTAMP_COPY;
 	dst_vq->lock = &ctx->dev->dev_mutex;
@@ -834,8 +833,8 @@ static int queue_init(void *priv, struct vb2_queue *src_vq, struct vb2_queue *ds
 	return vb2_queue_init(dst_vq);
 }
 
-static const struct v4l2_ctrl_config vim2m_ctrl_trans_time_msec = {
-	.ops = &vim2m_ctrl_ops,
+static const struct v4l2_ctrl_config fdp1_ctrl_trans_time_msec = {
+	.ops = &fdp1_ctrl_ops,
 	.id = V4L2_CID_TRANS_TIME_MSEC,
 	.name = "Transaction Time (msec)",
 	.type = V4L2_CTRL_TYPE_INTEGER,
@@ -845,8 +844,8 @@ static const struct v4l2_ctrl_config vim2m_ctrl_trans_time_msec = {
 	.step = 1,
 };
 
-static const struct v4l2_ctrl_config vim2m_ctrl_trans_num_bufs = {
-	.ops = &vim2m_ctrl_ops,
+static const struct v4l2_ctrl_config fdp1_ctrl_trans_num_bufs = {
+	.ops = &fdp1_ctrl_ops,
 	.id = V4L2_CID_TRANS_NUM_BUFS,
 	.name = "Buffers Per Transaction",
 	.type = V4L2_CTRL_TYPE_INTEGER,
@@ -859,10 +858,10 @@ static const struct v4l2_ctrl_config vim2m_ctrl_trans_num_bufs = {
 /*
  * File operations
  */
-static int vim2m_open(struct file *file)
+static int fdp1_open(struct file *file)
 {
-	struct vim2m_dev *dev = video_drvdata(file);
-	struct vim2m_ctx *ctx = NULL;
+	struct fdp1_dev *dev = video_drvdata(file);
+	struct fdp1_ctx *ctx = NULL;
 	struct v4l2_ctrl_handler *hdl;
 	int rc = 0;
 
@@ -879,10 +878,10 @@ static int vim2m_open(struct file *file)
 	ctx->dev = dev;
 	hdl = &ctx->hdl;
 	v4l2_ctrl_handler_init(hdl, 4);
-	v4l2_ctrl_new_std(hdl, &vim2m_ctrl_ops, V4L2_CID_HFLIP, 0, 1, 1, 0);
-	v4l2_ctrl_new_std(hdl, &vim2m_ctrl_ops, V4L2_CID_VFLIP, 0, 1, 1, 0);
-	v4l2_ctrl_new_custom(hdl, &vim2m_ctrl_trans_time_msec, NULL);
-	v4l2_ctrl_new_custom(hdl, &vim2m_ctrl_trans_num_bufs, NULL);
+	v4l2_ctrl_new_std(hdl, &fdp1_ctrl_ops, V4L2_CID_HFLIP, 0, 1, 1, 0);
+	v4l2_ctrl_new_std(hdl, &fdp1_ctrl_ops, V4L2_CID_VFLIP, 0, 1, 1, 0);
+	v4l2_ctrl_new_custom(hdl, &fdp1_ctrl_trans_time_msec, NULL);
+	v4l2_ctrl_new_custom(hdl, &fdp1_ctrl_trans_num_bufs, NULL);
 	if (hdl->error) {
 		rc = hdl->error;
 		v4l2_ctrl_handler_free(hdl);
@@ -922,10 +921,10 @@ open_unlock:
 	return rc;
 }
 
-static int vim2m_release(struct file *file)
+static int fdp1_release(struct file *file)
 {
-	struct vim2m_dev *dev = video_drvdata(file);
-	struct vim2m_ctx *ctx = file2ctx(file);
+	struct fdp1_dev *dev = video_drvdata(file);
+	struct fdp1_ctx *ctx = file2ctx(file);
 
 	dprintk(dev, "Releasing instance %p\n", ctx);
 
@@ -942,20 +941,20 @@ static int vim2m_release(struct file *file)
 	return 0;
 }
 
-static const struct v4l2_file_operations vim2m_fops = {
+static const struct v4l2_file_operations fdp1_fops = {
 	.owner		= THIS_MODULE,
-	.open		= vim2m_open,
-	.release	= vim2m_release,
+	.open		= fdp1_open,
+	.release	= fdp1_release,
 	.poll		= v4l2_m2m_fop_poll,
 	.unlocked_ioctl	= video_ioctl2,
 	.mmap		= v4l2_m2m_fop_mmap,
 };
 
-static struct video_device vim2m_videodev = {
+static struct video_device fdp1_videodev = {
 	.name		= MEM2MEM_NAME,
 	.vfl_dir	= VFL_DIR_M2M,
-	.fops		= &vim2m_fops,
-	.ioctl_ops	= &vim2m_ioctl_ops,
+	.fops		= &fdp1_fops,
+	.ioctl_ops	= &fdp1_ioctl_ops,
 	.minor		= -1,
 	.release	= video_device_release_empty,
 };
@@ -966,65 +965,66 @@ static struct v4l2_m2m_ops m2m_ops = {
 	.job_abort	= job_abort,
 };
 
-static int vim2m_probe(struct platform_device *pdev)
+static int fdp1_probe(struct platform_device *pdev)
 {
-	struct vim2m_dev *dev;
+	struct fdp1_dev *fdp1;
 	struct video_device *vfd;
 	int ret;
 
-	dev = devm_kzalloc(&pdev->dev, sizeof(*dev), GFP_KERNEL);
-	if (!dev)
+	fdp1 = devm_kzalloc(&pdev->dev, sizeof(*fdp1), GFP_KERNEL);
+	if (!fdp1)
 		return -ENOMEM;
 
-	spin_lock_init(&dev->irqlock);
+	spin_lock_init(&fdp1->irqlock);
 
-	ret = v4l2_device_register(&pdev->dev, &dev->v4l2_dev);
+	ret = v4l2_device_register(&pdev->dev, &fdp1->v4l2_dev);
 	if (ret)
 		return ret;
 
-	atomic_set(&dev->num_inst, 0);
-	mutex_init(&dev->dev_mutex);
+	atomic_set(&fdp1->num_inst, 0);
+	mutex_init(&fdp1->dev_mutex);
 
-	dev->vfd = vim2m_videodev;
-	vfd = &dev->vfd;
-	vfd->lock = &dev->dev_mutex;
-	vfd->v4l2_dev = &dev->v4l2_dev;
+	fdp1->vfd = fdp1_videodev;
+	vfd = &fdp1->vfd;
+	vfd->lock = &fdp1->dev_mutex;
+	vfd->v4l2_dev = &fdp1->v4l2_dev;
 
 	ret = video_register_device(vfd, VFL_TYPE_GRABBER, 0);
 	if (ret) {
-		v4l2_err(&dev->v4l2_dev, "Failed to register video device\n");
+		v4l2_err(&fdp1->v4l2_dev, "Failed to register video device\n");
 		goto unreg_dev;
 	}
 
-	video_set_drvdata(vfd, dev);
-	snprintf(vfd->name, sizeof(vfd->name), "%s", vim2m_videodev.name);
-	v4l2_info(&dev->v4l2_dev,
+	video_set_drvdata(vfd, fdp1);
+	snprintf(vfd->name, sizeof(vfd->name), "%s", fdp1_videodev.name);
+	v4l2_info(&fdp1->v4l2_dev,
 			"Device registered as /dev/video%d\n", vfd->num);
 
-	setup_timer(&dev->timer, device_isr, (long)dev);
-	platform_set_drvdata(pdev, dev);
 
-	dev->m2m_dev = v4l2_m2m_init(&m2m_ops);
-	if (IS_ERR(dev->m2m_dev)) {
-		v4l2_err(&dev->v4l2_dev, "Failed to init mem2mem device\n");
-		ret = PTR_ERR(dev->m2m_dev);
+	setup_timer(&fdp1->timer, device_isr, (long)fdp1);
+	platform_set_drvdata(pdev, fdp1);
+
+	fdp1->m2m_dev = v4l2_m2m_init(&m2m_ops);
+	if (IS_ERR(fdp1->m2m_dev)) {
+		v4l2_err(&fdp1->v4l2_dev, "Failed to init mem2mem device\n");
+		ret = PTR_ERR(fdp1->m2m_dev);
 		goto err_m2m;
 	}
 
 	return 0;
 
 err_m2m:
-	v4l2_m2m_release(dev->m2m_dev);
-	video_unregister_device(&dev->vfd);
+	v4l2_m2m_release(fdp1->m2m_dev);
+	video_unregister_device(&fdp1->vfd);
 unreg_dev:
-	v4l2_device_unregister(&dev->v4l2_dev);
+	v4l2_device_unregister(&fdp1->v4l2_dev);
 
 	return ret;
 }
 
-static int vim2m_remove(struct platform_device *pdev)
+static int fdp1_remove(struct platform_device *pdev)
 {
-	struct vim2m_dev *dev = platform_get_drvdata(pdev);
+	struct fdp1_dev *dev = platform_get_drvdata(pdev);
 
 	v4l2_info(&dev->v4l2_dev, "Removing " MEM2MEM_NAME);
 	v4l2_m2m_release(dev->m2m_dev);
@@ -1035,20 +1035,20 @@ static int vim2m_remove(struct platform_device *pdev)
 	return 0;
 }
 
-static const struct of_device_id vim2m_dt_ids[] = {
+static const struct of_device_id fdp1_dt_ids[] = {
 	{ .compatible = "renesas,fdp1-r8a7795" }, /* H3 */
 	{ .compatible = "renesas,fdp1-r8a7796" }, /* M3-W */
 	{ .compatible = "renesas,rcar-gen3-fdp1" },
 	{ },
 };
-MODULE_DEVICE_TABLE(of, vim2m_dt_ids);
+MODULE_DEVICE_TABLE(of, fdp1_dt_ids);
 
 static struct platform_driver fdp1_pdrv = {
-	.probe		= vim2m_probe,
-	.remove		= vim2m_remove,
+	.probe		= fdp1_probe,
+	.remove		= fdp1_remove,
 	.driver		= {
 		.name	= MEM2MEM_NAME,
-		.of_match_table = vim2m_dt_ids,
+		.of_match_table = fdp1_dt_ids,
 	},
 };
 
