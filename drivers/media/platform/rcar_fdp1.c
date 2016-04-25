@@ -32,12 +32,6 @@
 #include <media/v4l2-event.h>
 #include <media/videobuf2-vmalloc.h>
 
-MODULE_DESCRIPTION("RCar Fine Display Processor");
-MODULE_AUTHOR("Kieran Bingham, <kieran@bingham.xyz>");
-MODULE_LICENSE("GPL");
-MODULE_VERSION("0.1");
-MODULE_ALIAS("rcar_fdp1");
-
 static unsigned debug;
 module_param(debug, uint, 0644);
 MODULE_PARM_DESC(debug, "activate debug info");
@@ -52,7 +46,7 @@ MODULE_PARM_DESC(debug, "activate debug info");
 #define MEM2MEM_CAPTURE	(1 << 0)
 #define MEM2MEM_OUTPUT	(1 << 1)
 
-#define MEM2MEM_NAME		"vim2m"
+#define MEM2MEM_NAME		"rcar_fdp1"
 
 /* Per queue */
 #define MEM2MEM_DEF_NUM_BUFS	VIDEO_MAX_FRAME
@@ -71,14 +65,6 @@ MODULE_PARM_DESC(debug, "activate debug info");
 #define dprintk(dev, fmt, arg...) \
 	v4l2_dbg(1, debug, &dev->v4l2_dev, "%s: " fmt, __func__, ## arg)
 
-
-static void vim2m_dev_release(struct device *dev)
-{}
-
-static struct platform_device vim2m_pdev = {
-	.name		= MEM2MEM_NAME,
-	.dev.release	= vim2m_dev_release,
-};
 
 struct vim2m_fmt {
 	u32	fourcc;
@@ -1049,7 +1035,7 @@ static int vim2m_remove(struct platform_device *pdev)
 	return 0;
 }
 
-static struct platform_driver vim2m_pdrv = {
+static struct platform_driver fdp1_pdrv = {
 	.probe		= vim2m_probe,
 	.remove		= vim2m_remove,
 	.driver		= {
@@ -1057,26 +1043,10 @@ static struct platform_driver vim2m_pdrv = {
 	},
 };
 
-static void __exit vim2m_exit(void)
-{
-	platform_driver_unregister(&vim2m_pdrv);
-	platform_device_unregister(&vim2m_pdev);
-}
+module_platform_driver(fdp1_pdrv);
 
-static int __init vim2m_init(void)
-{
-	int ret;
-
-	ret = platform_device_register(&vim2m_pdev);
-	if (ret)
-		return ret;
-
-	ret = platform_driver_register(&vim2m_pdrv);
-	if (ret)
-		platform_device_unregister(&vim2m_pdev);
-
-	return ret;
-}
-
-module_init(vim2m_init);
-module_exit(vim2m_exit);
+MODULE_DESCRIPTION("Renesas R-Car Fine Display Processor");
+MODULE_AUTHOR("Kieran Bingham, <kieran@bingham.xyz>");
+MODULE_LICENSE("GPL");
+MODULE_VERSION("0.1");
+MODULE_ALIAS("platform:" MEM2MEM_NAME);
