@@ -111,6 +111,7 @@ static const struct i2c_device_id pm2xxx_ident[] = {
 	{ "pm2301", 0 },
 	{ }
 };
+MODULE_DEVICE_TABLE(i2c, pm2xxx_ident);
 
 static void set_lpn_pin(struct pm2xxx_charger *pm2)
 {

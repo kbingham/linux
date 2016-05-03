@@ -390,6 +390,7 @@ static const struct i2c_device_id wlf_gf_module_id[] = {
 	{ "wlf-gf-module", 0 },
 	{ }
 };
+MODULE_DEVICE_TABLE(i2c, wlf_gf_module_id);
 
 static struct i2c_driver wlf_gf_module_driver = {
 	.driver = {

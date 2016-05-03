@@ -280,7 +280,7 @@ static const struct i2c_device_id max8997_i2c_id[] = {
 	{ "max8966", TYPE_MAX8966 },
 	{ }
 };
-MODULE_DEVICE_TABLE(i2c, max8998_i2c_id);
+MODULE_DEVICE_TABLE(i2c, max8997_i2c_id);
 
 static u8 max8997_dumpaddr_pmic[] = {
 	MAX8997_REG_INT1MSK,
