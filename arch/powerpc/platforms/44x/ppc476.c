@@ -102,6 +102,7 @@ static const struct i2c_device_id avr_id[] = {
 	{ "akebono-avr", 0 },
 	{ }
 };
+MODULE_DEVICE_TABLE(i2c, avr_id);
 
 static struct i2c_driver avr_driver = {
 	.driver = {

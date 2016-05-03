@@ -160,6 +160,7 @@ static const struct i2c_device_id cpld_reg_ids[] = {
 	{ "cpld_reg0", 0, },
 	{ },
 };
+MODULE_DEVICE_TABLE(i2c, cpld_reg_ids);
 
 static struct i2c_driver dm6467evm_cpld_driver = {
 	.driver.name	= "cpld_reg0",
@@ -368,6 +369,7 @@ static const struct i2c_device_id cpld_video_id[] = {
 	{ "cpld_video", 0 },
 	{ }
 };
+MODULE_DEVICE_TABLE(i2c, cpld_video_id);
 
 static struct i2c_driver cpld_video_driver = {
 	.driver = {

@@ -506,6 +506,7 @@ static const struct i2c_device_id dm6446evm_msp_ids[] = {
 	{ "dm6446evm_msp", 0, },
 	{ /* end of list */ },
 };
+MODULE_DEVICE_TABLE(i2c, dm6446evm_msp_ids);
 
 static struct i2c_driver dm6446evm_msp_driver = {
 	.driver.name	= "dm6446evm_msp",
