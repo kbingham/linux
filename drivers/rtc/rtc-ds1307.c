@@ -188,7 +188,14 @@ static const struct i2c_device_id ds1307_id[] = {
 	{ "rx8025", rx_8025 },
 	{ }
 };
-MODULE_DEVICE_TABLE(i2c, ds1307_id);
+//MODULE_DEVICE_TABLE(i2c, ds1307_id);
+
+static const struct of_device_id ds1307_of_match[] = {
+	{ .compatible = "maxim,ds1307", .data = ds_1307 },
+	{ .compatible = "maxim,ds1337", .data = ds_1337 },
+	{ },
+};
+MODULE_DEVICE_TABLE(of, ds1307_of_match);
 
 /*----------------------------------------------------------------------*/
 
@@ -1608,6 +1615,7 @@ static int ds1307_remove(struct i2c_client *client)
 static struct i2c_driver ds1307_driver = {
 	.driver = {
 		.name	= "rtc-ds1307",
+		.of_match_table = ds1307_of_match,
 	},
 	.probe		= ds1307_probe,
 	.remove		= ds1307_remove,
