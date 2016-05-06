@@ -177,6 +177,14 @@ static struct fdp1_q_data *get_q_data(struct fdp1_ctx *ctx,
 		return &ctx->out_q;
 	else
 		return &ctx->cap_q;
+
+	/* TODO: Do we want to restrict buffer types, to say
+	 * V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE
+	 * and
+	 * V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE
+	 * + the non MPLANE variants perhaps?
+	 */
+
 }
 
 static int device_process(struct fdp1_ctx *ctx,
@@ -877,6 +885,9 @@ static int fdp1_open(struct file *file)
 
 
 	/* Perform v4l2_ctrl_handler_setup(hdl); if desired */
+
+	/* M2M_SRC = Out
+	 * M2M_DST = Cap */
 
 	ctx->out_q.fmt = &formats[0];
 	ctx->out_q.width = 1920;
