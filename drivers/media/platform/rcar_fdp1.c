@@ -160,7 +160,9 @@ struct fdp1_ctx {
 	enum v4l2_colorspace	colorspace;
 
 	/* Source and destination queue data */
-	struct fdp1_q_data   q_data[2];
+	struct fdp1_q_data   out_q; /* HW Source */
+	struct fdp1_q_data   cap_q; /* HW Destination */
+
 };
 
 static inline struct fdp1_ctx *file2ctx(struct file *file)
@@ -171,15 +173,10 @@ static inline struct fdp1_ctx *file2ctx(struct file *file)
 static struct fdp1_q_data *get_q_data(struct fdp1_ctx *ctx,
 					 enum v4l2_buf_type type)
 {
-	switch (type) {
-	case V4L2_BUF_TYPE_VIDEO_OUTPUT:
-		return &ctx->q_data[V4L2_M2M_SRC];
-	case V4L2_BUF_TYPE_VIDEO_CAPTURE:
-		return &ctx->q_data[V4L2_M2M_DST];
-	default:
-		BUG();
-	}
-	return NULL;
+	if (V4L2_TYPE_IS_OUTPUT(type))
+		return &ctx->out_q;
+	else
+		return &ctx->cap_q;
 }
 
 static int device_process(struct fdp1_ctx *ctx,
@@ -862,11 +859,12 @@ static int fdp1_open(struct file *file)
 {
 	struct fdp1_dev *dev = video_drvdata(file);
 	struct fdp1_ctx *ctx = NULL;
-	struct v4l2_ctrl_handler *hdl;
+	// struct v4l2_ctrl_handler *hdl;
 	int rc = 0;
 
 	if (mutex_lock_interruptible(&dev->dev_mutex))
 		return -ERESTARTSYS;
+
 	ctx = kzalloc(sizeof(*ctx), GFP_KERNEL);
 	if (!ctx) {
 		rc = -ENOMEM;
@@ -876,28 +874,28 @@ static int fdp1_open(struct file *file)
 	v4l2_fh_init(&ctx->fh, video_devdata(file));
 	file->private_data = &ctx->fh;
 	ctx->dev = dev;
-	hdl = &ctx->hdl;
-	v4l2_ctrl_handler_init(hdl, 4);
-	v4l2_ctrl_new_std(hdl, &fdp1_ctrl_ops, V4L2_CID_HFLIP, 0, 1, 1, 0);
-	v4l2_ctrl_new_std(hdl, &fdp1_ctrl_ops, V4L2_CID_VFLIP, 0, 1, 1, 0);
-	v4l2_ctrl_new_custom(hdl, &fdp1_ctrl_trans_time_msec, NULL);
-	v4l2_ctrl_new_custom(hdl, &fdp1_ctrl_trans_num_bufs, NULL);
-	if (hdl->error) {
-		rc = hdl->error;
-		v4l2_ctrl_handler_free(hdl);
-		goto open_unlock;
-	}
-	ctx->fh.ctrl_handler = hdl;
-	v4l2_ctrl_handler_setup(hdl);
 
-	ctx->q_data[V4L2_M2M_SRC].fmt = &formats[0];
-	ctx->q_data[V4L2_M2M_SRC].width = 640;
-	ctx->q_data[V4L2_M2M_SRC].height = 480;
-	ctx->q_data[V4L2_M2M_SRC].sizeimage =
-		ctx->q_data[V4L2_M2M_SRC].width *
-		ctx->q_data[V4L2_M2M_SRC].height *
-		(ctx->q_data[V4L2_M2M_SRC].fmt->depth >> 3);
-	ctx->q_data[V4L2_M2M_DST] = ctx->q_data[V4L2_M2M_SRC];
+
+	/* Perform v4l2_ctrl_handler_setup(hdl); if desired */
+
+	ctx->out_q.fmt = &formats[0];
+	ctx->out_q.width = 1920;
+	ctx->out_q.height = 1080;
+	ctx->out_q.sizeimage =
+		ctx->out_q.width *
+		ctx->out_q.height *
+		(ctx->out_q.fmt->depth >> 3);
+	ctx->cap_q = ctx->out_q;
+
+	/* Better for above
+	__fdp1_try_fmt(ctx, &ctx->out_q.fmtinfo, &ctx->out_q.format,
+		      V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
+	__fdp1_try_fmt(ctx, &ctx->cap_q.fmtinfo, &ctx->cap_q.format,
+		      V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE);
+	 */
+
+	/* Configure default parameters. */
+
 	ctx->colorspace = V4L2_COLORSPACE_REC709;
 
 	ctx->fh.m2m_ctx = v4l2_m2m_ctx_init(dev->m2m_dev, ctx, &queue_init);
@@ -905,7 +903,7 @@ static int fdp1_open(struct file *file)
 	if (IS_ERR(ctx->fh.m2m_ctx)) {
 		rc = PTR_ERR(ctx->fh.m2m_ctx);
 
-		v4l2_ctrl_handler_free(hdl);
+		// No handler yet ... v4l2_ctrl_handler_free(hdl);
 		kfree(ctx);
 		goto open_unlock;
 	}
