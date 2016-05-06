@@ -13,6 +13,25 @@
 / {
 	model = "TI AM335x BeagleBone Black";
 	compatible = "ti,am335x-bone-black", "ti,am335x-bone", "ti,am33xx";
+
+
+
+	fdp1ch1: fdp1@FE940000 {
+		compatible = "renesas,rcar-gen3-fdp1";
+		reg = <0xFE940000 0x2400>;
+	};
+
+	/* R-Car H3 Only */
+	fdp1ch2: fdp1@FE944000 {
+		compatible = "renesas,rcar-gen3-fdp1";
+		reg = <0xFE944000 0x2400>;
+	};
+
+	/* R-Car H3 Only */
+	fdp1ch3: fdp1@FE948000 {
+		compatible = "renesas,rcar-gen3-fdp1";
+		reg = <0xFE948000 0x2400>;
+	};
 };
 
 &ldo3_reg {
@@ -94,3 +113,4 @@
 &rtc {
 	system-power-controller;
 };
+
