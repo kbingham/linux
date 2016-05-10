@@ -196,6 +196,7 @@ static int device_process(struct fdp1_ctx *ctx,
 			  struct vb2_v4l2_buffer *in_vb,
 			  struct vb2_v4l2_buffer *out_vb)
 {
+#ifdef OLD_CPU_DEINT
 	struct fdp1_dev *dev = ctx->dev;
 	struct fdp1_q_data *q_data;
 	u8 *p_in, *p_out;
@@ -322,6 +323,7 @@ static int device_process(struct fdp1_ctx *ctx,
 			p_out += bytes_left;
 		}
 	}
+#endif // #ifdef OLD_CPU_DEINT
 
 	return 0;
 }
