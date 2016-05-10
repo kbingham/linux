@@ -441,24 +441,20 @@ static int enum_fmt(struct v4l2_fmtdesc *f, u32 type)
 
 	for (i = 0; i < NUM_FORMATS; ++i) {
 		if (formats[i].types & type) {
-			/* index-th format of type type found ? */
 			if (num == f->index)
 				break;
-			/* Correct type but haven't reached our index yet,
-			 * just increment per-type index */
 			++num;
 		}
 	}
 
-	if (i < NUM_FORMATS) {
-		/* Format found */
-		fmt = &formats[i];
-		f->pixelformat = fmt->fourcc;
-		return 0;
-	}
-
 	/* Format not found */
-	return -EINVAL;
+	if (i >= NUM_FORMATS)
+		return -EINVAL;
+
+	/* Format found */
+	f->pixelformat = formats[i].fourcc;
+
+	return 0;
 }
 
 static int vidioc_enum_fmt_vid_cap(struct file *file, void *priv,
