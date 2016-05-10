@@ -36,10 +36,15 @@ static unsigned debug;
 module_param(debug, uint, 0644);
 MODULE_PARM_DESC(debug, "activate debug info");
 
-#define MIN_W 32
-#define MIN_H 32
-#define MAX_W 640
-#define MAX_H 480
+/* Min Width/Height/Height-Field */
+#define MIN_W 80
+#define MIN_H 80
+#define MIN_HF 40
+
+#define MAX_W 3840
+#define MAX_H 2160
+#define MAX_HF 1080
+
 #define DIM_ALIGN_MASK 7 /* 8-byte alignment for line length */
 
 /* Flags that indicate a format can be used for capture/output */
