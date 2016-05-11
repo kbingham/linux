@@ -48,8 +48,8 @@ MODULE_PARM_DESC(debug, "activate debug info");
 #define DIM_ALIGN_MASK 7 /* 8-byte alignment for line length */
 
 /* Flags that indicate a format can be used for capture/output */
-#define MEM2MEM_CAPTURE	(1 << 0)
-#define MEM2MEM_OUTPUT	(1 << 1)
+#define FDP1_CAPTURE	(1 << 0)
+#define FDP1_OUTPUT	(1 << 1)
 
 #define MEM2MEM_NAME		"rcar_fdp1"
 
@@ -83,13 +83,13 @@ static struct fdp1_fmt formats[] = {
 		.fourcc	= V4L2_PIX_FMT_RGB565X, /* rrrrrggg gggbbbbb */
 		.depth	= 16,
 		/* Both capture and output format */
-		.types	= MEM2MEM_CAPTURE | MEM2MEM_OUTPUT,
+		.types = FDP1_CAPTURE | FDP1_OUTPUT,
 	},
 	{
 		.fourcc	= V4L2_PIX_FMT_YUYV,
 		.depth	= 16,
 		/* Output-only format */
-		.types	= MEM2MEM_OUTPUT,
+		.types  = FDP1_OUTPUT,
 	},
 };
 
@@ -461,13 +461,13 @@ static int enum_fmt(struct v4l2_fmtdesc *f, u32 type)
 static int vidioc_enum_fmt_vid_cap(struct file *file, void *priv,
 				   struct v4l2_fmtdesc *f)
 {
-	return enum_fmt(f, MEM2MEM_CAPTURE);
+	return enum_fmt(f, FDP1_CAPTURE);
 }
 
 static int vidioc_enum_fmt_vid_out(struct file *file, void *priv,
 				   struct v4l2_fmtdesc *f)
 {
-	return enum_fmt(f, MEM2MEM_OUTPUT);
+	return enum_fmt(f, FDP1_OUTPUT);
 }
 
 static int vidioc_g_fmt(struct fdp1_ctx *ctx, struct v4l2_format *f)
@@ -537,7 +537,7 @@ static int vidioc_try_fmt_vid_cap(struct file *file, void *priv,
 		f->fmt.pix.pixelformat = formats[0].fourcc;
 		fmt = find_format(f);
 	}
-	if (!(fmt->types & MEM2MEM_CAPTURE)) {
+	if (!(fmt->types & FDP1_CAPTURE)) {
 		v4l2_err(&ctx->dev->v4l2_dev,
 			 "Fourcc format (0x%08x) invalid.\n",
 			 f->fmt.pix.pixelformat);
@@ -559,7 +559,7 @@ static int vidioc_try_fmt_vid_out(struct file *file, void *priv,
 		f->fmt.pix.pixelformat = formats[0].fourcc;
 		fmt = find_format(f);
 	}
-	if (!(fmt->types & MEM2MEM_OUTPUT)) {
+	if (!(fmt->types & FDP1_OUTPUT)) {
 		v4l2_err(&ctx->dev->v4l2_dev,
 			 "Fourcc format (0x%08x) invalid.\n",
 			 f->fmt.pix.pixelformat);
