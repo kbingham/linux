@@ -100,8 +100,9 @@ struct fdp1_q_data {
 	unsigned int		width;
 	unsigned int		height;
 	unsigned int		sizeimage;
-	unsigned int		sequence;
 	struct fdp1_fmt	*fmt;
+	struct v4l2_pix_format_mplane format;
+	unsigned int sequence;
 };
 
 enum {
