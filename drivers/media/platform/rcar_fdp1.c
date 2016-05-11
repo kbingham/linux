@@ -71,26 +71,45 @@ MODULE_PARM_DESC(debug, "activate debug info");
 	v4l2_dbg(1, debug, &dev->v4l2_dev, "%s: " fmt, __func__, ## arg)
 
 
+/**
+ * struct fdp1_fmt - The FDP1 internal format data
+ * @fourcc: the fourcc code, to match the V4L2 API
+ * @depth: pixel depth
+ * @fmt: 7-bit format code for the fdp1 hardware
+ * @num_planes: number of planes
+ * @types: types of queue this format is applicable to
+ */
 struct fdp1_fmt {
 	u32	fourcc;
-	int	depth;
-	/* Types the format can be used for */
-	u32	types;
+	u8	depth;
+	u8	fmt;
+	u8	num_planes;
+	u8	types;
 };
 
 static struct fdp1_fmt formats[] = {
-	{
-		.fourcc	= V4L2_PIX_FMT_RGB565X, /* rrrrrggg gggbbbbb */
-		.depth	= 16,
-		/* Both capture and output format */
-		.types = FDP1_CAPTURE | FDP1_OUTPUT,
-	},
-	{
-		.fourcc	= V4L2_PIX_FMT_YUYV,
-		.depth	= 16,
-		/* Output-only format */
-		.types  = FDP1_OUTPUT,
-	},
+
+	/* RGB Formats are only supported by the Write Pixel Formatter */
+	/*	FourCC	      depth  fmt  np   type       */
+	{ V4L2_PIX_FMT_RGB332,    8, 0x00, 1, FDP1_CAPTURE },
+	{ V4L2_PIX_FMT_XRGB555X, 16, 0x04, 1, FDP1_CAPTURE },
+	{ V4L2_PIX_FMT_RGB565X,  16, 0x06, 1, FDP1_CAPTURE }, /* Big Endian */
+	/* Not mapping the 18 bit (6-6-6) formats */
+	{ V4L2_PIX_FMT_ARGB32,   24, 0x13, 1, FDP1_CAPTURE },
+	/* XRGB Can be supported on the Capture, as A is arbitrary anyway */
+	{ V4L2_PIX_FMT_XRGB32,   24, 0x13, 1, FDP1_CAPTURE },
+	/* 0x14 = RGBA8888 */
+	{ V4L2_PIX_FMT_RGB24,    24, 0x15, 1, FDP1_CAPTURE }, /* RGB 8-8-8 */
+	{ V4L2_PIX_FMT_BGR24,    24, 0x18, 1, FDP1_CAPTURE },
+
+	/* ARGB444 is confusing. uapi/linux/videodev2.h represents it as aaaarrrrggggbbbb
+	 * however in https://linuxtv.org/downloads/v4l-dvb-apis/packed-rgb.html
+	 * it is shown as g3 g2	g1 g0 b3 b2 b1 b0 | a3 a2 a1 a0 r3 r2 r1 r0
+	 */
+	{ V4L2_PIX_FMT_ARGB444,  16, 0x19, 1, FDP1_CAPTURE }, // TESTME I'm probably the wrong endianness !!!
+	{ V4L2_PIX_FMT_ARGB555X, 16, 0x1B, 1, FDP1_CAPTURE },
+	 /* Arbitrary Alpha Value, hence can re-use 0x1B */
+	{ V4L2_PIX_FMT_XRGB555X, 16, 0x1B, 1, FDP1_CAPTURE },
 };
 
 #define NUM_FORMATS ARRAY_SIZE(formats)
