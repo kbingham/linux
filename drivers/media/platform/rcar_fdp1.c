@@ -164,7 +164,7 @@ struct fdp1_dev {
 
 struct fdp1_ctx {
 	struct v4l2_fh		fh;
-	struct fdp1_dev	*dev;
+	struct fdp1_dev		*fdp1;
 
 	struct v4l2_ctrl_handler hdl;
 
@@ -217,7 +217,7 @@ static int device_process(struct fdp1_ctx *ctx,
 			  struct vb2_v4l2_buffer *out_vb)
 {
 #ifdef OLD_CPU_DEINT
-	struct fdp1_dev *dev = ctx->dev;
+	struct fdp1_dev *fdp1 = ctx->fdp1;
 	struct fdp1_q_data *q_data;
 	u8 *p_in, *p_out;
 	int x, y, t, w;
@@ -233,14 +233,14 @@ static int device_process(struct fdp1_ctx *ctx,
 	p_in = vb2_plane_vaddr(&in_vb->vb2_buf, 0);
 	p_out = vb2_plane_vaddr(&out_vb->vb2_buf, 0);
 	if (!p_in || !p_out) {
-		v4l2_err(&dev->v4l2_dev,
+		v4l2_err(&fdp1->v4l2_dev,
 			 "Acquiring kernel pointers to buffers failed\n");
 		return -EFAULT;
 	}
 
 	if (vb2_plane_size(&in_vb->vb2_buf, 0) >
 			vb2_plane_size(&out_vb->vb2_buf, 0)) {
-		v4l2_err(&dev->v4l2_dev, "Output buffer is too small\n");
+		v4l2_err(&fdp1->v4l2_dev, "Output buffer is too small\n");
 		return -EINVAL;
 	}
 
@@ -348,10 +348,10 @@ static int device_process(struct fdp1_ctx *ctx,
 	return 0;
 }
 
-static void schedule_irq(struct fdp1_dev *dev, int msec_timeout)
+static void schedule_irq(struct fdp1_dev *fdp1, int msec_timeout)
 {
-	dprintk(dev, "Scheduling a simulated irq\n");
-	mod_timer(&dev->timer, jiffies + msecs_to_jiffies(msec_timeout));
+	dprintk(fdp1, "Scheduling a simulated irq\n");
+	mod_timer(&fdp1->timer, jiffies + msecs_to_jiffies(msec_timeout));
 }
 
 /*
@@ -367,7 +367,7 @@ static int job_ready(void *priv)
 
 	if (v4l2_m2m_num_src_bufs_ready(ctx->fh.m2m_ctx) < ctx->translen
 	    || v4l2_m2m_num_dst_bufs_ready(ctx->fh.m2m_ctx) < ctx->translen) {
-		dprintk(ctx->dev, "Not enough buffers available\n");
+		dprintk(ctx->fdp1, "Not enough buffers available\n");
 		return 0;
 	}
 
@@ -391,7 +391,7 @@ static void job_abort(void *priv)
 static void device_run(void *priv)
 {
 	struct fdp1_ctx *ctx = priv;
-	struct fdp1_dev *dev = ctx->dev;
+	struct fdp1_dev *fdp1 = ctx->fdp1;
 	struct vb2_v4l2_buffer *src_buf, *dst_buf;
 
 	src_buf = v4l2_m2m_next_src_buf(ctx->fh.m2m_ctx);
@@ -400,7 +400,7 @@ static void device_run(void *priv)
 	device_process(ctx, src_buf, dst_buf);
 
 	/* Run a timer, which simulates a hardware irq  */
-	schedule_irq(dev, ctx->transtime);
+	schedule_irq(fdp1, ctx->transtime);
 }
 
 static void device_isr(unsigned long priv)
@@ -429,7 +429,7 @@ static void device_isr(unsigned long priv)
 
 	if (curr_ctx->num_processed == curr_ctx->translen
 	    || curr_ctx->aborting) {
-		dprintk(curr_ctx->dev, "Finishing transaction\n");
+		dprintk(curr_ctx->fdp1, "Finishing transaction\n");
 		curr_ctx->num_processed = 0;
 		v4l2_m2m_job_finish(fdp1_dev->m2m_dev, curr_ctx->fh.m2m_ctx);
 	} else {
@@ -557,7 +557,7 @@ static int vidioc_try_fmt_vid_cap(struct file *file, void *priv,
 		fmt = find_format(f);
 	}
 	if (!(fmt->types & FDP1_CAPTURE)) {
-		v4l2_err(&ctx->dev->v4l2_dev,
+		v4l2_err(&ctx->fdp1->v4l2_dev,
 			 "Fourcc format (0x%08x) invalid.\n",
 			 f->fmt.pix.pixelformat);
 		return -EINVAL;
@@ -579,7 +579,7 @@ static int vidioc_try_fmt_vid_out(struct file *file, void *priv,
 		fmt = find_format(f);
 	}
 	if (!(fmt->types & FDP1_OUTPUT)) {
-		v4l2_err(&ctx->dev->v4l2_dev,
+		v4l2_err(&ctx->fdp1->v4l2_dev,
 			 "Fourcc format (0x%08x) invalid.\n",
 			 f->fmt.pix.pixelformat);
 		return -EINVAL;
@@ -604,7 +604,7 @@ static int vidioc_s_fmt(struct fdp1_ctx *ctx, struct v4l2_format *f)
 		return -EINVAL;
 
 	if (vb2_is_busy(vq)) {
-		v4l2_err(&ctx->dev->v4l2_dev, "%s queue busy\n", __func__);
+		v4l2_err(&ctx->fdp1->v4l2_dev, "%s queue busy\n", __func__);
 		return -EBUSY;
 	}
 
@@ -614,7 +614,7 @@ static int vidioc_s_fmt(struct fdp1_ctx *ctx, struct v4l2_format *f)
 	q_data->sizeimage	= q_data->width * q_data->height
 				* q_data->fmt->depth >> 3;
 
-	dprintk(ctx->dev,
+	dprintk(ctx->fdp1,
 		"Setting format for type %d, wxh: %dx%d, fmt: %d\n",
 		f->type, q_data->width, q_data->height, q_data->fmt->fourcc);
 
@@ -678,7 +678,7 @@ static int fdp1_s_ctrl(struct v4l2_ctrl *ctrl)
 		break;
 
 	default:
-		v4l2_err(&ctx->dev->v4l2_dev, "Invalid control\n");
+		v4l2_err(&ctx->fdp1->v4l2_dev, "Invalid control\n");
 		return -EINVAL;
 	}
 
@@ -750,7 +750,7 @@ static int fdp1_queue_setup(struct vb2_queue *vq,
 	 * alloc_ctxs array.
 	 */
 
-	dprintk(ctx->dev, "get %d buffer(s) of size %d each.\n", count, size);
+	dprintk(ctx->fdp1, "get %d buffer(s) of size %d each.\n", count, size);
 
 	return 0;
 }
@@ -761,21 +761,21 @@ static int fdp1_buf_prepare(struct vb2_buffer *vb)
 	struct fdp1_ctx *ctx = vb2_get_drv_priv(vb->vb2_queue);
 	struct fdp1_q_data *q_data;
 
-	dprintk(ctx->dev, "type: %d\n", vb->vb2_queue->type);
+	dprintk(ctx->fdp1, "type: %d\n", vb->vb2_queue->type);
 
 	q_data = get_q_data(ctx, vb->vb2_queue->type);
 	if (V4L2_TYPE_IS_OUTPUT(vb->vb2_queue->type)) {
 		if (vbuf->field == V4L2_FIELD_ANY)
 			vbuf->field = V4L2_FIELD_NONE;
 		if (vbuf->field != V4L2_FIELD_NONE) {
-			dprintk(ctx->dev, "%s field isn't supported\n",
+			dprintk(ctx->fdp1, "%s field isn't supported\n",
 					__func__);
 			return -EINVAL;
 		}
 	}
 
 	if (vb2_plane_size(vb, 0) < q_data->sizeimage) {
-		dprintk(ctx->dev, "%s data will not fit into plane (%lu < %lu)\n",
+		dprintk(ctx->fdp1, "%s data will not fit into plane (%lu < %lu)\n",
 				__func__, vb2_plane_size(vb, 0), (long)q_data->sizeimage);
 		return -EINVAL;
 	}
@@ -815,9 +815,9 @@ static void fdp1_stop_streaming(struct vb2_queue *q)
 			vbuf = v4l2_m2m_dst_buf_remove(ctx->fh.m2m_ctx);
 		if (vbuf == NULL)
 			return;
-		spin_lock_irqsave(&ctx->dev->irqlock, flags);
+		spin_lock_irqsave(&ctx->fdp1->irqlock, flags);
 		v4l2_m2m_buf_done(vbuf, VB2_BUF_STATE_ERROR);
-		spin_unlock_irqrestore(&ctx->dev->irqlock, flags);
+		spin_unlock_irqrestore(&ctx->fdp1->irqlock, flags);
 	}
 }
 
@@ -843,7 +843,7 @@ static int queue_init(void *priv, struct vb2_queue *src_vq, struct vb2_queue *ds
 	src_vq->ops = &fdp1_qops;
 	src_vq->mem_ops = &vb2_vmalloc_memops;
 	src_vq->timestamp_flags = V4L2_BUF_FLAG_TIMESTAMP_COPY;
-	src_vq->lock = &ctx->dev->dev_mutex;
+	src_vq->lock = &ctx->fdp1->dev_mutex;
 
 	ret = vb2_queue_init(src_vq);
 	if (ret)
@@ -856,7 +856,7 @@ static int queue_init(void *priv, struct vb2_queue *src_vq, struct vb2_queue *ds
 	dst_vq->ops = &fdp1_qops;
 	dst_vq->mem_ops = &vb2_vmalloc_memops;
 	dst_vq->timestamp_flags = V4L2_BUF_FLAG_TIMESTAMP_COPY;
-	dst_vq->lock = &ctx->dev->dev_mutex;
+	dst_vq->lock = &ctx->fdp1->dev_mutex;
 
 	return vb2_queue_init(dst_vq);
 }
@@ -888,12 +888,11 @@ static const struct v4l2_ctrl_config fdp1_ctrl_trans_num_bufs = {
  */
 static int fdp1_open(struct file *file)
 {
-	struct fdp1_dev *dev = video_drvdata(file);
+	struct fdp1_dev *fdp1 = video_drvdata(file);
 	struct fdp1_ctx *ctx = NULL;
-	// struct v4l2_ctrl_handler *hdl;
 	int rc = 0;
 
-	if (mutex_lock_interruptible(&dev->dev_mutex))
+	if (mutex_lock_interruptible(&fdp1->dev_mutex))
 		return -ERESTARTSYS;
 
 	ctx = kzalloc(sizeof(*ctx), GFP_KERNEL);
@@ -904,7 +903,7 @@ static int fdp1_open(struct file *file)
 
 	v4l2_fh_init(&ctx->fh, video_devdata(file));
 	file->private_data = &ctx->fh;
-	ctx->dev = dev;
+	ctx->fdp1 = fdp1;
 
 
 	/* Perform v4l2_ctrl_handler_setup(hdl); if desired */
@@ -932,7 +931,7 @@ static int fdp1_open(struct file *file)
 
 	ctx->colorspace = V4L2_COLORSPACE_REC709;
 
-	ctx->fh.m2m_ctx = v4l2_m2m_ctx_init(dev->m2m_dev, ctx, &queue_init);
+	ctx->fh.m2m_ctx = v4l2_m2m_ctx_init(fdp1->m2m_dev, ctx, &queue_init);
 
 	if (IS_ERR(ctx->fh.m2m_ctx)) {
 		rc = PTR_ERR(ctx->fh.m2m_ctx);
@@ -943,32 +942,32 @@ static int fdp1_open(struct file *file)
 	}
 
 	v4l2_fh_add(&ctx->fh);
-	atomic_inc(&dev->num_inst);
+	atomic_inc(&fdp1->num_inst);
 
-	dprintk(dev, "Created instance: %p, m2m_ctx: %p\n",
+	dprintk(fdp1, "Created instance: %p, m2m_ctx: %p\n",
 		ctx, ctx->fh.m2m_ctx);
 
 open_unlock:
-	mutex_unlock(&dev->dev_mutex);
+	mutex_unlock(&fdp1->dev_mutex);
 	return rc;
 }
 
 static int fdp1_release(struct file *file)
 {
-	struct fdp1_dev *dev = video_drvdata(file);
+	struct fdp1_dev *fdp1 = video_drvdata(file);
 	struct fdp1_ctx *ctx = file2ctx(file);
 
-	dprintk(dev, "Releasing instance %p\n", ctx);
+	dprintk(fdp1, "Releasing instance %p\n", ctx);
 
 	v4l2_fh_del(&ctx->fh);
 	v4l2_fh_exit(&ctx->fh);
 	v4l2_ctrl_handler_free(&ctx->hdl);
-	mutex_lock(&dev->dev_mutex);
+	mutex_lock(&fdp1->dev_mutex);
 	v4l2_m2m_ctx_release(ctx->fh.m2m_ctx);
-	mutex_unlock(&dev->dev_mutex);
+	mutex_unlock(&fdp1->dev_mutex);
 	kfree(ctx);
 
-	atomic_dec(&dev->num_inst);
+	atomic_dec(&fdp1->num_inst);
 
 	return 0;
 }
@@ -1056,13 +1055,13 @@ unreg_dev:
 
 static int fdp1_remove(struct platform_device *pdev)
 {
-	struct fdp1_dev *dev = platform_get_drvdata(pdev);
+	struct fdp1_dev *fdp1 = platform_get_drvdata(pdev);
 
-	v4l2_info(&dev->v4l2_dev, "Removing " MEM2MEM_NAME);
-	v4l2_m2m_release(dev->m2m_dev);
-	del_timer_sync(&dev->timer);
-	video_unregister_device(&dev->vfd);
-	v4l2_device_unregister(&dev->v4l2_dev);
+	v4l2_info(&fdp1->v4l2_dev, "Removing " MEM2MEM_NAME);
+	v4l2_m2m_release(fdp1->m2m_dev);
+	del_timer_sync(&fdp1->timer);
+	video_unregister_device(&fdp1->vfd);
+	v4l2_device_unregister(&fdp1->v4l2_dev);
 
 	return 0;
 }
