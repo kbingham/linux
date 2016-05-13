@@ -21,9 +21,9 @@
 #include <linux/timer.h>
 #include <linux/sched.h>
 #include <linux/slab.h>
-
 #include <linux/of.h>
 #include <linux/of_device.h>
+#include <linux/interrupt.h>
 #include <linux/platform_device.h>
 #include <media/v4l2-mem2mem.h>
 #include <media/v4l2-device.h>
@@ -157,6 +157,10 @@ struct fdp1_dev {
 	struct mutex		dev_mutex;
 	spinlock_t		irqlock;
 
+	void __iomem		*regs;
+	unsigned int		irq;
+	struct device		*dev;
+
 	struct timer_list	timer;
 
 	struct v4l2_m2m_dev	*m2m_dev;
@@ -210,6 +214,16 @@ static struct fdp1_q_data *get_q_data(struct fdp1_ctx *ctx,
 	 * + the non MPLANE variants perhaps?
 	 */
 
+}
+
+static u32 fdp1_read(struct fdp1_dev *fdp1, unsigned int reg)
+{
+	return ioread32(fdp1->regs + reg);
+}
+
+static void fdp1_write(struct fdp1_dev *fdp1, u32 val, unsigned int reg)
+{
+	iowrite32(val, fdp1->regs + reg);
 }
 
 static int device_process(struct fdp1_ctx *ctx,
@@ -996,10 +1010,16 @@ static struct v4l2_m2m_ops m2m_ops = {
 	.job_abort	= job_abort,
 };
 
+static irqreturn_t fdp1_irq_handler(int irq, void *dev_id)
+{
+	return IRQ_HANDLED; /* LIES - DAMNED LIES */
+}
+
 static int fdp1_probe(struct platform_device *pdev)
 {
 	struct fdp1_dev *fdp1;
 	struct video_device *vfd;
+	struct resource *res;
 	int ret;
 
 	fdp1 = devm_kzalloc(&pdev->dev, sizeof(*fdp1), GFP_KERNEL);
@@ -1007,6 +1027,28 @@ static int fdp1_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	spin_lock_init(&fdp1->irqlock);
+	fdp1->dev = &pdev->dev;
+	platform_set_drvdata(pdev, fdp1);
+
+	/* memory-mapped registers */
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	fdp1->regs = devm_ioremap_resource(&pdev->dev, res);
+	if (IS_ERR(fdp1->regs))
+		return PTR_ERR(fdp1->regs);
+
+	/* interrupt service routine registration */
+	fdp1->irq = ret = platform_get_irq(pdev, 0);
+	if (ret < 0) {
+		dev_err(&pdev->dev, "cannot find IRQ\n");
+		return ret;
+	}
+
+	ret = devm_request_irq(&pdev->dev, fdp1->irq, fdp1_irq_handler, 0,
+			       dev_name(&pdev->dev), fdp1);
+	if (ret) {
+		dev_err(&pdev->dev, "cannot claim IRQ %d\n", fdp1->irq);
+		return ret;
+	}
 
 	ret = v4l2_device_register(&pdev->dev, &fdp1->v4l2_dev);
 	if (ret)
@@ -1033,7 +1075,6 @@ static int fdp1_probe(struct platform_device *pdev)
 
 
 	setup_timer(&fdp1->timer, device_isr, (long)fdp1);
-	platform_set_drvdata(pdev, fdp1);
 
 	fdp1->m2m_dev = v4l2_m2m_init(&m2m_ops);
 	if (IS_ERR(fdp1->m2m_dev)) {
