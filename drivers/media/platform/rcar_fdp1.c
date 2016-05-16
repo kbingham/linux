@@ -25,6 +25,7 @@
 #include <linux/of_device.h>
 #include <linux/interrupt.h>
 #include <linux/platform_device.h>
+#include <linux/pm_runtime.h>
 #include <media/v4l2-mem2mem.h>
 #include <media/v4l2-device.h>
 #include <media/v4l2-ioctl.h>
@@ -955,6 +956,8 @@ static int fdp1_open(struct file *file)
 		goto open_unlock;
 	}
 
+	pm_runtime_get_sync(fdp1->dev);
+
 	v4l2_fh_add(&ctx->fh);
 	atomic_inc(&fdp1->num_inst);
 
@@ -982,6 +985,8 @@ static int fdp1_release(struct file *file)
 	kfree(ctx);
 
 	atomic_dec(&fdp1->num_inst);
+
+	pm_runtime_put(fdp1->dev);
 
 	return 0;
 }
@@ -1050,6 +1055,10 @@ static int fdp1_probe(struct platform_device *pdev)
 		return ret;
 	}
 
+	/* Bring the device up ready for reading registers */
+	pm_runtime_enable(&pdev->dev);
+	pm_runtime_get_sync(&pdev->dev);
+
 	ret = v4l2_device_register(&pdev->dev, &fdp1->v4l2_dev);
 	if (ret)
 		return ret;
@@ -1083,6 +1092,8 @@ static int fdp1_probe(struct platform_device *pdev)
 		goto err_m2m;
 	}
 
+	pm_runtime_put(&pdev->dev);
+
 	return 0;
 
 err_m2m:
@@ -1103,6 +1114,7 @@ static int fdp1_remove(struct platform_device *pdev)
 	del_timer_sync(&fdp1->timer);
 	video_unregister_device(&fdp1->vfd);
 	v4l2_device_unregister(&fdp1->v4l2_dev);
+	pm_runtime_disable(&pdev->dev);
 
 	return 0;
 }
