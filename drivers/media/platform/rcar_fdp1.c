@@ -52,7 +52,7 @@ MODULE_PARM_DESC(debug, "activate debug info");
 #define FDP1_CAPTURE	(1 << 0)
 #define FDP1_OUTPUT	(1 << 1)
 
-#define MEM2MEM_NAME		"rcar_fdp1"
+#define DRIVER_NAME		"rcar_fdp1"
 
 /* Per queue */
 #define MEM2MEM_DEF_NUM_BUFS	VIDEO_MAX_FRAME
@@ -466,10 +466,10 @@ static void device_isr(unsigned long priv)
 static int vidioc_querycap(struct file *file, void *priv,
 			   struct v4l2_capability *cap)
 {
-	strncpy(cap->driver, MEM2MEM_NAME, sizeof(cap->driver) - 1);
-	strncpy(cap->card, MEM2MEM_NAME, sizeof(cap->card) - 1);
+	strncpy(cap->driver, DRIVER_NAME, sizeof(cap->driver) - 1);
+	strncpy(cap->card, DRIVER_NAME, sizeof(cap->card) - 1);
 	snprintf(cap->bus_info, sizeof(cap->bus_info),
-			"platform:%s", MEM2MEM_NAME);
+			"platform:%s", DRIVER_NAME);
 	cap->device_caps = V4L2_CAP_VIDEO_M2M | V4L2_CAP_STREAMING;
 	cap->capabilities = cap->device_caps | V4L2_CAP_DEVICE_CAPS;
 	return 0;
@@ -1009,7 +1009,7 @@ static const struct v4l2_file_operations fdp1_fops = {
 };
 
 static struct video_device fdp1_videodev = {
-	.name		= MEM2MEM_NAME,
+	.name		= DRIVER_NAME,
 	.vfl_dir	= VFL_DIR_M2M,
 	.fops		= &fdp1_fops,
 	.ioctl_ops	= &fdp1_ioctl_ops,
@@ -1132,7 +1132,7 @@ static int fdp1_remove(struct platform_device *pdev)
 {
 	struct fdp1_dev *fdp1 = platform_get_drvdata(pdev);
 
-	v4l2_info(&fdp1->v4l2_dev, "Removing " MEM2MEM_NAME);
+	v4l2_info(&fdp1->v4l2_dev, "Removing " DRIVER_NAME);
 	v4l2_m2m_release(fdp1->m2m_dev);
 	del_timer_sync(&fdp1->timer);
 	video_unregister_device(&fdp1->vfd);
@@ -1154,7 +1154,7 @@ static struct platform_driver fdp1_pdrv = {
 	.probe		= fdp1_probe,
 	.remove		= fdp1_remove,
 	.driver		= {
-		.name	= MEM2MEM_NAME,
+		.name	= DRIVER_NAME,
 		.of_match_table = fdp1_dt_ids,
 	},
 };
@@ -1165,4 +1165,4 @@ MODULE_DESCRIPTION("Renesas R-Car Fine Display Processor");
 MODULE_AUTHOR("Kieran Bingham, <kieran@bingham.xyz>");
 MODULE_LICENSE("GPL");
 MODULE_VERSION("0.1");
-MODULE_ALIAS("platform:" MEM2MEM_NAME);
+MODULE_ALIAS("platform:" DRIVER_NAME);
