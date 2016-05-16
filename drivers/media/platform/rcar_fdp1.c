@@ -71,6 +71,14 @@ MODULE_PARM_DESC(debug, "activate debug info");
 #define dprintk(dev, fmt, arg...) \
 	v4l2_dbg(1, debug, &dev->v4l2_dev, "%s: " fmt, __func__, ## arg)
 
+/*
+ * FDP1 registers and bits
+ */
+
+/* Internal Data (HW Version) */
+#define IP_INTDATA 		0x0800
+#define IP_H3			0x02010101
+#define IP_M3W			0x02010202
 
 /**
  * struct fdp1_fmt - The FDP1 internal format data
@@ -1026,6 +1034,7 @@ static int fdp1_probe(struct platform_device *pdev)
 	struct video_device *vfd;
 	struct resource *res;
 	int ret;
+	int hw_version;
 
 	fdp1 = devm_kzalloc(&pdev->dev, sizeof(*fdp1), GFP_KERNEL);
 	if (!fdp1)
@@ -1058,6 +1067,20 @@ static int fdp1_probe(struct platform_device *pdev)
 	/* Bring the device up ready for reading registers */
 	pm_runtime_enable(&pdev->dev);
 	pm_runtime_get_sync(&pdev->dev);
+
+	hw_version = fdp1_read(fdp1, IP_INTDATA);
+	switch (hw_version)
+	{
+	case IP_H3:
+		dprintk(fdp1, "FDP1 Version R-Car H3\n");
+		break;
+	case IP_M3W:
+		dprintk(fdp1, "FDP1 Version R-Car M3-W\n");
+		break;
+	default:
+		dprintk(fdp1, "FDP1 Version unidentified: 0x%08x\n", hw_version);
+		break;
+	}
 
 	ret = v4l2_device_register(&pdev->dev, &fdp1->v4l2_dev);
 	if (ret)
