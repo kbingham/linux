@@ -236,11 +236,13 @@ static struct fdp1_q_data *get_q_data(struct fdp1_ctx *ctx,
 
 static u32 fdp1_read(struct fdp1_dev *fdp1, unsigned int reg)
 {
+	dprintk(fdp1, "Read from %p\n", fdp1->regs + reg);
 	return ioread32(fdp1->regs + reg);
 }
 
 static void fdp1_write(struct fdp1_dev *fdp1, u32 val, unsigned int reg)
 {
+	dprintk(fdp1, "Write to %p\n", fdp1->regs + reg);
 	iowrite32(val, fdp1->regs + reg);
 }
 
@@ -973,6 +975,7 @@ static int fdp1_open(struct file *file)
 		goto open_unlock;
 	}
 
+	dprintk(fdp1, "pm_runtime_get_sync(fdp1->dev:0x%p)\n", fdp1->dev);
 	pm_runtime_get_sync(fdp1->dev);
 
 	v4l2_fh_add(&ctx->fh);
@@ -1003,6 +1006,7 @@ static int fdp1_release(struct file *file)
 
 	atomic_dec(&fdp1->num_inst);
 
+	dprintk(fdp1, "pm_runtime_put(fdp1->dev:0x%p)\n", fdp1->dev);
 	pm_runtime_put(fdp1->dev);
 
 	return 0;
@@ -1098,6 +1102,8 @@ static int fdp1_probe(struct platform_device *pdev)
 	pm_runtime_enable(&pdev->dev);
 	pm_runtime_get_sync(&pdev->dev);
 
+	dprintk(fdp1, "**********************************\n");
+
 	hw_version = fdp1_read(fdp1, IP_INTDATA);
 	switch (hw_version)
 	{
@@ -1147,6 +1153,8 @@ static int fdp1_probe(struct platform_device *pdev)
 
 	pm_runtime_put(&pdev->dev);
 
+	dprintk(fdp1, "------------------------------------------\n");
+
 	return 0;
 
 err_m2m:
@@ -1154,6 +1162,8 @@ err_m2m:
 	video_unregister_device(&fdp1->vfd);
 unreg_dev:
 	v4l2_device_unregister(&fdp1->v4l2_dev);
+
+	dprintk(fdp1, ":-( ??????????????????????????????????????\n");
 
 	return ret;
 }
