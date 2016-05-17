@@ -31,7 +31,7 @@
 #include <media/v4l2-ioctl.h>
 #include <media/v4l2-ctrls.h>
 #include <media/v4l2-event.h>
-#include <media/videobuf2-vmalloc.h>
+#include <media/videobuf2-dma-contig.h>
 
 static unsigned debug;
 module_param(debug, uint, 0644);
@@ -178,7 +178,7 @@ struct fdp1_dev {
 	void __iomem		*regs;
 	unsigned int		irq;
 	struct device		*dev;
-
+	void			*alloc_ctx;
 	struct timer_list	timer;
 
 	struct v4l2_m2m_dev	*m2m_dev;
@@ -763,28 +763,35 @@ static int fdp1_queue_setup(struct vb2_queue *vq,
 {
 	struct fdp1_ctx *ctx = vb2_get_drv_priv(vq);
 	struct fdp1_q_data *q_data;
-	unsigned int size, count = *nbuffers;
+	unsigned int i;
 
 	q_data = get_q_data(ctx, vq->type);
 
-	size = q_data->width * q_data->height * q_data->fmt->depth >> 3;
+	if (*nplanes) {
+		if (*nplanes != q_data->format.num_planes)
+			return -EINVAL;
 
-	while (size * count > MEM2MEM_VID_MEM_LIMIT)
-		(count)--;
-	*nbuffers = count;
+		for (i = 0; i < *nplanes; i++) {
+			unsigned int q_size = q_data->format.plane_fmt[i].sizeimage;
 
-	if (*nplanes)
-		return sizes[0] < size ? -EINVAL : 0;
+			if (sizes[i] < q_size)
+				return -EINVAL;
+			alloc_ctxs[i] = ctx->fdp1->alloc_ctx;
+		}
 
-	*nplanes = 1;
-	sizes[0] = size;
+		dprintk(ctx->fdp1, "get %d buffer(s) of %d planes each\n", *nbuffers, *nplanes);
 
-	/*
-	 * videobuf2-vmalloc allocator is context-less so no need to set
-	 * alloc_ctxs array.
-	 */
+		return 0;
+	}
 
-	dprintk(ctx->fdp1, "get %d buffer(s) of size %d each.\n", count, size);
+	*nplanes = q_data->format.num_planes;
+
+	for (i = 0; i < *nplanes; i++) {
+		sizes[i] = q_data->format.plane_fmt[i].sizeimage;
+		alloc_ctxs[i] = ctx->fdp1->alloc_ctx;
+	}
+
+	dprintk(ctx->fdp1, "get %d buffer(s) of %d planes each\n", *nbuffers, *nplanes);
 
 	return 0;
 }
@@ -794,27 +801,40 @@ static int fdp1_buf_prepare(struct vb2_buffer *vb)
 	struct vb2_v4l2_buffer *vbuf = to_vb2_v4l2_buffer(vb);
 	struct fdp1_ctx *ctx = vb2_get_drv_priv(vb->vb2_queue);
 	struct fdp1_q_data *q_data;
+	unsigned int i;
 
 	dprintk(ctx->fdp1, "type: %d\n", vb->vb2_queue->type);
 
 	q_data = get_q_data(ctx, vb->vb2_queue->type);
-	if (V4L2_TYPE_IS_OUTPUT(vb->vb2_queue->type)) {
+
+	/*
+	 * Capture Queue (!OUTPUT) must be progressive
+	 * Output Queue, however can be interlaced
+	 */
+	if (!V4L2_TYPE_IS_OUTPUT(vb->vb2_queue->type)) {
 		if (vbuf->field == V4L2_FIELD_ANY)
 			vbuf->field = V4L2_FIELD_NONE;
 		if (vbuf->field != V4L2_FIELD_NONE) {
-			dprintk(ctx->fdp1, "%s field isn't supported\n",
+			dev_err(ctx->fdp1->dev, "%s field isn't supported\n",
 					__func__);
 			return -EINVAL;
 		}
 	}
 
-	if (vb2_plane_size(vb, 0) < q_data->sizeimage) {
-		dprintk(ctx->fdp1, "%s data will not fit into plane (%lu < %lu)\n",
-				__func__, vb2_plane_size(vb, 0), (long)q_data->sizeimage);
-		return -EINVAL;
-	}
+	for (i = 0; i < q_data->format.num_planes; i++) {
+		unsigned long size = q_data->format.plane_fmt[i].sizeimage;
 
-	vb2_set_plane_payload(vb, 0, q_data->sizeimage);
+		if (vb2_plane_size(vb, i) < size) {
+			dev_err(ctx->fdp1->dev,
+				"%s: data will not fit into plane (%lu < %lu)\n",
+			       __func__, vb2_plane_size(vb, i), size);
+			return -EINVAL;
+		}
+
+		/* FDP1 capture queue */
+		if (!V4L2_TYPE_IS_OUTPUT(vb->vb2_queue->type))
+			vb2_set_plane_payload(vb, i, size);
+	}
 
 	return 0;
 }
@@ -875,7 +895,7 @@ static int queue_init(void *priv, struct vb2_queue *src_vq, struct vb2_queue *ds
 	src_vq->drv_priv = ctx;
 	src_vq->buf_struct_size = sizeof(struct v4l2_m2m_buffer);
 	src_vq->ops = &fdp1_qops;
-	src_vq->mem_ops = &vb2_vmalloc_memops;
+	src_vq->mem_ops = &vb2_dma_contig_memops;
 	src_vq->timestamp_flags = V4L2_BUF_FLAG_TIMESTAMP_COPY;
 	src_vq->lock = &ctx->fdp1->dev_mutex;
 
@@ -888,7 +908,7 @@ static int queue_init(void *priv, struct vb2_queue *src_vq, struct vb2_queue *ds
 	dst_vq->drv_priv = ctx;
 	dst_vq->buf_struct_size = sizeof(struct v4l2_m2m_buffer);
 	dst_vq->ops = &fdp1_qops;
-	dst_vq->mem_ops = &vb2_vmalloc_memops;
+	dst_vq->mem_ops = &vb2_dma_contig_memops;
 	dst_vq->timestamp_flags = V4L2_BUF_FLAG_TIMESTAMP_COPY;
 	dst_vq->lock = &ctx->fdp1->dev_mutex;
 
@@ -1130,10 +1150,20 @@ static int fdp1_probe(struct platform_device *pdev)
 	vfd->lock = &fdp1->dev_mutex;
 	vfd->v4l2_dev = &fdp1->v4l2_dev;
 
+
+	/* Memory allocation contexts */
+	fdp1->alloc_ctx = vb2_dma_contig_init_ctx(&pdev->dev);
+	if (IS_ERR(fdp1->alloc_ctx)) {
+		v4l2_err(&fdp1->v4l2_dev, "Failed to init memory allocator\n");
+		ret = PTR_ERR(fdp1->alloc_ctx);
+		goto unreg_dev;
+	}
+
+
 	ret = video_register_device(vfd, VFL_TYPE_GRABBER, 0);
 	if (ret) {
 		v4l2_err(&fdp1->v4l2_dev, "Failed to register video device\n");
-		goto unreg_dev;
+		goto vb2_allocator_rollback;
 	}
 
 	video_set_drvdata(vfd, fdp1);
@@ -1160,6 +1190,10 @@ static int fdp1_probe(struct platform_device *pdev)
 err_m2m:
 	v4l2_m2m_release(fdp1->m2m_dev);
 	video_unregister_device(&fdp1->vfd);
+
+vb2_allocator_rollback:
+	vb2_dma_contig_cleanup_ctx(fdp1->alloc_ctx);
+
 unreg_dev:
 	v4l2_device_unregister(&fdp1->v4l2_dev);
 
@@ -1177,6 +1211,7 @@ static int fdp1_remove(struct platform_device *pdev)
 	del_timer_sync(&fdp1->timer);
 	video_unregister_device(&fdp1->vfd);
 	v4l2_device_unregister(&fdp1->v4l2_dev);
+	vb2_dma_contig_cleanup_ctx(fdp1->alloc_ctx);
 	pm_runtime_disable(&pdev->dev);
 
 	return 0;
