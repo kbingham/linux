@@ -75,6 +75,15 @@ MODULE_PARM_DESC(debug, "activate debug info");
  * FDP1 registers and bits
  */
 
+/* Interrupt status register */
+#define CTL_IRQSTA		0x0040
+#define CTL_IRQSTA_VERE		BIT(16)
+#define CTL_IRQSTA_VINTE	BIT(4)
+#define CTL_IRQSTA_FREE		BIT(0)
+#define CTL_IRQSTA_MASK		( CTL_IRQSTA_VERE \
+				| CTL_IRQSTA_VINTE \
+				| CTL_IRQSTA_FREE )
+
 /* Internal Data (HW Version) */
 #define IP_INTDATA 		0x0800
 #define IP_H3			0x02010101
@@ -1025,7 +1034,28 @@ static struct v4l2_m2m_ops m2m_ops = {
 
 static irqreturn_t fdp1_irq_handler(int irq, void *dev_id)
 {
-	return IRQ_HANDLED; /* LIES - DAMNED LIES */
+	struct fdp1_dev *fdp1 = dev_id;
+	struct fdp1_ctx *ctx;
+
+	unsigned int int_status;
+
+	int_status = fdp1_read(fdp1, CTL_IRQSTA);
+
+	dprintk(fdp1, "IRQ: 0x%x %s%s%s\n", int_status,
+			int_status & CTL_IRQSTA_VERE ? "[Error]" : "[E]",
+			int_status & CTL_IRQSTA_VINTE ? "[VSync]" : "[V]",
+			int_status & CTL_IRQSTA_FREE ? "[FrameEnd]" : "[F]");
+
+	/* Spurious interrupt */
+	if (!((CTL_IRQSTA_MASK) & int_status))
+		return IRQ_NONE;
+
+	/* Clear interrupts */
+	fdp1_write(fdp1, ~(int_status & CTL_IRQSTA_MASK), CTL_IRQSTA);
+
+	/* Do more stuff ... */
+
+	return IRQ_HANDLED;
 }
 
 static int fdp1_probe(struct platform_device *pdev)
