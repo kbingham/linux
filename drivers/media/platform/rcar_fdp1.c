@@ -101,7 +101,7 @@ MODULE_PARM_DESC(debug, "activate debug info");
 struct fdp1_fmt {
 	u32	fourcc;
 	u8	bpp[3];
-	u8	fmt;
+	u32	fmt;
 	u8	num_planes;
 	u8	types;
 };
@@ -129,6 +129,45 @@ static struct fdp1_fmt formats[] = {
 	{ V4L2_PIX_FMT_ARGB555X, {16, 0, 0}, 0x1B, 1, FDP1_CAPTURE },
 	 /* Arbitrary Alpha Value, hence can re-use 0x1B */
 	{ V4L2_PIX_FMT_XRGB555X, {16, 0, 0}, 0x1B, 1, FDP1_CAPTURE },
+
+
+	/* YUV Formats */
+	//{ V4L2_PIX_FMT_,  { 8,16, 0}, 0x40, 2, FDP1_CAPTURE | FDP1_OUTPUT }, /* YCbCr4:4:4 semi */
+	{ V4L2_PIX_FMT_NV16,  { 8, 8, 0}, 0x41, 2, FDP1_CAPTURE | FDP1_OUTPUT }, /* YCbCr4:2:2 semi (NV16, NV61) */
+	{ V4L2_PIX_FMT_NV61,  { 8, 8, 0}, 0x41 | WPF_FORMAT_WSPUVS,
+			2, FDP1_CAPTURE | FDP1_OUTPUT }, /* YCbCr4:2:2 semi (NV16, NV61) */
+	{ V4L2_PIX_FMT_NV12,  { 8, 8, 0}, 0x42, 2, FDP1_CAPTURE | FDP1_OUTPUT }, /* YCbCr4:2:0 semi (NV12, NV21) */
+	{ V4L2_PIX_FMT_NV21,  { 8, 8, 0}, 0x42 | WPF_FORMAT_WSPUVS,
+			2, FDP1_CAPTURE | FDP1_OUTPUT }, /* YCbCr4:2:0 semi (NV12, NV21) */
+
+	//{ V4L2_PIX_FMT_,  {24, 0, 0}, 0x46, 1, FDP1_CAPTURE | FDP1_OUTPUT }, /* YCbCr4:4:4 interleaved */
+	{ V4L2_PIX_FMT_UYVY,  {16, 0, 0}, 0x47, 1, FDP1_CAPTURE | FDP1_OUTPUT }, /* YCbCr4:2:2 interleaved type 0 */
+	{ V4L2_PIX_FMT_YUYV,  {16, 0, 0}, 0x47 | WPF_FORMAT_WSPYCS,
+			1, FDP1_CAPTURE | FDP1_OUTPUT }, /* RSPYCS=1 */
+	{ V4L2_PIX_FMT_YVYU,  {16, 0, 0}, 0x47 | WPF_FORMAT_WSPYCS | WPF_FORMAT_WSPUVS,
+			1, FDP1_CAPTURE | FDP1_OUTPUT }, /* RSPUVS=1 RSPYCS=1 */
+
+	//{ V4L2_PIX_FMT_,  888, 0x48, 1, FDP1_CAPTURE | FDP1_OUTPUT }, /* YCbCr4:2:2 interleaved type 1 */
+
+	/* V4L2_PIX_FMT_YVU4??M is the same except the Cr data is stored
+	 * in the second plane and the Cb data in the third plane.  */
+
+	/* Should be able to map Planar formats (contiguous single plane)
+	 * to these fmt's too. Should be just a matter of getting the correct
+	 * address to the hardware */
+	{ V4L2_PIX_FMT_YUV444M,  { 8, 8, 8}, 0x4A, 3, FDP1_CAPTURE | FDP1_OUTPUT }, /* YCbCr4:4:4 */
+	{ V4L2_PIX_FMT_YVU444M,  { 8, 8, 8}, 0x4A, 3, FDP1_CAPTURE | FDP1_OUTPUT },
+
+	{ V4L2_PIX_FMT_YUV422M,  { 8, 4, 4}, 0x4B, 3, FDP1_CAPTURE | FDP1_OUTPUT }, /* YCbCr4:2:2 */
+	{ V4L2_PIX_FMT_YVU422M,  { 8, 4, 4}, 0x4B, 3, FDP1_CAPTURE | FDP1_OUTPUT },
+	/* 3 Planes in a contiguous buffer ...
+	 * will have to verify that the hardware can support alignment ? */
+	{ V4L2_PIX_FMT_YUV422P,  {16, 0, 0}, 0x4B, 1, FDP1_CAPTURE | FDP1_OUTPUT },
+
+	{ V4L2_PIX_FMT_YUV420M,  { 8, 2, 2}, 0x4C, 3, FDP1_CAPTURE | FDP1_OUTPUT }, /* YCbCr4:2:0 */
+	{ V4L2_PIX_FMT_YVU420M,  { 8, 2, 2}, 0x4C, 3, FDP1_CAPTURE | FDP1_OUTPUT },
+
+
 };
 
 #define NUM_FORMATS ARRAY_SIZE(formats)
