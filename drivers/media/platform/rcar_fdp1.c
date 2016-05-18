@@ -906,6 +906,25 @@ static int fdp1_open(struct file *file)
 	file->private_data = &ctx->fh;
 	ctx->fdp1 = fdp1;
 
+	/* Initialise controls */
+
+	ctx->transtime = 40;
+	ctx->translen = 1;
+
+	v4l2_ctrl_handler_init(&ctx->hdl, 4);
+	v4l2_ctrl_new_std(&ctx->hdl, &fdp1_ctrl_ops, V4L2_CID_HFLIP, 0, 1, 1, 0);
+	v4l2_ctrl_new_std(&ctx->hdl, &fdp1_ctrl_ops, V4L2_CID_VFLIP, 0, 1, 1, 0);
+	v4l2_ctrl_new_custom(&ctx->hdl, &fdp1_ctrl_trans_time_msec, NULL);
+	v4l2_ctrl_new_custom(&ctx->hdl, &fdp1_ctrl_trans_num_bufs, NULL);
+	if (ctx->hdl.error) {
+		rc = ctx->hdl.error;
+		v4l2_ctrl_handler_free(&ctx->hdl);
+		goto open_unlock;
+	}
+
+	ctx->fh.ctrl_handler = &ctx->hdl; // don't set the handle unless it's registered!
+	v4l2_ctrl_handler_setup(&ctx->hdl);
+
 	/* Configure default parameters. */
 	__fdp1_try_fmt(ctx, &ctx->out_q.fmt, &ctx->out_q.format,
 		      V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
@@ -919,7 +938,7 @@ static int fdp1_open(struct file *file)
 	if (IS_ERR(ctx->fh.m2m_ctx)) {
 		rc = PTR_ERR(ctx->fh.m2m_ctx);
 
-		// No handler yet ... v4l2_ctrl_handler_free(hdl);
+		v4l2_ctrl_handler_free(&ctx->hdl);
 		kfree(ctx);
 		goto open_unlock;
 	}
