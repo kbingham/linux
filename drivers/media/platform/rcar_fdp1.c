@@ -33,6 +33,11 @@
 #include <media/v4l2-event.h>
 #include <media/videobuf2-dma-contig.h>
 
+#ifdef CONFIG_ARM
+/* Don't perform register read/writes on qemu / 32 bit build */
+#define QEMU_TESTING
+#endif
+
 static unsigned debug;
 module_param(debug, uint, 0644);
 MODULE_PARM_DESC(debug, "activate debug info");
@@ -471,8 +476,10 @@ static void device_run(void *priv)
 
 	device_process(ctx, src_buf, dst_buf);
 
+#ifdef QEMU_TESTING
 	/* Run a timer, which simulates a hardware irq  */
 	schedule_irq(fdp1, ctx->transtime);
+#endif
 }
 
 static void device_isr(unsigned long priv)
@@ -1085,6 +1092,7 @@ static int fdp1_probe(struct platform_device *pdev)
 	fdp1->dev = &pdev->dev;
 	platform_set_drvdata(pdev, fdp1);
 
+#ifndef QEMU_TESTING
 	/* memory-mapped registers */
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	fdp1->regs = devm_ioremap_resource(&pdev->dev, res);
@@ -1104,6 +1112,7 @@ static int fdp1_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "cannot claim IRQ %d\n", fdp1->irq);
 		return ret;
 	}
+#endif
 
 	/* Bring the device up ready for reading registers */
 	pm_runtime_enable(&pdev->dev);
@@ -1111,6 +1120,7 @@ static int fdp1_probe(struct platform_device *pdev)
 
 	dprintk(fdp1, "**********************************\n");
 
+#ifndef QEMU_TESTING
 	hw_version = fdp1_read(fdp1, IP_INTDATA);
 	switch (hw_version)
 	{
@@ -1125,6 +1135,7 @@ static int fdp1_probe(struct platform_device *pdev)
 		break;
 	}
 
+#endif
 	ret = v4l2_device_register(&pdev->dev, &fdp1->v4l2_dev);
 	if (ret)
 		return ret;
