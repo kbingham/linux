@@ -45,6 +45,7 @@ MODULE_PARM_DESC(debug, "activate debug info");
 #define MAX_W 3840
 #define MAX_H 2160
 #define MAX_HF 1080
+#define MEMALIGN 8
 
 #define DIM_ALIGN_MASK 7 /* 8-byte alignment for line length */
 
@@ -99,44 +100,41 @@ MODULE_PARM_DESC(debug, "activate debug info");
  */
 struct fdp1_fmt {
 	u32	fourcc;
-	u8	depth;
+	u8	bpp[3];
 	u8	fmt;
 	u8	num_planes;
 	u8	types;
 };
 
 static struct fdp1_fmt formats[] = {
-
 	/* RGB Formats are only supported by the Write Pixel Formatter */
-	/*	FourCC	      depth  fmt  np   type       */
-	{ V4L2_PIX_FMT_RGB332,    8, 0x00, 1, FDP1_CAPTURE },
-	{ V4L2_PIX_FMT_XRGB555X, 16, 0x04, 1, FDP1_CAPTURE },
-	{ V4L2_PIX_FMT_RGB565X,  16, 0x06, 1, FDP1_CAPTURE }, /* Big Endian */
+	/*	FourCC	            BPP[3]    fmt  np   type       */
+	{ V4L2_PIX_FMT_RGB332,   { 8, 0, 0}, 0x00, 1, FDP1_CAPTURE },
+	{ V4L2_PIX_FMT_XRGB555X, {16, 0, 0}, 0x04, 1, FDP1_CAPTURE },
+	{ V4L2_PIX_FMT_RGB565X,  {16, 0, 0}, 0x06, 1, FDP1_CAPTURE }, /* Big Endian */
 	/* Not mapping the 18 bit (6-6-6) formats */
-	{ V4L2_PIX_FMT_ARGB32,   24, 0x13, 1, FDP1_CAPTURE },
+	{ V4L2_PIX_FMT_ARGB32,   {24, 0, 0}, 0x13, 1, FDP1_CAPTURE },
 	/* XRGB Can be supported on the Capture, as A is arbitrary anyway */
-	{ V4L2_PIX_FMT_XRGB32,   24, 0x13, 1, FDP1_CAPTURE },
+	{ V4L2_PIX_FMT_XRGB32,   {24, 0, 0}, 0x13, 1, FDP1_CAPTURE },
 	/* 0x14 = RGBA8888 */
-	{ V4L2_PIX_FMT_RGB24,    24, 0x15, 1, FDP1_CAPTURE }, /* RGB 8-8-8 */
-	{ V4L2_PIX_FMT_BGR24,    24, 0x18, 1, FDP1_CAPTURE },
+	{ V4L2_PIX_FMT_RGB24,    {24, 0, 0}, 0x15, 1, FDP1_CAPTURE }, /* RGB 8-8-8 */
+	{ V4L2_PIX_FMT_BGR24,    {24, 0, 0}, 0x18, 1, FDP1_CAPTURE },
 
 	/* ARGB444 is confusing. uapi/linux/videodev2.h represents it as aaaarrrrggggbbbb
 	 * however in https://linuxtv.org/downloads/v4l-dvb-apis/packed-rgb.html
 	 * it is shown as g3 g2	g1 g0 b3 b2 b1 b0 | a3 a2 a1 a0 r3 r2 r1 r0
+	 * We can use the
 	 */
-	{ V4L2_PIX_FMT_ARGB444,  16, 0x19, 1, FDP1_CAPTURE }, // TESTME I'm probably the wrong endianness !!!
-	{ V4L2_PIX_FMT_ARGB555X, 16, 0x1B, 1, FDP1_CAPTURE },
+	{ V4L2_PIX_FMT_ARGB444,  {16, 0, 0}, 0x19, 1, FDP1_CAPTURE }, // TESTME I'm probably the wrong endianness !!!
+	{ V4L2_PIX_FMT_ARGB555X, {16, 0, 0}, 0x1B, 1, FDP1_CAPTURE },
 	 /* Arbitrary Alpha Value, hence can re-use 0x1B */
-	{ V4L2_PIX_FMT_XRGB555X, 16, 0x1B, 1, FDP1_CAPTURE },
+	{ V4L2_PIX_FMT_XRGB555X, {16, 0, 0}, 0x1B, 1, FDP1_CAPTURE },
 };
 
 #define NUM_FORMATS ARRAY_SIZE(formats)
 
 /* Per-queue, driver-specific private data */
 struct fdp1_q_data {
-	unsigned int		width;
-	unsigned int		height;
-	unsigned int		sizeimage;
 	struct fdp1_fmt	*fmt;
 	struct v4l2_pix_format_mplane format;
 	unsigned int sequence;
@@ -150,14 +148,15 @@ enum {
 #define V4L2_CID_TRANS_TIME_MSEC	(V4L2_CID_USER_BASE + 0x1000)
 #define V4L2_CID_TRANS_NUM_BUFS		(V4L2_CID_USER_BASE + 0x1001)
 
-static struct fdp1_fmt *find_format(struct v4l2_format *f)
+static struct fdp1_fmt *fdp1_find_format(u32 pixelformat,
+					 unsigned int fmt_type)
 {
 	struct fdp1_fmt *fmt;
 	unsigned int k;
 
 	for (k = 0; k < NUM_FORMATS; k++) {
 		fmt = &formats[k];
-		if (fmt->fourcc == f->fmt.pix.pixelformat)
+		if ((fmt->fourcc == pixelformat) && (fmt->types & fmt_type))
 			break;
 	}
 
@@ -212,9 +211,9 @@ struct fdp1_ctx {
 
 };
 
-static inline struct fdp1_ctx *file2ctx(struct file *file)
+static inline struct fdp1_ctx *fh_to_ctx(struct v4l2_fh *fh)
 {
-	return container_of(file->private_data, struct fdp1_ctx, fh);
+	return container_of(fh, struct fdp1_ctx, fh);
 }
 
 static struct fdp1_q_data *get_q_data(struct fdp1_ctx *ctx,
@@ -262,7 +261,7 @@ static int device_process(struct fdp1_ctx *ctx,
 
 	width	= q_data->width;
 	height	= q_data->height;
-	bytesperline	= (q_data->width * q_data->fmt->depth) >> 3;
+	bytesperline	= (q_data->width * q_data->fmt->bpp[0]) >> 3;
 
 	p_in = vb2_plane_vaddr(&in_vb->vb2_buf, 0);
 	p_out = vb2_plane_vaddr(&out_vb->vb2_buf, 0);
@@ -481,7 +480,7 @@ static int vidioc_querycap(struct file *file, void *priv,
 	strncpy(cap->card, DRIVER_NAME, sizeof(cap->card) - 1);
 	snprintf(cap->bus_info, sizeof(cap->bus_info),
 			"platform:%s", DRIVER_NAME);
-	cap->device_caps = V4L2_CAP_VIDEO_M2M | V4L2_CAP_STREAMING;
+	cap->device_caps = V4L2_CAP_VIDEO_M2M_MPLANE | V4L2_CAP_STREAMING;
 	cap->capabilities = cap->device_caps | V4L2_CAP_DEVICE_CAPS;
 	return 0;
 }
@@ -511,130 +510,103 @@ static int enum_fmt(struct v4l2_fmtdesc *f, u32 type)
 	return 0;
 }
 
-static int vidioc_enum_fmt_vid_cap(struct file *file, void *priv,
-				   struct v4l2_fmtdesc *f)
+static int fdp1_enum_fmt_vid_cap(struct file *file, void *priv,
+				 struct v4l2_fmtdesc *f)
 {
 	return enum_fmt(f, FDP1_CAPTURE);
 }
 
-static int vidioc_enum_fmt_vid_out(struct file *file, void *priv,
+static int fdp1_enum_fmt_vid_out(struct file *file, void *priv,
 				   struct v4l2_fmtdesc *f)
 {
 	return enum_fmt(f, FDP1_OUTPUT);
 }
 
-static int vidioc_g_fmt(struct fdp1_ctx *ctx, struct v4l2_format *f)
+static int fdp1_g_fmt(struct file *file, void *priv, struct v4l2_format *f)
 {
-	struct vb2_queue *vq;
 	struct fdp1_q_data *q_data;
+	struct fdp1_ctx *ctx = fh_to_ctx(priv);
 
-	vq = v4l2_m2m_get_vq(ctx->fh.m2m_ctx, f->type);
-	if (!vq)
+	if (!v4l2_m2m_get_vq(ctx->fh.m2m_ctx, f->type))
 		return -EINVAL;
 
 	q_data = get_q_data(ctx, f->type);
-
-	f->fmt.pix.width	= q_data->width;
-	f->fmt.pix.height	= q_data->height;
-	f->fmt.pix.field	= V4L2_FIELD_NONE;
-	f->fmt.pix.pixelformat	= q_data->fmt->fourcc;
-	f->fmt.pix.bytesperline	= (q_data->width * q_data->fmt->depth) >> 3;
-	f->fmt.pix.sizeimage	= q_data->sizeimage;
-	f->fmt.pix.colorspace	= ctx->colorspace;
+	f->fmt.pix_mp = q_data->format;
 
 	return 0;
 }
 
-static int vidioc_g_fmt_vid_out(struct file *file, void *priv,
-				struct v4l2_format *f)
+static int __fdp1_try_fmt(struct fdp1_ctx *ctx, struct fdp1_fmt **fmtinfo,
+			  struct v4l2_pix_format_mplane *pix,
+			  enum v4l2_buf_type type)
 {
-	return vidioc_g_fmt(file2ctx(file), f);
-}
+	struct fdp1_fmt *fmt;
+	unsigned int fmt_type;
+	unsigned int i, bpl = 0;
 
-static int vidioc_g_fmt_vid_cap(struct file *file, void *priv,
-				struct v4l2_format *f)
-{
-	return vidioc_g_fmt(file2ctx(file), f);
-}
+	fmt_type = V4L2_TYPE_IS_OUTPUT(type) ? FDP1_OUTPUT : FDP1_CAPTURE;
 
-static int vidioc_try_fmt(struct v4l2_format *f, struct fdp1_fmt *fmt)
-{
-	/* V4L2 specification suggests the driver corrects the format struct
-	 * if any of the dimensions is unsupported */
-	if (f->fmt.pix.height < MIN_H)
-		f->fmt.pix.height = MIN_H;
-	else if (f->fmt.pix.height > MAX_H)
-		f->fmt.pix.height = MAX_H;
+	fmt = fdp1_find_format(pix->pixelformat, fmt_type);
+	if (!fmt) {
+		dev_dbg(ctx->fdp1->dev, "unknown format; set default format\n");
+		/* YUV Type compatible with both OUTPUT/CAPTURE */
+		fmt = fdp1_find_format(V4L2_PIX_FMT_YUV420M, fmt_type);
+	}
 
-	if (f->fmt.pix.width < MIN_W)
-		f->fmt.pix.width = MIN_W;
-	else if (f->fmt.pix.width > MAX_W)
-		f->fmt.pix.width = MAX_W;
+	pix->pixelformat = fmt->fourcc;
+	// TODO: pix->colorspace = fmt->colorspace;
+	pix->field = V4L2_FIELD_NONE;
+	pix->num_planes = fmt->num_planes;
+	memset(pix->reserved, 0, sizeof(pix->reserved));
 
-	f->fmt.pix.width &= ~DIM_ALIGN_MASK;
-	f->fmt.pix.bytesperline = (f->fmt.pix.width * fmt->depth) >> 3;
-	f->fmt.pix.sizeimage = f->fmt.pix.height * f->fmt.pix.bytesperline;
-	f->fmt.pix.field = V4L2_FIELD_NONE;
+	pix->width = clamp_t(unsigned int, pix->width, MIN_W, MAX_W);
+	pix->height = clamp_t(unsigned int, pix->height, MIN_H, MAX_H);
+
+	for (i = 0; i < pix->num_planes; ++i)
+		bpl = max(bpl, pix->plane_fmt[i].bytesperline);
+
+	bpl = clamp_t(unsigned int, bpl, pix->width, MAX_W);
+	bpl = round_up(bpl, MEMALIGN);
+
+	for (i = 0; i < pix->num_planes; ++i) {
+		pix->plane_fmt[i].bytesperline = bpl;
+		/* Todo: This just doesn't sound right below ...
+		 * Why would each plane be based upon the full height/bpl + bpp?
+		 * Maybe I'm just too sleepy now!
+		 */
+		pix->plane_fmt[i].sizeimage = bpl * pix->height * fmt->bpp[i] / 8;
+		memset(pix->plane_fmt[i].reserved, 0,
+		       sizeof(pix->plane_fmt[i].reserved));
+	}
+
+	if (fmtinfo)
+		*fmtinfo = fmt;
 
 	return 0;
 }
 
-static int vidioc_try_fmt_vid_cap(struct file *file, void *priv,
-				  struct v4l2_format *f)
+static int fdp1_try_fmt(struct file *file, void *priv, struct v4l2_format *f)
 {
 	struct fdp1_fmt *fmt;
-	struct fdp1_ctx *ctx = file2ctx(file);
+	struct fdp1_ctx *ctx = fh_to_ctx(priv);
 
-	fmt = find_format(f);
-	if (!fmt) {
-		f->fmt.pix.pixelformat = formats[0].fourcc;
-		fmt = find_format(f);
-	}
-	if (!(fmt->types & FDP1_CAPTURE)) {
-		v4l2_err(&ctx->fdp1->v4l2_dev,
-			 "Fourcc format (0x%08x) invalid.\n",
-			 f->fmt.pix.pixelformat);
+	if (!v4l2_m2m_get_vq(ctx->fh.m2m_ctx, f->type))
 		return -EINVAL;
-	}
-	f->fmt.pix.colorspace = ctx->colorspace;
 
-	return vidioc_try_fmt(f, fmt);
+	return __fdp1_try_fmt(ctx, NULL, &f->fmt.pix_mp, f->type);
 }
 
-static int vidioc_try_fmt_vid_out(struct file *file, void *priv,
-				  struct v4l2_format *f)
+static int fdp1_s_fmt(struct file *file, void *priv, struct v4l2_format *f)
 {
-	struct fdp1_fmt *fmt;
-	struct fdp1_ctx *ctx = file2ctx(file);
-
-	fmt = find_format(f);
-	if (!fmt) {
-		f->fmt.pix.pixelformat = formats[0].fourcc;
-		fmt = find_format(f);
-	}
-	if (!(fmt->types & FDP1_OUTPUT)) {
-		v4l2_err(&ctx->fdp1->v4l2_dev,
-			 "Fourcc format (0x%08x) invalid.\n",
-			 f->fmt.pix.pixelformat);
-		return -EINVAL;
-	}
-	if (!f->fmt.pix.colorspace)
-		f->fmt.pix.colorspace = V4L2_COLORSPACE_REC709;
-
-	return vidioc_try_fmt(f, fmt);
-}
-
-static int vidioc_s_fmt(struct fdp1_ctx *ctx, struct v4l2_format *f)
-{
-	struct fdp1_q_data *q_data;
 	struct vb2_queue *vq;
+	struct fdp1_ctx *ctx = fh_to_ctx(priv);
+	struct v4l2_m2m_ctx *m2m_ctx = ctx->fh.m2m_ctx;
+	struct fdp1_q_data *q_data;
+	struct fdp1_fmt *fmtinfo;
+	int ret;
 
-	vq = v4l2_m2m_get_vq(ctx->fh.m2m_ctx, f->type);
+	vq = v4l2_m2m_get_vq(m2m_ctx, f->type);
 	if (!vq)
-		return -EINVAL;
-
-	q_data = get_q_data(ctx, f->type);
-	if (!q_data)
 		return -EINVAL;
 
 	if (vb2_is_busy(vq)) {
@@ -642,45 +614,20 @@ static int vidioc_s_fmt(struct fdp1_ctx *ctx, struct v4l2_format *f)
 		return -EBUSY;
 	}
 
-	q_data->fmt		= find_format(f);
-	q_data->width		= f->fmt.pix.width;
-	q_data->height		= f->fmt.pix.height;
-	q_data->sizeimage	= q_data->width * q_data->height
-				* q_data->fmt->depth >> 3;
+	ret = __fdp1_try_fmt(ctx, &fmtinfo, &f->fmt.pix_mp, f->type);
+	if (ret < 0)
+		return ret;
+
+	q_data = get_q_data(ctx, f->type);
+	q_data->format = f->fmt.pix_mp;
+	q_data->fmt = fmtinfo;
 
 	dprintk(ctx->fdp1,
 		"Setting format for type %d, wxh: %dx%d, fmt: %d\n",
-		f->type, q_data->width, q_data->height, q_data->fmt->fourcc);
+			f->type, q_data->format.width, q_data->format.height,
+			q_data->fmt->fourcc);
 
 	return 0;
-}
-
-static int vidioc_s_fmt_vid_cap(struct file *file, void *priv,
-				struct v4l2_format *f)
-{
-	int ret;
-
-	ret = vidioc_try_fmt_vid_cap(file, priv, f);
-	if (ret)
-		return ret;
-
-	return vidioc_s_fmt(file2ctx(file), f);
-}
-
-static int vidioc_s_fmt_vid_out(struct file *file, void *priv,
-				struct v4l2_format *f)
-{
-	struct fdp1_ctx *ctx = file2ctx(file);
-	int ret;
-
-	ret = vidioc_try_fmt_vid_out(file, priv, f);
-	if (ret)
-		return ret;
-
-	ret = vidioc_s_fmt(file2ctx(file), f);
-	if (!ret)
-		ctx->colorspace = f->fmt.pix.colorspace;
-	return ret;
 }
 
 static int fdp1_s_ctrl(struct v4l2_ctrl *ctrl)
@@ -727,15 +674,14 @@ static const struct v4l2_ctrl_ops fdp1_ctrl_ops = {
 static const struct v4l2_ioctl_ops fdp1_ioctl_ops = {
 	.vidioc_querycap	= vidioc_querycap,
 
-	.vidioc_enum_fmt_vid_cap = vidioc_enum_fmt_vid_cap,
-	.vidioc_g_fmt_vid_cap	= vidioc_g_fmt_vid_cap,
-	.vidioc_try_fmt_vid_cap	= vidioc_try_fmt_vid_cap,
-	.vidioc_s_fmt_vid_cap	= vidioc_s_fmt_vid_cap,
-
-	.vidioc_enum_fmt_vid_out = vidioc_enum_fmt_vid_out,
-	.vidioc_g_fmt_vid_out	= vidioc_g_fmt_vid_out,
-	.vidioc_try_fmt_vid_out	= vidioc_try_fmt_vid_out,
-	.vidioc_s_fmt_vid_out	= vidioc_s_fmt_vid_out,
+	.vidioc_enum_fmt_vid_cap_mplane = fdp1_enum_fmt_vid_cap,
+	.vidioc_enum_fmt_vid_out_mplane = fdp1_enum_fmt_vid_out,
+	.vidioc_g_fmt_vid_cap_mplane	= fdp1_g_fmt,
+	.vidioc_g_fmt_vid_out_mplane	= fdp1_g_fmt,
+	.vidioc_try_fmt_vid_cap_mplane	= fdp1_try_fmt,
+	.vidioc_try_fmt_vid_out_mplane	= fdp1_try_fmt,
+	.vidioc_s_fmt_vid_cap_mplane	= fdp1_s_fmt,
+	.vidioc_s_fmt_vid_out_mplane	= fdp1_s_fmt,
 
 	.vidioc_reqbufs		= v4l2_m2m_ioctl_reqbufs,
 	.vidioc_querybuf	= v4l2_m2m_ioctl_querybuf,
@@ -776,11 +722,9 @@ static int fdp1_queue_setup(struct vb2_queue *vq,
 
 			if (sizes[i] < q_size)
 				return -EINVAL;
+
 			alloc_ctxs[i] = ctx->fdp1->alloc_ctx;
 		}
-
-		dprintk(ctx->fdp1, "get %d buffer(s) of %d planes each\n", *nbuffers, *nplanes);
-
 		return 0;
 	}
 
@@ -791,7 +735,11 @@ static int fdp1_queue_setup(struct vb2_queue *vq,
 		alloc_ctxs[i] = ctx->fdp1->alloc_ctx;
 	}
 
-	dprintk(ctx->fdp1, "get %d buffer(s) of %d planes each\n", *nbuffers, *nplanes);
+	dprintk(ctx->fdp1, "get %d buffer(s) of size [%d,%d,%d] each.\n",
+			*nbuffers,
+			sizes[0],
+			*nplanes > 1 ? sizes[1] : 0,
+			*nplanes > 2 ? sizes[2] : 0);
 
 	return 0;
 }
@@ -807,16 +755,14 @@ static int fdp1_buf_prepare(struct vb2_buffer *vb)
 
 	q_data = get_q_data(ctx, vb->vb2_queue->type);
 
-	/*
-	 * Capture Queue (!OUTPUT) must be progressive
-	 * Output Queue, however can be interlaced
-	 */
+	/* We only support progressive CAPTURE */
 	if (!V4L2_TYPE_IS_OUTPUT(vb->vb2_queue->type)) {
 		if (vbuf->field == V4L2_FIELD_ANY)
 			vbuf->field = V4L2_FIELD_NONE;
 		if (vbuf->field != V4L2_FIELD_NONE) {
-			dev_err(ctx->fdp1->dev, "%s field isn't supported\n",
-					__func__);
+			dprintk(ctx->fdp1,
+				"%s field isn't supported on capture\n",
+				__func__);
 			return -EINVAL;
 		}
 	}
@@ -826,14 +772,15 @@ static int fdp1_buf_prepare(struct vb2_buffer *vb)
 
 		if (vb2_plane_size(vb, i) < size) {
 			dev_err(ctx->fdp1->dev,
-				"%s: data will not fit into plane (%lu < %lu)\n",
-			       __func__, vb2_plane_size(vb, i), size);
+				"%s: data will not fit into plane [%d/%d] (%lu < %lu)\n",
+			       __func__,
+			       i, q_data->format.num_planes,
+			       vb2_plane_size(vb, i), size);
 			return -EINVAL;
 		}
 
-		/* FDP1 capture queue */
-		if (!V4L2_TYPE_IS_OUTPUT(vb->vb2_queue->type))
-			vb2_set_plane_payload(vb, i, size);
+		/* We have known size formats all around */
+		vb2_set_plane_payload(vb, i, size);
 	}
 
 	return 0;
@@ -959,29 +906,11 @@ static int fdp1_open(struct file *file)
 	file->private_data = &ctx->fh;
 	ctx->fdp1 = fdp1;
 
-
-	/* Perform v4l2_ctrl_handler_setup(hdl); if desired */
-
-	/* M2M_SRC = Out
-	 * M2M_DST = Cap */
-
-	ctx->out_q.fmt = &formats[0];
-	ctx->out_q.width = 1920;
-	ctx->out_q.height = 1080;
-	ctx->out_q.sizeimage =
-		ctx->out_q.width *
-		ctx->out_q.height *
-		(ctx->out_q.fmt->depth >> 3);
-	ctx->cap_q = ctx->out_q;
-
-	/* Better for above
-	__fdp1_try_fmt(ctx, &ctx->out_q.fmtinfo, &ctx->out_q.format,
-		      V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
-	__fdp1_try_fmt(ctx, &ctx->cap_q.fmtinfo, &ctx->cap_q.format,
-		      V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE);
-	 */
-
 	/* Configure default parameters. */
+	__fdp1_try_fmt(ctx, &ctx->out_q.fmt, &ctx->out_q.format,
+		      V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
+	__fdp1_try_fmt(ctx, &ctx->cap_q.fmt, &ctx->cap_q.format,
+		      V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE);
 
 	ctx->colorspace = V4L2_COLORSPACE_REC709;
 
@@ -1012,7 +941,7 @@ open_unlock:
 static int fdp1_release(struct file *file)
 {
 	struct fdp1_dev *fdp1 = video_drvdata(file);
-	struct fdp1_ctx *ctx = file2ctx(file);
+	struct fdp1_ctx *ctx = fh_to_ctx(file->private_data);
 
 	dprintk(fdp1, "Releasing instance %p\n", ctx);
 
