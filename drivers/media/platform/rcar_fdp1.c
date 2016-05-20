@@ -483,10 +483,163 @@ void fdp1_print_regs32(struct fdp1_dev *fdp1)
 			   readl(fdp1->regset.base + regs->offset));
 }
 
-static int device_process(struct fdp1_ctx *ctx,
-			  struct vb2_v4l2_buffer *in_vb,
-			  struct vb2_v4l2_buffer *out_vb)
+struct fdp1_plane_addrs
 {
+	unsigned long plane0;
+	unsigned long plane1;
+	unsigned long plane2;
+};
+
+static struct fdp1_plane_addrs vb2_dc_to_pa(struct vb2_v4l2_buffer *buf,
+		unsigned int planes)
+{
+	struct fdp1_plane_addrs pa = { 0 };
+	struct vb2_buffer *vb2buf = &buf->vb2_buf;
+
+	switch (planes)
+	{
+	case 3:	pa.plane2 = vb2_dma_contig_plane_dma_addr(vb2buf, 2);
+		/* Fall through */
+	case 2:	pa.plane1 = vb2_dma_contig_plane_dma_addr(vb2buf, 1);
+		/* Fall through */
+	case 1:	pa.plane0 = vb2_dma_contig_plane_dma_addr(vb2buf, 0);
+		break;
+	default:
+		BUG_ON(1);
+	}
+
+	return pa;
+}
+
+/* IPC registers are to be programmed with constant values */
+static void fdp1_set_ipc_dli(struct fdp1_dev *fdp1)
+{
+	fdp1_write(fdp1, 0x00010002, IPC_SMSK_THRESH);
+	fdp1_write(fdp1, 0x00200040, IPC_COMB_DET);
+	fdp1_write(fdp1, 0x00008020, IPC_MOTDEC);
+
+	fdp1_write(fdp1, 0x0080FF02, IPC_DLI_BLEND);
+	fdp1_write(fdp1, 0x001000FF, IPC_DLI_HGAIN);
+	fdp1_write(fdp1, 0x009004FF, IPC_DLI_SPRS);
+	fdp1_write(fdp1, 0x0004080C, IPC_DLI_ANGLE);
+	fdp1_write(fdp1, 0xFF10FF10, IPC_DLI_ISOPIX0);
+	fdp1_write(fdp1, 0x0000FF10, IPC_DLI_ISOPIX1);
+}
+
+
+static void fdp1_set_ipc_sensor(struct fdp1_dev *fdp1)
+{
+	//fdp1_write(fdp1, 0x0, IPC_SENSOR_TH0);  // Top bits are readonly?
+
+}
+
+static int device_process(struct fdp1_ctx *ctx,
+			  struct vb2_v4l2_buffer *src_buf,
+			  struct vb2_v4l2_buffer *dst_buf)
+{
+	struct fdp1_dev *fdp1 = ctx->fdp1;
+	struct fdp1_q_data *src_q_data = &ctx->out_q;
+	struct fdp1_q_data *dst_q_data = &ctx->cap_q;
+
+	struct fdp1_plane_addrs src_addr;
+	struct fdp1_plane_addrs dst_addr;
+
+	unsigned int opmode, ipcmode;
+	unsigned int channels;
+	unsigned int picture_size, stride_y, stride_c;
+
+	/* Obtain physical addresses for the HW */
+	src_addr = vb2_dc_to_pa(src_buf, src_q_data->fmt->num_planes);
+	dst_addr = vb2_dc_to_pa(dst_buf, dst_q_data->fmt->num_planes);
+
+	dprintk(fdp1, "\n\n");
+
+	/* Debug the world ... Lets see what we have going through */
+	dprintk(fdp1, "SRC[%d]: 0x%08lx 0x%08lx 0x%08lx (%dx%d, 0x%x)\n",
+			src_buf->vb2_buf.index,
+			src_addr.plane0, src_addr.plane1, src_addr.plane2,
+			src_q_data->format.width, src_q_data->format.height,
+			src_q_data->fmt->fmt);
+	dprintk(fdp1, "DST[%d]: 0x%08lx 0x%08lx 0x%08lx (%dx%d, 0x%x)\n",
+			dst_buf->vb2_buf.index,
+			dst_addr.plane0, dst_addr.plane1, dst_addr.plane2,
+			dst_q_data->format.width, dst_q_data->format.height,
+			dst_q_data->fmt->fmt);
+
+
+	/* Non-immediate registers */
+
+	/* First Frame only? ... */
+	fdp1_write(fdp1, CTL_CLKCTRL_CSTP_N, CTL_CLKCTRL);
+
+	/* Set the mode, and configuration */
+	opmode = (CTL_OPMODE_PRG | CTL_OPMODE_NO_INTERRUPT);
+	channels = (CTL_CHACT_WR | CTL_CHACT_RD1);
+	ipcmode = IPC_MODE_DLI | IPC_MODE_DIM_FIXED2D;
+
+	fdp1_write(fdp1, channels,	CTL_CHACT);
+	fdp1_write(fdp1, opmode,	CTL_OPMODE);
+	fdp1_write(fdp1, ipcmode,	IPC_MODE);
+
+	/* DLI Static Configuration */
+	fdp1_set_ipc_dli(fdp1);
+
+	/* Sensor Configuration */
+	fdp1_set_ipc_sensor(fdp1);
+
+	/* Enable All Interrupts */
+	fdp1_write(fdp1, CTL_IRQ_MASK, CTL_IRQENB);
+	dprintk(fdp1, "CycleStatus = %d\n", fdp1_read(fdp1, CTL_VCYCLE_STATUS));
+
+	/* Setup the source picture */
+
+	/* Picture size is common to Source AND Destination frames */
+	picture_size = ((src_q_data->format.width & GENMASK(12,0)) << 16);
+	picture_size |= (src_q_data->format.height & GENMASK(12,0));
+	dprintk(fdp1, "RPF_SIZE: 0x%08x\n", picture_size);
+	fdp1_write(fdp1, picture_size, RPF_SIZE);
+
+	/* Stride Y */
+	stride_y = src_q_data->format.width * src_q_data->fmt->bpp[0] / 8;
+	/* Stride CbCr */
+	stride_c = src_q_data->format.width * src_q_data->fmt->bpp[1] / 8;
+	fdp1_write(fdp1, (stride_y << 16) | (stride_c & 0xFFFF), RPF_PSTRIDE );
+
+	fdp1_write(fdp1, src_q_data->fmt->fmt, RPF_FORMAT);
+	fdp1_write(fdp1, src_addr.plane0, RPF1_ADDR_Y);
+	fdp1_write(fdp1, src_addr.plane1, RPF1_ADDR_C0);
+	fdp1_write(fdp1, src_addr.plane2, RPF1_ADDR_C1);
+
+	/* Setup the Dest Picture */
+
+	/* Stride Y */
+	stride_y = dst_q_data->format.width * dst_q_data->fmt->bpp[0] / 8;
+	/* Stride CbCr */
+	/* stride_c is not used for RGB formats, can be 0...? */
+	stride_c = dst_q_data->format.width * dst_q_data->fmt->bpp[1] / 8;
+	fdp1_write(fdp1, (stride_y << 16) | (stride_c & 0xFFFF), WPF_PSTRIDE );
+
+	fdp1_write(fdp1, dst_q_data->fmt->fmt, WPF_FORMAT);
+	fdp1_write(fdp1, dst_addr.plane0, WPF_ADDR_Y);
+	fdp1_write(fdp1, dst_addr.plane1, WPF_ADDR_C0);
+	fdp1_write(fdp1, dst_addr.plane2, WPF_ADDR_C1);
+
+	/* Finally, the Immediate Registers */
+
+	/* Start the command */
+	 /* set after all relevant registers are surely set except for
+	  * REGEND and SGCMD	  */
+	fdp1_write(fdp1, CTL_CMD_STRCMD, CTL_CMD);
+
+	/* Register End */
+	/* Registers will update to HW at next VINT */
+	fdp1_write(fdp1, CTL_REGEND_REGEND, CTL_REGEND);
+
+	/* Enable VINT Generator */
+	fdp1_write(fdp1, CTL_SGCMD_SGEN, CTL_SGCMD);
+
+
+
 #ifdef OLD_CPU_DEINT
 	struct fdp1_dev *fdp1 = ctx->fdp1;
 	struct fdp1_q_data *q_data;
