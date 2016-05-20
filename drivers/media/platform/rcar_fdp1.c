@@ -651,6 +651,10 @@ static void job_abort(void *priv)
 
 	/* Will cancel the transaction in the next interrupt handler */
 	ctx->aborting = 1;
+
+	/* Immediate abort sequence */
+	fdp1_write(ctx->fdp1, 0, CTL_SGCMD);
+	fdp1_write(ctx->fdp1, CTL_SRESET_SRST, CTL_SRESET);
 }
 
 /* device_run() - prepares and starts the device
