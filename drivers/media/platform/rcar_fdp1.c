@@ -33,6 +33,8 @@
 #include <media/v4l2-event.h>
 #include <media/videobuf2-dma-contig.h>
 
+#include <linux/debugfs.h>
+
 #ifdef CONFIG_ARM
 /* Don't perform register read/writes on qemu / 32 bit build */
 #define QEMU_TESTING
@@ -216,6 +218,62 @@ MODULE_PARM_DESC(debug, "activate debug info");
 #define IP_H3			0x02010101
 #define IP_M3W			0x02010202
 
+/* DebugFS Regsets */
+#define FDP1_DBFS_REG(reg) { #reg, reg }
+
+static struct debugfs_reg32 fdp1_regset[] = {
+	FDP1_DBFS_REG(CTL_CMD),
+	FDP1_DBFS_REG(CTL_SGCMD),
+	FDP1_DBFS_REG(CTL_REGEND),
+	FDP1_DBFS_REG(CTL_CHACT),
+	FDP1_DBFS_REG(CTL_OPMODE),
+	FDP1_DBFS_REG(CTL_VPERIOD),
+	FDP1_DBFS_REG(CTL_CLKCTRL),
+	FDP1_DBFS_REG(CTL_SRESET),
+	FDP1_DBFS_REG(CTL_STATUS),
+	FDP1_DBFS_REG(CTL_VCYCLE_STATUS),
+	FDP1_DBFS_REG(CTL_IRQENB),
+	FDP1_DBFS_REG(CTL_IRQSTA),
+	FDP1_DBFS_REG(CTL_IRQFSET),
+	FDP1_DBFS_REG(RPF_SIZE),
+	FDP1_DBFS_REG(RPF_FORMAT),
+	FDP1_DBFS_REG(RPF_PSTRIDE),
+	FDP1_DBFS_REG(RPF0_ADDR_Y),
+	FDP1_DBFS_REG(RPF1_ADDR_Y),
+	FDP1_DBFS_REG(RPF1_ADDR_C0),
+	FDP1_DBFS_REG(RPF1_ADDR_C1),
+	FDP1_DBFS_REG(RPF2_ADDR_Y),
+	FDP1_DBFS_REG(RPF_SMSK_ADDR),
+	FDP1_DBFS_REG(RPF_SWAP),
+	FDP1_DBFS_REG(WPF_FORMAT),
+	FDP1_DBFS_REG(WPF_RND_CTL),
+	FDP1_DBFS_REG(WPF_PSTRIDE),
+	FDP1_DBFS_REG(WPF_ADDR_Y),
+	FDP1_DBFS_REG(WPF_ADDR_C0),
+	FDP1_DBFS_REG(WPF_ADDR_C1),
+	FDP1_DBFS_REG(WPF_SWAP),
+	FDP1_DBFS_REG(IPC_MODE),
+	FDP1_DBFS_REG(IPC_SMSK_THRESH),
+	FDP1_DBFS_REG(IPC_COMB_DET),
+	FDP1_DBFS_REG(IPC_MOTDEC),
+	FDP1_DBFS_REG(IPC_DLI_BLEND),
+	FDP1_DBFS_REG(IPC_DLI_HGAIN),
+	FDP1_DBFS_REG(IPC_DLI_SPRS),
+	FDP1_DBFS_REG(IPC_DLI_ANGLE),
+	FDP1_DBFS_REG(IPC_DLI_ISOPIX0),
+	FDP1_DBFS_REG(IPC_DLI_ISOPIX1),
+	FDP1_DBFS_REG(IPC_SENSOR_TH0),
+	FDP1_DBFS_REG(IPC_SENSOR_CTL0),
+	FDP1_DBFS_REG(IPC_SENSOR_CTL1),
+	FDP1_DBFS_REG(IPC_SENSOR_CTL2),
+	FDP1_DBFS_REG(IPC_SENSOR_CTL3),
+	FDP1_DBFS_REG(IPC_LMEM),
+	FDP1_DBFS_REG(IP_INTDATA),
+};
+
+#define NUM_FDP1_REGSETS ARRAY_SIZE(fdp1_regset)
+
+
 /**
  * struct fdp1_fmt - The FDP1 internal format data
  * @fourcc: the fourcc code, to match the V4L2 API
@@ -346,6 +404,10 @@ struct fdp1_dev {
 	struct timer_list	timer;
 
 	struct v4l2_m2m_dev	*m2m_dev;
+
+	struct dentry 		*dbgroot;
+	struct dentry		*regset_dentry;
+	struct debugfs_regset32 regset;
 };
 
 struct fdp1_ctx {
@@ -408,6 +470,17 @@ static void fdp1_write(struct fdp1_dev *fdp1, u32 val, unsigned int reg)
 {
 	dprintk(fdp1, "Write to %p\n", fdp1->regs + reg);
 	iowrite32(val, fdp1->regs + reg);
+}
+
+
+void fdp1_print_regs32(struct fdp1_dev *fdp1)
+{
+	int i;
+	const struct debugfs_reg32 *regs = fdp1->regset.regs;
+
+	for (i = 0; i < fdp1->regset.nregs; i++, regs++)
+		dprintk(fdp1, "%s = 0x%08x\n", regs->name,
+			   readl(fdp1->regset.base + regs->offset));
 }
 
 static int device_process(struct fdp1_ctx *ctx,
@@ -1197,6 +1270,34 @@ static irqreturn_t fdp1_irq_handler(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
+static int fdp1_debugfs_init(struct fdp1_dev *fdp1)
+{
+
+	/* Debug FS Regset registration */
+	fdp1->regset.base = fdp1->regs;
+	fdp1->regset.regs = fdp1_regset;
+	fdp1->regset.nregs = NUM_FDP1_REGSETS;
+
+	fdp1->dbgroot = debugfs_create_dir(fdp1->v4l2_dev.name, NULL);
+	if (!fdp1->dbgroot)
+		return -ENOMEM;
+
+	fdp1->regset_dentry = debugfs_create_regset32("regs",
+			S_IRUGO, fdp1->dbgroot, &fdp1->regset);
+
+        if (!fdp1->regset_dentry) {
+                debugfs_remove_recursive(fdp1->dbgroot);
+                return -ENOMEM;
+        }
+
+	return 0;
+}
+
+static void fdp1_debugfs_remove(struct fdp1_dev *fdp1)
+{
+	debugfs_remove_recursive(fdp1->dbgroot);
+}
+
 static int fdp1_probe(struct platform_device *pdev)
 {
 	struct fdp1_dev *fdp1;
@@ -1300,6 +1401,9 @@ static int fdp1_probe(struct platform_device *pdev)
 		goto err_m2m;
 	}
 
+	/* Register debug fs entries */
+	fdp1_debugfs_init(fdp1);
+
 	pm_runtime_put(&pdev->dev);
 
 	dprintk(fdp1, "------------------------------------------\n");
@@ -1326,6 +1430,7 @@ static int fdp1_remove(struct platform_device *pdev)
 	struct fdp1_dev *fdp1 = platform_get_drvdata(pdev);
 
 	v4l2_info(&fdp1->v4l2_dev, "Removing " DRIVER_NAME);
+	fdp1_debugfs_remove(fdp1);
 	v4l2_m2m_release(fdp1->m2m_dev);
 	del_timer_sync(&fdp1->timer);
 	video_unregister_device(&fdp1->vfd);
