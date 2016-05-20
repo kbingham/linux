@@ -81,14 +81,135 @@ MODULE_PARM_DESC(debug, "activate debug info");
  * FDP1 registers and bits
  */
 
+/* FDP1 start register - Imm */
+#define CTL_CMD			0x0000
+#define CTL_CMD_STRCMD		BIT(0)
+
+/* Sync generator register - Imm */
+#define CTL_SGCMD		0x0004
+#define CTL_SGCMD_SGEN		BIT(0)
+
+/* Register set end register - Imm */
+#define CTL_REGEND		0x0008
+#define CTL_REGEND_REGEND	BIT(0)
+
+/* Channel activation register - Vupdt */
+#define CTL_CHACT		0x000C
+#define CTL_CHACT_SMW		BIT(9)
+#define CTL_CHACT_WR		BIT(8)
+#define CTL_CHACT_SMR		BIT(3)
+#define CTL_CHACT_RD2		BIT(2)
+#define CTL_CHACT_RD1		BIT(1)
+#define CTL_CHACT_RD0		BIT(0)
+
+/* Operation Mode Register - Vupdt */
+#define CTL_OPMODE		0x0010
+#define CTL_OPMODE_PRG		BIT(4)
+#define CTL_OPMODE_VIMD		GENMASK(1,0) //0x0003
+#define CTL_OPMODE_INTERRUPT	0
+#define CTL_OPMODE_BEST_EFFORT	1
+#define CTL_OPMODE_NO_INTERRUPT	2
+
+#define CTL_VPERIOD		0x0014
+#define CTL_CLKCTRL		0x0018
+#define CTL_CLKCTRL_CSTP_N	BIT(0)
+
+/* Software reset register */
+#define CTL_SRESET		0x001C
+#define CTL_SRESET_SRST		BIT(0)
+
+/* Control status register (V-update-status) */
+#define CTL_STATUS		0x0024
+#define CTL_STATUS_VINT_CNT(x)	((x & 0xff) >> 16)
+#define CTL_STATUS_SGREGSET	BIT(10)
+#define CTL_STATUS_SGVERR	BIT(9)
+#define CTL_STATUS_SGFREND	BIT(8)
+#define CTL_STATUS_BSY		BIT(0)
+
+#define CTL_VCYCLE_STATUS	0x0028
+
+/* Interrupt enable register */
+#define CTL_IRQENB		0x0038
 /* Interrupt status register */
-#define CTL_IRQSTA		0x0040
-#define CTL_IRQSTA_VERE		BIT(16)
-#define CTL_IRQSTA_VINTE	BIT(4)
-#define CTL_IRQSTA_FREE		BIT(0)
-#define CTL_IRQSTA_MASK		( CTL_IRQSTA_VERE \
-				| CTL_IRQSTA_VINTE \
-				| CTL_IRQSTA_FREE )
+#define CTL_IRQSTA		0x003C
+/* Interrupt control register */
+#define CTL_IRQFSET		0x0040
+
+/* Common IRQ Bit settings */
+#define CTL_IRQ_VERE		BIT(16)
+#define CTL_IRQ_VINTE		BIT(4)
+#define CTL_IRQ_FREE		BIT(0)
+#define CTL_IRQ_MASK		(CTL_IRQ_VERE | CTL_IRQ_VINTE | CTL_IRQ_FREE)
+
+/* RPF */
+#define RPF_SIZE		0x0060
+#define RPF_FORMAT		0x0064
+#define RPF_PSTRIDE		0x0068
+
+/* RPF0 Source Component Y Address register */
+#define RPF0_ADDR_Y		0x006C
+
+/* RPF1 Current Picture Registers */
+#define RPF1_ADDR_Y		0x0078
+#define RPF1_ADDR_C0		0x007C
+#define RPF1_ADDR_C1		0x0080
+
+/* RPF2 next picture register */
+#define RPF2_ADDR_Y		0x0084
+
+#define RPF_SMSK_ADDR		0x0090
+#define RPF_SWAP		0x0094
+
+/* WPF */
+#define WPF_FORMAT		0x00C0
+#define WPF_FORMAT_PDV_MASK
+#define WPF_FORMAT_FCNL		BIT(20)
+#define WPF_FORMAT_WSPYCS	BIT(15)
+#define WPF_FORMAT_WSPUVS	BIT(14)
+#define WPF_FORMAT_DITH
+#define WPF_FORMAT_WRTM
+#define WPF_FORMAT_CSC		BIT(8)
+
+#define WPF_RND_CTL		0x00C4
+#define WPF_PSTRIDE		0x00C8
+
+/* WPF Destination picture */
+#define WPF_ADDR_Y		0x00CC
+#define WPF_ADDR_C0		0x00D0
+#define WPF_ADDR_C1		0x00D4
+#define WPF_SWAP		0x00D8
+
+/* IPC */
+#define IPC_MODE		0x0100
+#define IPC_MODE_DLI		BIT(8)
+#define IPC_MODE_DIM		GENMASK(2,0) // 7
+#define IPC_MODE_DIM_ADAPT2D3D	0
+#define IPC_MODE_DIM_FIXED2D	1
+#define IPC_MODE_DIM_FIXED3D	2
+#define IPC_MODE_DIM_PREVFIELD	3
+#define IPC_MODE_DIM_NEXTFIELD	4
+
+#define IPC_SMSK_THRESH		0x0104
+#define IPC_COMB_DET		0x0108
+#define IPC_MOTDEC		0x010C
+
+/* DLI registers */
+#define IPC_DLI_BLEND		0x0120
+#define IPC_DLI_HGAIN		0x0124
+#define IPC_DLI_SPRS		0x0128
+#define IPC_DLI_ANGLE		0x012C
+#define IPC_DLI_ISOPIX0		0x0130
+#define IPC_DLI_ISOPIX1		0x0134
+
+/* Sensor registers */
+#define IPC_SENSOR_TH0		0x0140
+#define IPC_SENSOR_CTL0		0x0170
+#define IPC_SENSOR_CTL1		0x0174
+#define IPC_SENSOR_CTL2		0x0178
+#define IPC_SENSOR_CTL3		0x017C
+
+/* Line memory pixel number register - Vupdt */
+#define IPC_LMEM		0x01E0
 
 /* Internal Data (HW Version) */
 #define IP_INTDATA 		0x0800
@@ -1060,16 +1181,16 @@ static irqreturn_t fdp1_irq_handler(int irq, void *dev_id)
 	int_status = fdp1_read(fdp1, CTL_IRQSTA);
 
 	dprintk(fdp1, "IRQ: 0x%x %s%s%s\n", int_status,
-			int_status & CTL_IRQSTA_VERE ? "[Error]" : "[E]",
-			int_status & CTL_IRQSTA_VINTE ? "[VSync]" : "[V]",
-			int_status & CTL_IRQSTA_FREE ? "[FrameEnd]" : "[F]");
+			int_status & CTL_IRQ_VERE ? "[Error]" : "[!E]",
+			int_status & CTL_IRQ_VINTE ? "[VSync]" : "[!V]",
+			int_status & CTL_IRQ_FREE ? "[FrameEnd]" : "[!F]");
 
 	/* Spurious interrupt */
-	if (!((CTL_IRQSTA_MASK) & int_status))
+	if (!((CTL_IRQ_MASK) & int_status))
 		return IRQ_NONE;
 
 	/* Clear interrupts */
-	fdp1_write(fdp1, ~(int_status & CTL_IRQSTA_MASK), CTL_IRQSTA);
+	fdp1_write(fdp1, ~(int_status & CTL_IRQ_MASK), CTL_IRQSTA);
 
 	/* Do more stuff ... */
 
