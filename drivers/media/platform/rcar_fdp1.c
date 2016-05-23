@@ -690,8 +690,11 @@ static struct fdp1_plane_addrs vb2_dc_to_pa(struct vb2_v4l2_buffer *buf,
 }
 
 /* IPC registers are to be programmed with constant values */
-static void fdp1_set_ipc_dli(struct fdp1_dev *fdp1)
+static void fdp1_set_ipc_dli(struct fdp1_ctx *ctx)
 {
+	struct fdp1_dev *fdp1 = ctx->fdp1;
+	struct fdp1_q_data *src_q_data = &ctx->out_q;
+
 	fdp1_write(fdp1, 0x00010002, IPC_SMSK_THRESH);
 	fdp1_write(fdp1, 0x00200040, IPC_COMB_DET);
 	fdp1_write(fdp1, 0x00008020, IPC_MOTDEC);
@@ -705,10 +708,33 @@ static void fdp1_set_ipc_dli(struct fdp1_dev *fdp1)
 }
 
 
-static void fdp1_set_ipc_sensor(struct fdp1_dev *fdp1)
+static void fdp1_set_ipc_sensor(struct fdp1_ctx *ctx)
 {
-	//fdp1_write(fdp1, 0x0, IPC_SENSOR_TH0);  // Top bits are readonly?
+	struct fdp1_dev *fdp1 = ctx->fdp1;
+	struct fdp1_q_data *src_q_data = &ctx->out_q;
+	unsigned int xe, ye;
+	unsigned int x0, x1;
+	unsigned int hsize = src_q_data->format.width;
+	unsigned int vsize = src_q_data->format.height;
 
+	return;
+
+	fdp1_write(fdp1, 0x20208080, IPC_SENSOR_TH0);
+	fdp1_write(fdp1, (2<<12)|(2<<8)|1, IPC_SENSOR_CTL0); // Tidy me up
+	fdp1_write(fdp1, 0x00, IPC_SENSOR_CTL1);
+
+	if (src_q_data->format.field != V4L2_FIELD_NONE)
+		ye = (vsize * 2) - 1;
+	else
+		ye = vsize - 1;
+
+	xe = src_q_data->format.width - 1;
+	fdp1_write(fdp1, (xe << 16) | ye, IPC_SENSOR_CTL2); // Tidy me up
+
+	x0 = hsize / 3;
+	x1 = 2 * hsize / 3;
+
+	fdp1_write(fdp1, (x0 << 16) | (x1), IPC_SENSOR_CTL3);
 }
 
 static int device_process(struct fdp1_ctx *ctx,
@@ -775,10 +801,10 @@ static int device_process(struct fdp1_ctx *ctx,
 	fdp1_write(fdp1, ipcmode,	IPC_MODE);
 
 	/* DLI Static Configuration */
-	fdp1_set_ipc_dli(fdp1);
+	fdp1_set_ipc_dli(ctx);
 
 	/* Sensor Configuration */
-	fdp1_set_ipc_sensor(fdp1);
+	fdp1_set_ipc_sensor(ctx);
 
 	/* Enable All Interrupts */
 	fdp1_write(fdp1, CTL_IRQ_MASK, CTL_IRQENB);
