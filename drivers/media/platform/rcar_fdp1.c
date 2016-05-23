@@ -751,6 +751,7 @@ static int device_process(struct fdp1_ctx *ctx,
 	unsigned int opmode, ipcmode;
 	unsigned int channels;
 	unsigned int picture_size, stride_y, stride_c;
+	unsigned int format;
 
 	/* Obtain physical addresses for the HW */
 	src_addr = vb2_dc_to_pa(src_buf, src_q_data->fmt->num_planes);
@@ -838,7 +839,15 @@ static int device_process(struct fdp1_ctx *ctx,
 	stride_c = dst_q_data->format.width * dst_q_data->fmt->bpp[1] / 8;
 	fdp1_write(fdp1, (stride_y << 16) | (stride_c & 0xFFFF), WPF_PSTRIDE );
 
-	fdp1_write(fdp1, dst_q_data->fmt->fmt, WPF_FORMAT);
+	format = dst_q_data->fmt->fmt; /* Output Format Code */
+	if (dst_q_data->fmt->fmt <= 0x1B) /* Last RGB fmt code */
+		format |= WPF_FORMAT_CSC; /* Enable Colour Space conversion */
+
+	fdp1_write(fdp1, format, WPF_FORMAT);
+
+	if (format & WPF_FORMAT_CSC)
+		dprintk(fdp1, "Output is RGB - CSC Enabled\n");
+
 	fdp1_write(fdp1, dst_addr.plane0, WPF_ADDR_Y);
 	fdp1_write(fdp1, dst_addr.plane1, WPF_ADDR_C0);
 	fdp1_write(fdp1, dst_addr.plane2, WPF_ADDR_C1);
