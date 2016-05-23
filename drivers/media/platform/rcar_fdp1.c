@@ -1634,7 +1634,7 @@ static irqreturn_t fdp1_irq_handler(int irq, void *dev_id)
 	struct fdp1_dev *fdp1 = dev_id;
 	struct fdp1_ctx *ctx;
 
-	unsigned int int_status;
+	unsigned int int_status, scratch;
 
 	int_status = fdp1_read(fdp1, CTL_IRQSTA);
 
@@ -1643,6 +1643,19 @@ static irqreturn_t fdp1_irq_handler(int irq, void *dev_id)
 			int_status & CTL_IRQ_VINTE ? "[VSync]" : "[!V]",
 			int_status & CTL_IRQ_FREE ? "[FrameEnd]" : "[!F]");
 
+	dprintk(fdp1, "CycleStatus = %d\n", fdp1_read(fdp1, CTL_VCYCLE_STATUS));
+
+	scratch = fdp1_read(fdp1, CTL_STATUS);
+	dprintk(fdp1, "Control Status = 0x%08x : VINT_CNT = %d %s:%s:%s:%s\n",
+			scratch, (scratch >> 16),
+			scratch & CTL_STATUS_SGREGSET ? "RegSet" : "",
+			scratch & CTL_STATUS_SGVERR ? "Vsync Error" : "",
+			scratch & CTL_STATUS_SGFREND ? "FrameEnd" : "",
+			scratch & CTL_STATUS_BSY ? "Busy.." : "");
+	dprintk(fdp1, "***********************************\n");
+	fdp1_print_regs32(fdp1);
+	dprintk(fdp1, "***********************************\n");
+
 	/* Spurious interrupt */
 	if (!((CTL_IRQ_MASK) & int_status))
 		return IRQ_NONE;
@@ -1650,7 +1663,9 @@ static irqreturn_t fdp1_irq_handler(int irq, void *dev_id)
 	/* Clear interrupts */
 	fdp1_write(fdp1, ~(int_status & CTL_IRQ_MASK), CTL_IRQSTA);
 
-	/* Do more stuff ... */
+	/* Work completed Release the frames ... */
+	//if ((CTL_IRQ_VERE | CTL_IRQ_FREE) & int_status)
+		device_isr((unsigned long)fdp1);
 
 	return IRQ_HANDLED;
 }
