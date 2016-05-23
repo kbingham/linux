@@ -552,6 +552,21 @@ static int device_process(struct fdp1_ctx *ctx,
 	src_addr = vb2_dc_to_pa(src_buf, src_q_data->fmt->num_planes);
 	dst_addr = vb2_dc_to_pa(dst_buf, dst_q_data->fmt->num_planes);
 
+	src_buf->sequence = src_q_data->sequence++;
+	dst_buf->sequence = dst_q_data->sequence++;
+
+	dst_buf->vb2_buf.timestamp = src_buf->vb2_buf.timestamp;
+
+	if (src_buf->flags & V4L2_BUF_FLAG_TIMECODE)
+		dst_buf->timecode = src_buf->timecode;
+	dst_buf->field = src_buf->field;
+	dst_buf->flags = src_buf->flags &
+		(V4L2_BUF_FLAG_TIMECODE |
+		 V4L2_BUF_FLAG_KEYFRAME |
+		 V4L2_BUF_FLAG_PFRAME |
+		 V4L2_BUF_FLAG_BFRAME |
+		 V4L2_BUF_FLAG_TSTAMP_SRC_MASK);
+
 	dprintk(fdp1, "\n\n");
 
 	/* Debug the world ... Lets see what we have going through */
