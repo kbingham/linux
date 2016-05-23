@@ -835,12 +835,12 @@ static void device_run(void *priv)
 
 static void device_isr(unsigned long priv)
 {
-	struct fdp1_dev *fdp1_dev = (struct fdp1_dev *)priv;
+	struct fdp1_dev *fdp1 = (struct fdp1_dev *)priv;
 	struct fdp1_ctx *curr_ctx;
 	struct vb2_v4l2_buffer *src_vb, *dst_vb;
 	unsigned long flags;
 
-	curr_ctx = v4l2_m2m_get_curr_priv(fdp1_dev->m2m_dev);
+	curr_ctx = v4l2_m2m_get_curr_priv(fdp1->m2m_dev);
 
 	if (NULL == curr_ctx) {
 		pr_err("Instance released before the end of transaction\n");
@@ -852,16 +852,16 @@ static void device_isr(unsigned long priv)
 
 	curr_ctx->num_processed++;
 
-	spin_lock_irqsave(&fdp1_dev->irqlock, flags);
+	spin_lock_irqsave(&fdp1->irqlock, flags);
 	v4l2_m2m_buf_done(src_vb, VB2_BUF_STATE_DONE);
 	v4l2_m2m_buf_done(dst_vb, VB2_BUF_STATE_DONE);
-	spin_unlock_irqrestore(&fdp1_dev->irqlock, flags);
+	spin_unlock_irqrestore(&fdp1->irqlock, flags);
 
 	if (curr_ctx->num_processed == curr_ctx->translen
 	    || curr_ctx->aborting) {
 		dprintk(curr_ctx->fdp1, "Finishing transaction\n");
 		curr_ctx->num_processed = 0;
-		v4l2_m2m_job_finish(fdp1_dev->m2m_dev, curr_ctx->fh.m2m_ctx);
+		v4l2_m2m_job_finish(fdp1->m2m_dev, curr_ctx->fh.m2m_ctx);
 	} else {
 		device_run(curr_ctx);
 	}
