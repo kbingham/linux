@@ -858,6 +858,9 @@ static int device_process(struct fdp1_ctx *ctx,
 	fdp1_write(fdp1, dst_addr.plane1, WPF_ADDR_C0);
 	fdp1_write(fdp1, dst_addr.plane2, WPF_ADDR_C1);
 
+	/* Line Memory Pixel Number Register for linear access */
+	fdp1_write(fdp1, 1024, IPC_LMEM);
+
 	/* Finally, the Immediate Registers */
 
 	/* Start the command */
