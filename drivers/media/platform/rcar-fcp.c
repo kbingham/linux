@@ -20,10 +20,12 @@
 #include <linux/slab.h>
 
 #include <media/rcar-fcp.h>
+#include <media/v4l2-device.h>
 
 struct rcar_fcp_device {
 	struct list_head list;
 	struct device *dev;
+	void __iomem *regs;
 };
 
 static LIST_HEAD(fcp_devices);
@@ -120,6 +122,22 @@ void rcar_fcp_disable(struct rcar_fcp_device *fcp)
 }
 EXPORT_SYMBOL_GPL(rcar_fcp_disable);
 
+
+void __iomem * rcar_fcp_regs(struct rcar_fcp_device *fcp)
+{
+	if (!fcp)
+		return NULL;
+
+	return fcp->regs;
+}
+EXPORT_SYMBOL_GPL(rcar_fcp_regs);
+
+u32 rcar_fcp_read(struct rcar_fcp_device *fcp, unsigned int reg)
+{
+	return ioread32(fcp->regs + reg);
+}
+EXPORT_SYMBOL_GPL(rcar_fcp_read);
+
 /* -----------------------------------------------------------------------------
  * Platform Driver
  */
@@ -127,6 +145,7 @@ EXPORT_SYMBOL_GPL(rcar_fcp_disable);
 static int rcar_fcp_probe(struct platform_device *pdev)
 {
 	struct rcar_fcp_device *fcp;
+	struct resource *res;
 
 	fcp = devm_kzalloc(&pdev->dev, sizeof(*fcp), GFP_KERNEL);
 	if (fcp == NULL)
@@ -139,6 +158,11 @@ static int rcar_fcp_probe(struct platform_device *pdev)
 	mutex_lock(&fcp_lock);
 	list_add_tail(&fcp->list, &fcp_devices);
 	mutex_unlock(&fcp_lock);
+
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	fcp->regs = devm_ioremap_resource(&pdev->dev, res);
+	if (IS_ERR(fcp->regs))
+		return PTR_ERR(fcp->regs);
 
 	platform_set_drvdata(pdev, fcp);
 
