@@ -32,6 +32,7 @@
 #include <media/v4l2-ctrls.h>
 #include <media/v4l2-event.h>
 #include <media/videobuf2-dma-contig.h>
+#include <media/rcar-fcp.h>
 
 #include <linux/debugfs.h>
 
@@ -581,6 +582,7 @@ struct fdp1_dev {
 	void			*alloc_ctx;
 	struct timer_list	timer;
 
+	struct rcar_fcp_device	*fcp;
 	struct v4l2_m2m_dev	*m2m_dev;
 
 	struct dentry 		*dbgroot;
@@ -1702,6 +1704,7 @@ static int fdp1_probe(struct platform_device *pdev)
 {
 	struct fdp1_dev *fdp1;
 	struct video_device *vfd;
+	struct device_node *fcp_node;
 	struct resource *res;
 	int ret;
 	int hw_version;
@@ -1733,6 +1736,19 @@ static int fdp1_probe(struct platform_device *pdev)
 	if (ret) {
 		dev_err(&pdev->dev, "cannot claim IRQ %d\n", fdp1->irq);
 		return ret;
+	}
+
+	/* FCP (optional) */
+	fcp_node = of_parse_phandle(pdev->dev.of_node, "renesas,fcp", 0);
+	if (fcp_node) {
+		dprintk(fdp1, "Found an FCP Node Looking for Device\n");
+		fdp1->fcp = rcar_fcp_get(fcp_node);
+		of_node_put(fcp_node);
+		if (IS_ERR(fdp1->fcp)) {
+			dev_err(&pdev->dev, "FCP not found (%ld)\n",
+				PTR_ERR(fdp1->fcp));
+			return PTR_ERR(fdp1->fcp);
+		}
 	}
 #endif
 
@@ -1841,6 +1857,26 @@ static int fdp1_remove(struct platform_device *pdev)
 	return 0;
 }
 
+static int fdp1_pm_runtime_suspend(struct device *dev)
+{
+	struct fdp1_dev *fdp1 = dev_get_drvdata(dev);
+
+	rcar_fcp_disable(fdp1->fcp);
+
+	return 0;
+}
+
+static int fdp1_pm_runtime_resume(struct device *dev)
+{
+	struct fdp1_dev *fdp1 = dev_get_drvdata(dev);
+
+	return rcar_fcp_enable(fdp1->fcp);
+}
+
+static const struct dev_pm_ops fdp1_pm_ops = {
+	SET_RUNTIME_PM_OPS(fdp1_pm_runtime_suspend, fdp1_pm_runtime_resume, NULL)
+};
+
 static const struct of_device_id fdp1_dt_ids[] = {
 	{ .compatible = "renesas,fdp1-r8a7795" }, /* H3 */
 	{ .compatible = "renesas,fdp1-r8a7796" }, /* M3-W */
@@ -1855,6 +1891,7 @@ static struct platform_driver fdp1_pdrv = {
 	.driver		= {
 		.name	= DRIVER_NAME,
 		.of_match_table = fdp1_dt_ids,
+		.pm	= &fdp1_pm_ops,
 	},
 };
 
