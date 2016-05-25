@@ -146,6 +146,7 @@ static int rcar_fcp_probe(struct platform_device *pdev)
 {
 	struct rcar_fcp_device *fcp;
 	struct resource *res;
+	unsigned int vcr;
 
 	fcp = devm_kzalloc(&pdev->dev, sizeof(*fcp), GFP_KERNEL);
 	if (fcp == NULL)
@@ -163,6 +164,19 @@ static int rcar_fcp_probe(struct platform_device *pdev)
 	fcp->regs = devm_ioremap_resource(&pdev->dev, res);
 	if (IS_ERR(fcp->regs))
 		return PTR_ERR(fcp->regs);
+
+	rcar_fcp_enable(fcp);
+
+	vcr = rcar_fcp_read(fcp, FCP_VCR);
+
+	switch (vcr)
+	{
+	case 0x0101:
+		printk("FCP Registered with VCR as H3 as expected (0x%x)\n", vcr);
+		break;
+	default:
+		dev_err(fcp->dev, "FCP Failed to read VCR (0x%x)\n", vcr);
+	}
 
 	platform_set_drvdata(pdev, fcp);
 
