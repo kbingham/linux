@@ -1248,9 +1248,9 @@ static int fdp1_s_fmt(struct file *file, void *priv, struct v4l2_format *f)
 	q_data->fmt = fmtinfo;
 
 	dprintk(ctx->fdp1,
-		"Setting format for type %d, wxh: %dx%d, fmt: %d\n",
+		"Setting format for type %d, wxh: %dx%d, fmt: %4s (%d)\n",
 			f->type, q_data->format.width, q_data->format.height,
-			q_data->fmt->fourcc);
+			(char*)&q_data->fmt->fourcc, q_data->fmt->fourcc);
 
 	return 0;
 }
