@@ -795,13 +795,17 @@ static int device_process(struct fdp1_ctx *ctx,
 	fdp1_write(fdp1, CTL_CLKCTRL_CSTP_N, CTL_CLKCTRL);
 
 	/* Set the mode, and configuration */
-	opmode = (CTL_OPMODE_PRG | CTL_OPMODE_NO_INTERRUPT);
+	opmode = (CTL_OPMODE_PRG | CTL_OPMODE_INTERRUPT);
 	channels = (CTL_CHACT_WR | CTL_CHACT_RD1);
 	ipcmode = IPC_MODE_DLI | IPC_MODE_DIM_FIXED2D;
 
 	fdp1_write(fdp1, channels,	CTL_CHACT);
 	fdp1_write(fdp1, opmode,	CTL_OPMODE);
 	fdp1_write(fdp1, ipcmode,	IPC_MODE);
+
+	/* Configure clocking */
+#define MHZ (1000*1000)
+	fdp1_write(fdp1, (200*MHZ)/ 1 /*FPS*/,	CTL_VPERIOD);
 
 	/* DLI Static Configuration */
 	fdp1_set_ipc_dli(ctx);
