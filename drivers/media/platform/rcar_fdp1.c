@@ -1519,6 +1519,28 @@ static const struct v4l2_ctrl_config fdp1_ctrl_trans_num_bufs = {
 };
 
 /*
+ * It should be reasonable to have runtime hooks to call the fcp_enable
+ * using the runtime_pm framework whenever it is needed,
+ * however when I add in SET_RUNTIME_PM_OPS() and a .pm structure
+ * the FDP1 no longer gets it's clock enabled.
+ */
+static void fdp1_enable(struct fdp1_dev *fdp1)
+{
+	dprintk(fdp1, "pm_runtime_get_sync(fdp1->dev:0x%p)\n", fdp1->dev);
+
+	rcar_fcp_enable(fdp1->fcp);
+	pm_runtime_get_sync(fdp1->dev);
+}
+
+static void fdp1_disable(struct fdp1_dev *fdp1)
+{
+	dprintk(fdp1, "pm_runtime_put(fdp1->dev:0x%p)\n", fdp1->dev);
+
+	pm_runtime_put(fdp1->dev);
+	rcar_fcp_disable(fdp1->fcp);
+}
+
+/*
  * File operations
  */
 static int fdp1_open(struct file *file)
@@ -1577,8 +1599,8 @@ static int fdp1_open(struct file *file)
 		goto open_unlock;
 	}
 
-	dprintk(fdp1, "pm_runtime_get_sync(fdp1->dev:0x%p)\n", fdp1->dev);
-	pm_runtime_get_sync(fdp1->dev);
+	/* Perform any power management required */
+	fdp1_enable(fdp1);
 
 	v4l2_fh_add(&ctx->fh);
 	atomic_inc(&fdp1->num_inst);
@@ -1608,8 +1630,7 @@ static int fdp1_release(struct file *file)
 
 	atomic_dec(&fdp1->num_inst);
 
-	dprintk(fdp1, "pm_runtime_put(fdp1->dev:0x%p)\n", fdp1->dev);
-	pm_runtime_put(fdp1->dev);
+	fdp1_disable(fdp1);
 
 	return 0;
 }
@@ -1761,7 +1782,9 @@ static int fdp1_probe(struct platform_device *pdev)
 
 	/* Bring the device up ready for reading registers */
 	pm_runtime_enable(&pdev->dev);
-	pm_runtime_get_sync(&pdev->dev);
+
+	/* Power up the cells for the probe function */
+	fdp1_enable(fdp1);
 
 	dprintk(fdp1, "**********************************\n");
 
@@ -1827,7 +1850,8 @@ static int fdp1_probe(struct platform_device *pdev)
 	/* Register debug fs entries */
 	fdp1_debugfs_init(fdp1);
 
-	pm_runtime_put(&pdev->dev);
+	/* Allow the hw to sleep until an open call puts it to use */
+	fdp1_disable(fdp1);
 
 	dprintk(fdp1, "------------------------------------------\n");
 
@@ -1898,7 +1922,7 @@ static struct platform_driver fdp1_pdrv = {
 	.driver		= {
 		.name	= DRIVER_NAME,
 		.of_match_table = fdp1_dt_ids,
-		.pm	= &fdp1_pm_ops,
+		//.pm	= &fdp1_pm_ops,
 	},
 };
 
