@@ -689,7 +689,6 @@ static struct fdp1_plane_addrs vb2_dc_to_pa(struct vb2_v4l2_buffer *buf,
 static void fdp1_set_ipc_dli(struct fdp1_ctx *ctx)
 {
 	struct fdp1_dev *fdp1 = ctx->fdp1;
-	struct fdp1_q_data *src_q_data = &ctx->out_q;
 
 	fdp1_write(fdp1, 0x00010002, IPC_SMSK_THRESH);
 	fdp1_write(fdp1, 0x00200040, IPC_COMB_DET);
@@ -1067,7 +1066,6 @@ static void job_abort(void *priv)
 static void device_run(void *priv)
 {
 	struct fdp1_ctx *ctx = priv;
-	struct fdp1_dev *fdp1 = ctx->fdp1;
 	struct vb2_v4l2_buffer *src_buf, *dst_buf;
 
 	src_buf = v4l2_m2m_next_src_buf(ctx->fh.m2m_ctx);
@@ -1133,7 +1131,6 @@ static int vidioc_querycap(struct file *file, void *priv,
 static int enum_fmt(struct v4l2_fmtdesc *f, u32 type)
 {
 	int i, num;
-	struct fdp1_fmt *fmt;
 
 	num = 0;
 
@@ -1232,7 +1229,6 @@ static int __fdp1_try_fmt(struct fdp1_ctx *ctx, struct fdp1_fmt **fmtinfo,
 
 static int fdp1_try_fmt(struct file *file, void *priv, struct v4l2_format *f)
 {
-	struct fdp1_fmt *fmt;
 	struct fdp1_ctx *ctx = fh_to_ctx(priv);
 
 	if (!v4l2_m2m_get_vq(ctx->fh.m2m_ctx, f->type))
@@ -1666,7 +1662,6 @@ static struct v4l2_m2m_ops m2m_ops = {
 static irqreturn_t fdp1_irq_handler(int irq, void *dev_id)
 {
 	struct fdp1_dev *fdp1 = dev_id;
-	struct fdp1_ctx *ctx;
 
 	unsigned int int_status, scratch;
 
