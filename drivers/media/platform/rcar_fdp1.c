@@ -578,7 +578,9 @@ struct fdp1_dev {
 	unsigned int		irq;
 	struct device		*dev;
 	void			*alloc_ctx;
+#ifdef QEMU_TESTING
 	struct timer_list	timer;
+#endif
 
 	unsigned int		clk_rate;
 
@@ -915,11 +917,13 @@ static int device_process(struct fdp1_ctx *ctx,
 	return 0;
 }
 
+#ifdef QEMU_TESTING
 static void schedule_irq(struct fdp1_dev *fdp1, int msec_timeout)
 {
 	dprintk(fdp1, "Scheduling a simulated irq\n");
 	mod_timer(&fdp1->timer, jiffies + msecs_to_jiffies(msec_timeout));
 }
+#endif
 
 /*
  * mem2mem callbacks
@@ -971,13 +975,12 @@ static void device_run(void *priv)
 
 #ifdef QEMU_TESTING
 	/* Run a timer, which simulates a hardware irq  */
-	schedule_irq(fdp1, 40);
+	schedule_irq(ctx->fdp1, 40);
 #endif
 }
 
-static void device_isr(unsigned long priv)
+static void device_isr(struct fdp1_dev *fdp1, enum vb2_buffer_state state)
 {
-	struct fdp1_dev *fdp1 = (struct fdp1_dev *)priv;
 	struct fdp1_ctx *curr_ctx;
 	struct vb2_v4l2_buffer *src_vb, *dst_vb;
 	unsigned long flags;
@@ -996,7 +999,7 @@ static void device_isr(unsigned long priv)
 
 	spin_lock_irqsave(&fdp1->irqlock, flags);
 	v4l2_m2m_buf_done(src_vb, VB2_BUF_STATE_DONE);
-	v4l2_m2m_buf_done(dst_vb, VB2_BUF_STATE_DONE);
+	v4l2_m2m_buf_done(dst_vb, state);
 	spin_unlock_irqrestore(&fdp1->irqlock, flags);
 
 	if (curr_ctx->num_processed == curr_ctx->translen
@@ -1008,6 +1011,15 @@ static void device_isr(unsigned long priv)
 		device_run(curr_ctx);
 	}
 }
+
+#ifdef QEMU_TESTING
+static void device_isr_timer(unsigned long priv)
+{
+	struct fdp1_dev *fdp1 = (struct fdp1_dev *)priv;
+	/* This is from our timed debug routine and will be removed */
+	return device_isr(fdp1, VB2_BUF_STATE_DONE);
+}
+#endif
 
 /*
  * video ioctls
@@ -1592,8 +1604,10 @@ static irqreturn_t fdp1_irq_handler(int irq, void *dev_id)
 	fdp1_write(fdp1, ~(int_status & CTL_IRQ_MASK), CTL_IRQSTA);
 
 	/* Work completed Release the frames ... */
-	//if ((CTL_IRQ_VERE | CTL_IRQ_FREE) & int_status)
-		device_isr((unsigned long)fdp1);
+	if (CTL_IRQ_VERE & int_status)
+		device_isr(fdp1, VB2_BUF_STATE_ERROR);
+	else if (CTL_IRQ_FREE & int_status)
+		device_isr(fdp1, VB2_BUF_STATE_DONE);
 
 	return IRQ_HANDLED;
 }
@@ -1747,8 +1761,9 @@ static int fdp1_probe(struct platform_device *pdev)
 	v4l2_info(&fdp1->v4l2_dev,
 			"Device registered as /dev/video%d\n", vfd->num);
 
-
-	setup_timer(&fdp1->timer, device_isr, (long)fdp1);
+#ifdef QEMU_TESTING
+	setup_timer(&fdp1->timer, device_isr_timer, (long)fdp1);
+#endif
 
 	fdp1->m2m_dev = v4l2_m2m_init(&m2m_ops);
 	if (IS_ERR(fdp1->m2m_dev)) {
@@ -1792,7 +1807,9 @@ static int fdp1_remove(struct platform_device *pdev)
 	v4l2_info(&fdp1->v4l2_dev, "Removing " DRIVER_NAME);
 	fdp1_debugfs_remove(fdp1);
 	v4l2_m2m_release(fdp1->m2m_dev);
+#ifdef QEMU_TESTING
 	del_timer_sync(&fdp1->timer);
+#endif
 	video_unregister_device(&fdp1->vfd);
 	v4l2_device_unregister(&fdp1->v4l2_dev);
 	vb2_dma_contig_cleanup_ctx(fdp1->alloc_ctx);
