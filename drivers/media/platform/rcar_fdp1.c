@@ -206,6 +206,13 @@ MODULE_PARM_DESC(debug, "activate debug info");
 #define IP_H3			0x02010101
 #define IP_M3W			0x02010202
 
+/* LUTs */
+#define LUT_DIF_ADJ		0x1000
+#define LUT_SAD_ADJ		0x1400
+#define LUT_BLD_GAIN		0x1800
+#define LUT_DIF_GAIN		0x1C00
+#define LUT_MDET		0x2000
+
 /* DebugFS Regsets */
 #define FDP1_DBFS_REG(reg) { #reg, reg }
 
@@ -736,9 +743,23 @@ static void fdp1_set_ipc_sensor(struct fdp1_ctx *ctx)
 	fdp1_write(fdp1, (x0 << 16) | (x1), IPC_SENSOR_CTL3);
 }
 
-static void fdp1_set_lut(struct fdp1_ctx *ctx)
-{
 
+static void fdp1_write_lut(struct fdp1_dev *fdp1,
+			   fdp1_lut *lut,
+			   unsigned int base)
+{
+	int i;
+	for (i = 0; i < 256; i++)
+		fdp1_write(fdp1, lut[i], base + (i*4));
+}
+
+static void fdp1_set_lut(struct fdp1_dev *fdp1)
+{
+	fdp1_write_lut(fdp1, fdp1_diff_adj,	LUT_DIF_ADJ);
+	fdp1_write_lut(fdp1, fdp1_sad_adj,	LUT_SAD_ADJ);
+	fdp1_write_lut(fdp1, fdp1_bld_gain,	LUT_BLD_GAIN);
+	fdp1_write_lut(fdp1, fdp1_dif_gain,	LUT_DIF_GAIN);
+	fdp1_write_lut(fdp1, fdp1_mdet,		LUT_MDET);
 }
 
 static int device_process(struct fdp1_ctx *ctx,
@@ -1735,6 +1756,9 @@ static int fdp1_probe(struct platform_device *pdev)
 		ret = PTR_ERR(fdp1->m2m_dev);
 		goto err_m2m;
 	}
+
+	/* Program in the static LUTs */
+	fdp1_set_lut(fdp1);
 
 	/* Register debug fs entries */
 	fdp1_debugfs_init(fdp1);
