@@ -636,13 +636,17 @@ static struct fdp1_q_data *get_q_data(struct fdp1_ctx *ctx,
 
 static u32 fdp1_read(struct fdp1_dev *fdp1, unsigned int reg)
 {
-	dprintk(fdp1, "Read from %p\n", fdp1->regs + reg);
+	if (debug >= 2)
+		dprintk(fdp1, "Read from %p\n", fdp1->regs + reg);
+
 	return ioread32(fdp1->regs + reg);
 }
 
 static void fdp1_write(struct fdp1_dev *fdp1, u32 val, unsigned int reg)
 {
-	dprintk(fdp1, "Write to %p\n", fdp1->regs + reg);
+	if (debug >= 2)
+		dprintk(fdp1, "Write to %p\n", fdp1->regs + reg);
+
 	iowrite32(val, fdp1->regs + reg);
 }
 
@@ -1682,7 +1686,8 @@ static irqreturn_t fdp1_irq_handler(int irq, void *dev_id)
 			scratch & CTL_STATUS_SGFREND ? "FrameEnd" : "",
 			scratch & CTL_STATUS_BSY ? "Busy.." : "");
 	dprintk(fdp1, "***********************************\n");
-	fdp1_print_regs32(fdp1);
+	if (debug >= 2)
+		fdp1_print_regs32(fdp1);
 	dprintk(fdp1, "***********************************\n");
 
 	/* Spurious interrupt */
