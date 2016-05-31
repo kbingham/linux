@@ -63,20 +63,6 @@ MODULE_PARM_DESC(debug, "activate debug info");
 
 #define DRIVER_NAME		"rcar_fdp1"
 
-/* Per queue */
-#define MEM2MEM_DEF_NUM_BUFS	VIDEO_MAX_FRAME
-/* In bytes, per queue */
-#define MEM2MEM_VID_MEM_LIMIT	(16 * 1024 * 1024)
-
-/* Default transaction time in msec */
-#define MEM2MEM_DEF_TRANSTIME	40
-#define MEM2MEM_COLOR_STEP	(0xff >> 4)
-#define MEM2MEM_NUM_TILES	8
-
-/* Flags that indicate processing mode */
-#define MEM2MEM_HFLIP	(1 << 0)
-#define MEM2MEM_VFLIP	(1 << 1)
-
 #define dprintk(dev, fmt, arg...) \
 	v4l2_dbg(1, debug, &dev->v4l2_dev, "%s: " fmt, __func__, ## arg)
 
@@ -547,8 +533,12 @@ enum {
 	V4L2_M2M_DST = 1,
 };
 
-#define V4L2_CID_TRANS_TIME_MSEC	(V4L2_CID_USER_BASE + 0x1000)
-#define V4L2_CID_TRANS_NUM_BUFS		(V4L2_CID_USER_BASE + 0x1001)
+/* Custom controls */
+#define V4L2_CID_FPS			(V4L2_CID_USER_BASE + 0x1000)
+#define V4L2_CID_BEST_EFFORT		(V4L2_CID_USER_BASE + 0x1001)
+
+/* Flags that indicate processing mode */
+#define FDP1_BEST_EFFORT 	BIT(0)
 
 static struct fdp1_fmt *fdp1_find_format(u32 pixelformat,
 					 unsigned int fmt_type)
@@ -581,6 +571,7 @@ struct fdp1_dev {
 	struct device		*dev;
 	void			*alloc_ctx;
 	struct timer_list	timer;
+	unsigned int		clk_rate;
 
 	struct rcar_fcp_device	*fcp;
 	struct v4l2_m2m_dev	*m2m_dev;
@@ -601,16 +592,19 @@ struct fdp1_ctx {
 
 	/* Transaction length (i.e. how many buffers per transaction) */
 	u32			translen;
-	/* Transaction time (i.e. simulated processing time) in milliseconds */
-	u32			transtime;
 
 	/* Abort requested by m2m */
 	int			aborting;
 
 	/* Processing mode */
 	int			mode;
-
 	enum v4l2_colorspace	colorspace;
+
+	/* User can request a specific rate, to use interrupt
+	 * driven processing, or set FPS==0 to request instant
+	 * processing (no-interrupt) mode
+	 */
+	int			fps;
 
 	/* Source and destination queue data */
 	struct fdp1_q_data   out_q; /* HW Source */
@@ -798,17 +792,31 @@ static int device_process(struct fdp1_ctx *ctx,
 	fdp1_write(fdp1, CTL_CLKCTRL_CSTP_N, CTL_CLKCTRL);
 
 	/* Set the mode, and configuration */
-	opmode = (CTL_OPMODE_PRG | CTL_OPMODE_INTERRUPT);
-	channels = (CTL_CHACT_WR | CTL_CHACT_RD1);
+	channels = (CTL_CHACT_WR | CTL_CHACT_RD1); /* Always on */
 	ipcmode = IPC_MODE_DLI | IPC_MODE_DIM_FIXED2D;
+
+	/* Determine Mode, and Rate if requested */
+	if (ctx->fps)
+	{
+		unsigned int period = fdp1->clk_rate / ctx->fps;
+		fdp1_write(fdp1, period, CTL_VPERIOD);
+		opmode = CTL_OPMODE_INTERRUPT;
+	}
+	else
+		opmode = CTL_OPMODE_NO_INTERRUPT;
+
+	if (src_q_data->format.field == V4L2_FIELD_NONE)
+		opmode |= CTL_OPMODE_PRG;
+	else
+	{
+		/* De-interlacing */
+		channels |= (CTL_CHACT_WR | CTL_CHACT_RD1);
+		/* ... */
+	}
 
 	fdp1_write(fdp1, channels,	CTL_CHACT);
 	fdp1_write(fdp1, opmode,	CTL_OPMODE);
 	fdp1_write(fdp1, ipcmode,	IPC_MODE);
-
-	/* Configure clocking */
-#define MHZ (1000*1000)
-	fdp1_write(fdp1, (200*MHZ)/ 1 /*FPS*/,	CTL_VPERIOD);
 
 	/* DLI Static Configuration */
 	fdp1_set_ipc_dli(ctx);
@@ -1069,7 +1077,7 @@ static void device_run(void *priv)
 
 #ifdef QEMU_TESTING
 	/* Run a timer, which simulates a hardware irq  */
-	schedule_irq(fdp1, ctx->transtime);
+	schedule_irq(fdp1, 40);
 #endif
 }
 
@@ -1273,27 +1281,16 @@ static int fdp1_s_ctrl(struct v4l2_ctrl *ctrl)
 		container_of(ctrl->handler, struct fdp1_ctx, hdl);
 
 	switch (ctrl->id) {
-	case V4L2_CID_HFLIP:
+	case V4L2_CID_FPS:
+		ctx->fps = ctrl->val;
+		break;
+
+	case V4L2_CID_BEST_EFFORT:
 		if (ctrl->val)
-			ctx->mode |= MEM2MEM_HFLIP;
+			ctx->mode |= FDP1_BEST_EFFORT;
 		else
-			ctx->mode &= ~MEM2MEM_HFLIP;
-		break;
-
-	case V4L2_CID_VFLIP:
-		if (ctrl->val)
-			ctx->mode |= MEM2MEM_VFLIP;
-		else
-			ctx->mode &= ~MEM2MEM_VFLIP;
-		break;
-
-	case V4L2_CID_TRANS_TIME_MSEC:
-		ctx->transtime = ctrl->val;
-		break;
-
-	case V4L2_CID_TRANS_NUM_BUFS:
-		ctx->translen = ctrl->val;
-		break;
+			ctx->mode &= ~FDP1_BEST_EFFORT;
+		break;		break;
 
 	default:
 		v4l2_err(&ctx->fdp1->v4l2_dev, "Invalid control\n");
@@ -1499,25 +1496,31 @@ static int queue_init(void *priv, struct vb2_queue *src_vq, struct vb2_queue *ds
 	return vb2_queue_init(dst_vq);
 }
 
-static const struct v4l2_ctrl_config fdp1_ctrl_trans_time_msec = {
+static const struct v4l2_ctrl_config fdp1_ctrl_fps = {
 	.ops = &fdp1_ctrl_ops,
-	.id = V4L2_CID_TRANS_TIME_MSEC,
-	.name = "Transaction Time (msec)",
+	.id = V4L2_CID_FPS,
+	.name = "Frames per second (0==free-run)",
 	.type = V4L2_CTRL_TYPE_INTEGER,
-	.def = MEM2MEM_DEF_TRANSTIME,
-	.min = 1,
-	.max = 10001,
+	.def = 0,
+	.min = 0,
+	.max = 240,
 	.step = 1,
 };
 
-static const struct v4l2_ctrl_config fdp1_ctrl_trans_num_bufs = {
+/* If a value is set for FPS, putting us into Interrupt Driven mode,
+ * we can choose what to do if a frame process exceeds the time available
+ * to meet the desired FPS. We can either error and abort the frame, or
+ * wait for the frame to finish anyway. This later option is 'best effort
+ * mode'
+ */
+static const struct v4l2_ctrl_config fdp1_ctrl_best_effort = {
 	.ops = &fdp1_ctrl_ops,
-	.id = V4L2_CID_TRANS_NUM_BUFS,
-	.name = "Buffers Per Transaction",
+	.id = V4L2_CID_BEST_EFFORT,
+	.name = "Best Effort Interrupt Mode",
 	.type = V4L2_CTRL_TYPE_INTEGER,
-	.def = 1,
-	.min = 1,
-	.max = MEM2MEM_DEF_NUM_BUFS,
+	.def = 0,
+	.min = 0,
+	.max = 1,
 	.step = 1,
 };
 
@@ -1567,14 +1570,12 @@ static int fdp1_open(struct file *file)
 
 	/* Initialise controls */
 
-	ctx->transtime = 40;
+	ctx->fps = 0;
 	ctx->translen = 1;
 
-	v4l2_ctrl_handler_init(&ctx->hdl, 4);
-	v4l2_ctrl_new_std(&ctx->hdl, &fdp1_ctrl_ops, V4L2_CID_HFLIP, 0, 1, 1, 0);
-	v4l2_ctrl_new_std(&ctx->hdl, &fdp1_ctrl_ops, V4L2_CID_VFLIP, 0, 1, 1, 0);
-	v4l2_ctrl_new_custom(&ctx->hdl, &fdp1_ctrl_trans_time_msec, NULL);
-	v4l2_ctrl_new_custom(&ctx->hdl, &fdp1_ctrl_trans_num_bufs, NULL);
+	v4l2_ctrl_handler_init(&ctx->hdl, 2);
+	v4l2_ctrl_new_custom(&ctx->hdl, &fdp1_ctrl_fps, NULL);
+	v4l2_ctrl_new_custom(&ctx->hdl, &fdp1_ctrl_best_effort, NULL);
 	if (ctx->hdl.error) {
 		rc = ctx->hdl.error;
 		v4l2_ctrl_handler_free(&ctx->hdl);
