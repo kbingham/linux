@@ -17,6 +17,7 @@
 
 #include <linux/module.h>
 #include <linux/delay.h>
+#include <linux/clk.h>
 #include <linux/fs.h>
 #include <linux/timer.h>
 #include <linux/sched.h>
@@ -571,6 +572,7 @@ struct fdp1_dev {
 	struct device		*dev;
 	void			*alloc_ctx;
 	struct timer_list	timer;
+
 	unsigned int		clk_rate;
 
 	struct rcar_fcp_device	*fcp;
@@ -1668,6 +1670,7 @@ static irqreturn_t fdp1_irq_handler(int irq, void *dev_id)
 	struct fdp1_dev *fdp1 = dev_id;
 
 	unsigned int int_status, scratch;
+	unsigned int cycles;
 
 	int_status = fdp1_read(fdp1, CTL_IRQSTA);
 
@@ -1676,7 +1679,8 @@ static irqreturn_t fdp1_irq_handler(int irq, void *dev_id)
 			int_status & CTL_IRQ_VINTE ? "[VSync]" : "[!V]",
 			int_status & CTL_IRQ_FREE ? "[FrameEnd]" : "[!F]");
 
-	dprintk(fdp1, "CycleStatus = %d\n", fdp1_read(fdp1, CTL_VCYCLE_STATUS));
+	cycles = fdp1_read(fdp1, CTL_VCYCLE_STATUS);
+	dprintk(fdp1, "CycleStatus = %d (%dms)\n", cycles, cycles/(fdp1->clk_rate/1000));
 
 	scratch = fdp1_read(fdp1, CTL_STATUS);
 	dprintk(fdp1, "Control Status = 0x%08x : VINT_CNT = %d %s:%s:%s:%s\n",
@@ -1738,6 +1742,8 @@ static int fdp1_probe(struct platform_device *pdev)
 	struct video_device *vfd;
 	struct device_node *fcp_node;
 	struct resource *res;
+	struct clk *clk;
+
 	int ret;
 	int hw_version;
 
@@ -1789,6 +1795,16 @@ static int fdp1_probe(struct platform_device *pdev)
 
 	/* Power up the cells for the probe function */
 	fdp1_get(fdp1);
+
+	/* Determine our clock rate */
+	clk = devm_clk_get(&pdev->dev, NULL);
+	if (IS_ERR(clk))
+		return PTR_ERR(clk);
+
+	fdp1->clk_rate = clk_get_rate(clk);
+	clk_put(clk);
+
+	dprintk(fdp1, "Running at %d\n", fdp1->clk_rate);
 
 	dprintk(fdp1, "**********************************\n");
 
