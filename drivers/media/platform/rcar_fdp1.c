@@ -653,16 +653,20 @@ static u32 fdp1_read(struct fdp1_dev *fdp1, unsigned int reg)
 {
 	if (debug >= 2)
 		dprintk(fdp1, "Read from %p\n", fdp1->regs + reg);
-
+#ifndef QEMU_TESTING
 	return ioread32(fdp1->regs + reg);
+#else
+	return 0;
+#endif
 }
 
 static void fdp1_write(struct fdp1_dev *fdp1, u32 val, unsigned int reg)
 {
 	if (debug >= 2)
 		dprintk(fdp1, "Write to %p\n", fdp1->regs + reg);
-
+#ifndef QEMU_TESTING
 	iowrite32(val, fdp1->regs + reg);
+#endif
 }
 
 
@@ -1705,6 +1709,7 @@ static int fdp1_probe(struct platform_device *pdev)
 	/* Power up the cells for the probe function */
 	fdp1_get(fdp1);
 
+#ifndef QEMU_TESTING
 	/* Determine our clock rate */
 	clk = devm_clk_get(&pdev->dev, NULL);
 	if (IS_ERR(clk))
@@ -1712,6 +1717,9 @@ static int fdp1_probe(struct platform_device *pdev)
 
 	fdp1->clk_rate = clk_get_rate(clk);
 	clk_put(clk);
+#else
+	fdp1->clk_rate = 199999999;
+#endif
 
 	dprintk(fdp1, "Running at %d\n", fdp1->clk_rate);
 
