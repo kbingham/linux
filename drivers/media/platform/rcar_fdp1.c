@@ -152,7 +152,7 @@ MODULE_PARM_DESC(debug, "activate debug info");
 
 /* WPF */
 #define WPF_FORMAT		0x00C0
-#define WPF_FORMAT_PDV_MASK
+#define WPF_FORMAT_PDV_SHIFT	24
 #define WPF_FORMAT_FCNL		BIT(20)
 #define WPF_FORMAT_WSPYCS	BIT(15)
 #define WPF_FORMAT_WSPUVS	BIT(14)
@@ -617,6 +617,10 @@ struct fdp1_ctx {
 	 */
 	int			fps;
 
+	/* Capture pipeline, can specify an alpha value
+	 * for supported formats. 0-255 only */
+	unsigned char		alpha;
+
 	/* Source and destination queue data */
 	struct fdp1_q_data   out_q; /* HW Source */
 	struct fdp1_q_data   cap_q; /* HW Destination */
@@ -878,6 +882,9 @@ static int device_process(struct fdp1_ctx *ctx,
 	format = dst_q_data->fmt->fmt; /* Output Format Code */
 	if (dst_q_data->fmt->fmt <= 0x1B) /* Last RGB fmt code */
 		format |= WPF_FORMAT_CSC; /* Enable Colour Space conversion */
+
+	/* Set an alpha value into the Pad Value */
+	format |= ctx->alpha << WPF_FORMAT_PDV_SHIFT;
 
 	fdp1_write(fdp1, format, WPF_FORMAT);
 
@@ -1187,6 +1194,10 @@ static int fdp1_s_ctrl(struct v4l2_ctrl *ctrl)
 			ctx->mode &= ~FDP1_BEST_EFFORT;
 		break;		break;
 
+	case V4L2_CID_ALPHA_COMPONENT:
+		ctx->alpha = ctrl->val;
+		break;
+
 	default:
 		v4l2_err(&ctx->fdp1->v4l2_dev, "Invalid control\n");
 		return -EINVAL;
@@ -1468,9 +1479,12 @@ static int fdp1_open(struct file *file)
 	ctx->fps = 0;
 	ctx->translen = 1;
 
-	v4l2_ctrl_handler_init(&ctx->hdl, 2);
+	v4l2_ctrl_handler_init(&ctx->hdl, 3);
 	v4l2_ctrl_new_custom(&ctx->hdl, &fdp1_ctrl_fps, NULL);
 	v4l2_ctrl_new_custom(&ctx->hdl, &fdp1_ctrl_best_effort, NULL);
+	v4l2_ctrl_new_std(&ctx->hdl, &fdp1_ctrl_ops,
+			  V4L2_CID_ALPHA_COMPONENT, 0, 255, 1, 255);
+
 	if (ctx->hdl.error) {
 		rc = ctx->hdl.error;
 		v4l2_ctrl_handler_free(&ctx->hdl);
