@@ -285,7 +285,7 @@ struct fdp1_fmt {
 	u8	types;
 };
 
-static struct fdp1_fmt formats[] = {
+static const struct fdp1_fmt formats[] = {
 	/* RGB Formats are only supported by the Write Pixel Formatter */
 	/*	FourCC	            BPP[3]    fmt  np   type       */
 	{ V4L2_PIX_FMT_RGB332,   { 8, 0, 0}, 0x00, 1, FDP1_CAPTURE },
@@ -531,7 +531,7 @@ fdp1_lut fdp1_mdet[256] = {
 
 /* Per-queue, driver-specific private data */
 struct fdp1_q_data {
-	struct fdp1_fmt	*fmt;
+	const struct fdp1_fmt	*fmt;
 	struct v4l2_pix_format_mplane format;
 	unsigned int sequence;
 };
@@ -548,10 +548,10 @@ enum {
 /* Flags that indicate processing mode */
 #define FDP1_BEST_EFFORT 	BIT(0)
 
-static struct fdp1_fmt *fdp1_find_format(u32 pixelformat,
+static const struct fdp1_fmt *fdp1_find_format(u32 pixelformat,
 					 unsigned int fmt_type)
 {
-	struct fdp1_fmt *fmt;
+	const struct fdp1_fmt *fmt;
 	unsigned int k;
 
 	for (k = 0; k < NUM_FORMATS; k++) {
@@ -1084,11 +1084,11 @@ static int fdp1_g_fmt(struct file *file, void *priv, struct v4l2_format *f)
 	return 0;
 }
 
-static int __fdp1_try_fmt(struct fdp1_ctx *ctx, struct fdp1_fmt **fmtinfo,
+static int __fdp1_try_fmt(struct fdp1_ctx *ctx, const struct fdp1_fmt **fmtinfo,
 			  struct v4l2_pix_format_mplane *pix,
 			  enum v4l2_buf_type type)
 {
-	struct fdp1_fmt *fmt;
+	const struct fdp1_fmt *fmt;
 	unsigned int fmt_type;
 	unsigned int i, bpl = 0;
 
@@ -1149,7 +1149,7 @@ static int fdp1_s_fmt(struct file *file, void *priv, struct v4l2_format *f)
 	struct fdp1_ctx *ctx = fh_to_ctx(priv);
 	struct v4l2_m2m_ctx *m2m_ctx = ctx->fh.m2m_ctx;
 	struct fdp1_q_data *q_data;
-	struct fdp1_fmt *fmtinfo;
+	const struct fdp1_fmt *fmtinfo;
 	int ret;
 
 	vq = v4l2_m2m_get_vq(m2m_ctx, f->type);
