@@ -674,9 +674,7 @@ void fdp1_print_regs32(struct fdp1_dev *fdp1)
 
 struct fdp1_plane_addrs
 {
-	unsigned long plane0;
-	unsigned long plane1;
-	unsigned long plane2;
+	dma_addr_t addr[3];
 };
 
 static struct fdp1_plane_addrs vb2_dc_to_pa(struct vb2_v4l2_buffer *buf,
@@ -685,17 +683,10 @@ static struct fdp1_plane_addrs vb2_dc_to_pa(struct vb2_v4l2_buffer *buf,
 	struct fdp1_plane_addrs pa = { 0 };
 	struct vb2_buffer *vb2buf = &buf->vb2_buf;
 
-	switch (planes)
-	{
-	case 3:	pa.plane2 = vb2_dma_contig_plane_dma_addr(vb2buf, 2);
-		/* Fall through */
-	case 2:	pa.plane1 = vb2_dma_contig_plane_dma_addr(vb2buf, 1);
-		/* Fall through */
-	case 1:	pa.plane0 = vb2_dma_contig_plane_dma_addr(vb2buf, 0);
-		break;
-	default:
-		BUG_ON(1);
-	}
+	int i;
+
+	for (i = 0; i < vb2buf->num_planes; ++i)
+		pa.addr[i] = vb2_dma_contig_plane_dma_addr(vb2buf, i);
 
 	return pa;
 }
@@ -802,14 +793,14 @@ static int device_process(struct fdp1_ctx *ctx,
 	dprintk(fdp1, "\n\n");
 
 	/* Debug the world ... Lets see what we have going through */
-	dprintk(fdp1, "SRC[%d]: 0x%08lx 0x%08lx 0x%08lx (%dx%d, 0x%x)\n",
+	dprintk(fdp1, "SRC[%d]: 0x%08llx 0x%08llx 0x%08llx (%dx%d, 0x%x)\n",
 			src_buf->vb2_buf.index,
-			src_addr.plane0, src_addr.plane1, src_addr.plane2,
+			src_addr.addr[0], src_addr.addr[1], src_addr.addr[2],
 			src_q_data->format.width, src_q_data->format.height,
 			src_q_data->fmt->fmt);
-	dprintk(fdp1, "DST[%d]: 0x%08lx 0x%08lx 0x%08lx (%dx%d, 0x%x)\n",
+	dprintk(fdp1, "DST[%d]: 0x%08llx 0x%08llx 0x%08llx (%dx%d, 0x%x)\n",
 			dst_buf->vb2_buf.index,
-			dst_addr.plane0, dst_addr.plane1, dst_addr.plane2,
+			dst_addr.addr[0], dst_addr.addr[1], dst_addr.addr[2],
 			dst_q_data->format.width, dst_q_data->format.height,
 			dst_q_data->fmt->fmt);
 
@@ -871,9 +862,9 @@ static int device_process(struct fdp1_ctx *ctx,
 	fdp1_write(fdp1, (stride_y << 16) | (stride_c & 0xFFFF), RPF_PSTRIDE );
 
 	fdp1_write(fdp1, src_q_data->fmt->fmt, RPF_FORMAT);
-	fdp1_write(fdp1, src_addr.plane0, RPF1_ADDR_Y);
-	fdp1_write(fdp1, src_addr.plane1, RPF1_ADDR_C0);
-	fdp1_write(fdp1, src_addr.plane2, RPF1_ADDR_C1);
+	fdp1_write(fdp1, src_addr.addr[0], RPF1_ADDR_Y);
+	fdp1_write(fdp1, src_addr.addr[1], RPF1_ADDR_C0);
+	fdp1_write(fdp1, src_addr.addr[2], RPF1_ADDR_C1);
 
 	/* Setup the Dest Picture */
 
@@ -893,9 +884,9 @@ static int device_process(struct fdp1_ctx *ctx,
 	if (format & WPF_FORMAT_CSC)
 		dprintk(fdp1, "Output is RGB - CSC Enabled\n");
 
-	fdp1_write(fdp1, dst_addr.plane0, WPF_ADDR_Y);
-	fdp1_write(fdp1, dst_addr.plane1, WPF_ADDR_C0);
-	fdp1_write(fdp1, dst_addr.plane2, WPF_ADDR_C1);
+	fdp1_write(fdp1, dst_addr.addr[0], WPF_ADDR_Y);
+	fdp1_write(fdp1, dst_addr.addr[1], WPF_ADDR_C0);
+	fdp1_write(fdp1, dst_addr.addr[2], WPF_ADDR_C1);
 
 	/* Line Memory Pixel Number Register for linear access */
 	fdp1_write(fdp1, 1024, IPC_LMEM);
