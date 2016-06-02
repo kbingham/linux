@@ -624,12 +624,13 @@ int vb2_verify_memory_type(struct vb2_queue *q,
 {
 	if (memory != VB2_MEMORY_MMAP && memory != VB2_MEMORY_USERPTR &&
 	    memory != VB2_MEMORY_DMABUF) {
-		dprintk(1, "unsupported memory type\n");
+		dprintk(1, "unsupported memory type %d\n", memory);
 		return -EINVAL;
 	}
 
 	if (type != q->type) {
-		dprintk(1, "requested type is incorrect\n");
+		dprintk(1, "requested type is incorrect %d, instead of Q: %d\n",
+				type, q->type);
 		return -EINVAL;
 	}
 
