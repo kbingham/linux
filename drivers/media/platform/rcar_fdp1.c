@@ -1100,9 +1100,14 @@ static int __fdp1_try_fmt(struct fdp1_ctx *ctx, const struct fdp1_fmt **fmtinfo,
 
 	fmt = fdp1_find_format(pix->pixelformat, fmt_type);
 	if (!fmt) {
+		/* Return the zero'th element for this type */
+		struct v4l2_fmtdesc f;
+		f.index = 0;
+		if (enum_fmt(&f, fmt_type))
+			return -EINVAL;
+
+		fmt = fdp1_find_format(f.pixelformat, fmt_type);
 		dev_dbg(ctx->fdp1->dev, "unknown format; set default format\n");
-		/* YUV Type compatible with both OUTPUT/CAPTURE */
-		fmt = fdp1_find_format(V4L2_PIX_FMT_YUV420M, fmt_type);
 	}
 
 	pix->pixelformat = fmt->fourcc;
