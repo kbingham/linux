@@ -1711,7 +1711,7 @@ static int fdp1_probe(struct platform_device *pdev)
 
 #ifndef QEMU_TESTING
 	/* Determine our clock rate */
-	clk = devm_clk_get(&pdev->dev, NULL);
+	clk = clk_get(&pdev->dev, NULL);
 	if (IS_ERR(clk))
 		return PTR_ERR(clk);
 
