@@ -47,13 +47,13 @@ module_param(debug, uint, 0644);
 MODULE_PARM_DESC(debug, "activate debug info");
 
 /* Min Width/Height/Height-Field */
-#define MIN_W 80
-#define MIN_H 80
-#define MIN_HF 40
+#define MIN_W 80U
+#define MIN_H 80U
+#define MIN_HF 40U
 
-#define MAX_W 3840
-#define MAX_H 2160
-#define MAX_HF 1080
+#define MAX_W 3840U
+#define MAX_H 2160U
+#define MAX_HF 1080U
 #define MEMALIGN 8
 
 #define DIM_ALIGN_MASK 7 /* 8-byte alignment for line length */
@@ -168,6 +168,13 @@ MODULE_PARM_DESC(debug, "activate debug info");
 #define WPF_ADDR_C0		0x00D0
 #define WPF_ADDR_C1		0x00D4
 #define WPF_SWAP		0x00D8
+#define WPF_SWAP_SSWAP_SHIFT	4
+
+/* WPF/RPF Common */
+#define RWPF_SWAP_BYTE		BIT(0)
+#define RWPF_SWAP_WORD		BIT(1)
+#define RWPF_SWAP_LWRD		BIT(2)
+#define RWPF_SWAP_LLWD		BIT(3)
 
 /* IPC */
 #define IPC_MODE		0x0100
@@ -272,81 +279,122 @@ static struct debugfs_reg32 fdp1_regset[] = {
 /**
  * struct fdp1_fmt - The FDP1 internal format data
  * @fourcc: the fourcc code, to match the V4L2 API
- * @depth: pixel depth
- * @fmt: 7-bit format code for the fdp1 hardware
+ * @bpp: bits per pixel per plane
  * @num_planes: number of planes
+ * @hsub: horizontal subsampling factor
+ * @vsub: vertical subsampling factor
+ * @fmt: 7-bit format code for the fdp1 hardware, with yc/uv swap settings
  * @types: types of queue this format is applicable to
  */
 struct fdp1_fmt {
 	u32	fourcc;
 	u8	bpp[3];
-	u32	fmt;
 	u8	num_planes;
+	u8	hsub;
+	u8	vsub;
+	u32	fmt;
+	u8	swap;
 	u8	types;
 };
 
 static const struct fdp1_fmt formats[] = {
-	/* RGB Formats are only supported by the Write Pixel Formatter */
-	/*	FourCC	            BPP[3]    fmt  np   type       */
-	{ V4L2_PIX_FMT_RGB332,   { 8, 0, 0}, 0x00, 1, FDP1_CAPTURE },
-	{ V4L2_PIX_FMT_XRGB555X, {16, 0, 0}, 0x04, 1, FDP1_CAPTURE },
-	{ V4L2_PIX_FMT_RGB565X,  {16, 0, 0}, 0x06, 1, FDP1_CAPTURE }, /* Big Endian */
-	/* Not mapping the 18 bit (6-6-6) formats */
-	{ V4L2_PIX_FMT_ARGB32,   {24, 0, 0}, 0x13, 1, FDP1_CAPTURE },
-	/* XRGB Can be supported on the Capture, as A is arbitrary anyway */
-	{ V4L2_PIX_FMT_XRGB32,   {24, 0, 0}, 0x13, 1, FDP1_CAPTURE },
-	/* 0x14 = RGBA8888 */
-	{ V4L2_PIX_FMT_RGB24,    {24, 0, 0}, 0x15, 1, FDP1_CAPTURE }, /* RGB 8-8-8 */
-	{ V4L2_PIX_FMT_BGR24,    {24, 0, 0}, 0x18, 1, FDP1_CAPTURE },
+	/* RGB formats are only supported by the Write Pixel Formatter */
 
-	/* ARGB444 is confusing. uapi/linux/videodev2.h represents it as aaaarrrrggggbbbb
-	 * however in https://linuxtv.org/downloads/v4l-dvb-apis/packed-rgb.html
-	 * it is shown as g3 g2	g1 g0 b3 b2 b1 b0 | a3 a2 a1 a0 r3 r2 r1 r0
-	 * We can use the SWAP registers as necessary here though.
-	 */
-	{ V4L2_PIX_FMT_ARGB444,  {16, 0, 0}, 0x19, 1, FDP1_CAPTURE }, // TESTME I'm probably the wrong endianness !!!
-	{ V4L2_PIX_FMT_ARGB555X, {16, 0, 0}, 0x1B, 1, FDP1_CAPTURE },
-	 /* Arbitrary Alpha Value, hence can re-use 0x1B */
-	{ V4L2_PIX_FMT_XRGB555X, {16, 0, 0}, 0x1B, 1, FDP1_CAPTURE },
+	{ V4L2_PIX_FMT_RGB332, { 8, 0, 0}, 1, 1, 1, 0x00,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
+	  FDP1_CAPTURE },
 
+	{ V4L2_PIX_FMT_XRGB444, { 16, 0, 0}, 1, 1, 1, 0x01,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD,
+	  FDP1_CAPTURE },
 
-	/* YUV Formats */
-	//{ V4L2_PIX_FMT_,  { 8,16, 0}, 0x40, 2, FDP1_CAPTURE | FDP1_OUTPUT }, /* YCbCr4:4:4 semi */
-	{ V4L2_PIX_FMT_NV16,  { 8, 8, 0}, 0x41, 2, FDP1_CAPTURE | FDP1_OUTPUT }, /* YCbCr4:2:2 semi (NV16, NV61) */
-	{ V4L2_PIX_FMT_NV61,  { 8, 8, 0}, 0x41 | WPF_FORMAT_WSPUVS,
-			2, FDP1_CAPTURE | FDP1_OUTPUT }, /* YCbCr4:2:2 semi (NV16, NV61) */
-	{ V4L2_PIX_FMT_NV12,  { 8, 8, 0}, 0x42, 2, FDP1_CAPTURE | FDP1_OUTPUT }, /* YCbCr4:2:0 semi (NV12, NV21) */
-	{ V4L2_PIX_FMT_NV21,  { 8, 8, 0}, 0x42 | WPF_FORMAT_WSPUVS,
-			2, FDP1_CAPTURE | FDP1_OUTPUT }, /* YCbCr4:2:0 semi (NV12, NV21) */
+	{ V4L2_PIX_FMT_XRGB555, { 16, 0, 0}, 1, 1, 1, 0x04,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD,
+	  FDP1_CAPTURE },
 
-	//{ V4L2_PIX_FMT_,  {24, 0, 0}, 0x46, 1, FDP1_CAPTURE | FDP1_OUTPUT }, /* YCbCr4:4:4 interleaved */
-	{ V4L2_PIX_FMT_UYVY,  {16, 0, 0}, 0x47, 1, FDP1_CAPTURE | FDP1_OUTPUT }, /* YCbCr4:2:2 interleaved type 0 */
-	{ V4L2_PIX_FMT_YUYV,  {16, 0, 0}, 0x47 | WPF_FORMAT_WSPYCS,
-			1, FDP1_CAPTURE | FDP1_OUTPUT }, /* RSPYCS=1 */
-	{ V4L2_PIX_FMT_YVYU,  {16, 0, 0}, 0x47 | WPF_FORMAT_WSPYCS | WPF_FORMAT_WSPUVS,
-			1, FDP1_CAPTURE | FDP1_OUTPUT }, /* RSPUVS=1 RSPYCS=1 */
+	{ V4L2_PIX_FMT_RGB565, { 16, 0, 0}, 1, 1, 1, 0x06,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD,
+	  FDP1_CAPTURE },
 
-	//{ V4L2_PIX_FMT_,  888, 0x48, 1, FDP1_CAPTURE | FDP1_OUTPUT }, /* YCbCr4:2:2 interleaved type 1 */
+	{ V4L2_PIX_FMT_ABGR32, { 32, 0, 0}, 1, 1, 1, 0x13,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD,
+	  FDP1_CAPTURE }, /* Has alpha */
+	{ V4L2_PIX_FMT_XBGR32, { 32, 0, 0}, 1, 1, 1, 0x13,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD,
+	  FDP1_CAPTURE },
+	{ V4L2_PIX_FMT_ARGB32, { 32, 0, 0}, 1, 1, 1, 0x13,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
+	  FDP1_CAPTURE },
+	{ V4L2_PIX_FMT_XRGB32, { 32, 0, 0}, 1, 1, 1, 0x13,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
+	  FDP1_CAPTURE },
 
-	/* V4L2_PIX_FMT_YVU4??M is the same except the Cr data is stored
-	 * in the second plane and the Cb data in the third plane.  */
+	{ V4L2_PIX_FMT_RGB24, { 24, 0, 0}, 1, 1, 1, 0x15,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
+	  FDP1_CAPTURE },
 
-	/* Should be able to map Planar formats (contiguous single plane)
-	 * to these fmt's too. Should be just a matter of getting the correct
-	 * address to the hardware */
-	{ V4L2_PIX_FMT_YUV444M,  { 8, 8, 8}, 0x4A, 3, FDP1_CAPTURE | FDP1_OUTPUT }, /* YCbCr4:4:4 */
-	{ V4L2_PIX_FMT_YVU444M,  { 8, 8, 8}, 0x4A, 3, FDP1_CAPTURE | FDP1_OUTPUT },
+	{ V4L2_PIX_FMT_BGR24, { 24, 0, 0}, 1, 1, 1, 0x18,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
+	  FDP1_CAPTURE },
 
-	{ V4L2_PIX_FMT_YUV422M,  { 8, 4, 4}, 0x4B, 3, FDP1_CAPTURE | FDP1_OUTPUT }, /* YCbCr4:2:2 */
-	{ V4L2_PIX_FMT_YVU422M,  { 8, 4, 4}, 0x4B, 3, FDP1_CAPTURE | FDP1_OUTPUT },
-	/* 3 Planes in a contiguous buffer ...
-	 * will have to verify that the hardware can support alignment ? */
-	{ V4L2_PIX_FMT_YUV422P,  {16, 0, 0}, 0x4B, 1, FDP1_CAPTURE | FDP1_OUTPUT },
+	{ V4L2_PIX_FMT_ARGB444, { 16, 0, 0}, 1, 1, 1, 0x19,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD,
+	  FDP1_CAPTURE },
 
-	{ V4L2_PIX_FMT_YUV420M,  { 8, 2, 2}, 0x4C, 3, FDP1_CAPTURE | FDP1_OUTPUT }, /* YCbCr4:2:0 */
-	{ V4L2_PIX_FMT_YVU420M,  { 8, 2, 2}, 0x4C, 3, FDP1_CAPTURE | FDP1_OUTPUT },
+	{ V4L2_PIX_FMT_ARGB555, { 16, 0, 0}, 1, 1, 1, 0x1b,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD,
+	  FDP1_CAPTURE },
 
+	/* YUV Formats are supported by Read and Write Pixel Formatters */
 
+	{ V4L2_PIX_FMT_NV16M, { 8, 16, 0}, 2, 2, 1, 0x41,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
+	  FDP1_CAPTURE | FDP1_OUTPUT },
+	{ V4L2_PIX_FMT_NV61M, { 8, 16, 0}, 2, 2, 1, 0x41 | WPF_FORMAT_WSPUVS,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
+	  FDP1_CAPTURE | FDP1_OUTPUT },
+
+	{ V4L2_PIX_FMT_NV12M, { 8, 16, 0}, 2, 2, 2, 0x42,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
+	  FDP1_CAPTURE | FDP1_OUTPUT },
+	{ V4L2_PIX_FMT_NV21M, { 8, 16, 0}, 2, 2, 2, 0x42 | WPF_FORMAT_WSPUVS,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
+	  FDP1_CAPTURE | FDP1_OUTPUT },
+
+	{ V4L2_PIX_FMT_UYVY, { 16, 0, 0}, 1, 2, 1, 0x47,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
+	  FDP1_CAPTURE | FDP1_OUTPUT },
+	{ V4L2_PIX_FMT_VYUY, { 16, 0, 0}, 1, 2, 1, 0x47 | WPF_FORMAT_WSPUVS,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
+	  FDP1_CAPTURE | FDP1_OUTPUT },
+	{ V4L2_PIX_FMT_UYVY, { 16, 0, 0}, 1, 2, 1, 0x47 | WPF_FORMAT_WSPYCS,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
+	  FDP1_CAPTURE | FDP1_OUTPUT },
+	{ V4L2_PIX_FMT_UYVY, { 16, 0, 0}, 1, 2, 1,
+	  0x47 | WPF_FORMAT_WSPYCS | WPF_FORMAT_WSPUVS,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
+	  FDP1_CAPTURE | FDP1_OUTPUT },
+
+	{ V4L2_PIX_FMT_YUV444M, { 8, 8, 8}, 3, 1, 1, 0x4a,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
+	  FDP1_CAPTURE | FDP1_OUTPUT },
+	{ V4L2_PIX_FMT_YVU444M, { 8, 8, 8}, 3, 1, 1, 0x4a | WPF_FORMAT_WSPUVS,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
+	  FDP1_CAPTURE | FDP1_OUTPUT },
+
+	{ V4L2_PIX_FMT_YUV422M, { 8, 8, 8}, 3, 2, 1, 0x4b,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
+	  FDP1_CAPTURE | FDP1_OUTPUT },
+	{ V4L2_PIX_FMT_YUV422M, { 8, 8, 8}, 3, 2, 1, 0x4b | WPF_FORMAT_WSPUVS,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
+	  FDP1_CAPTURE | FDP1_OUTPUT },
+
+	{ V4L2_PIX_FMT_YUV420M, { 8, 8, 8}, 3, 2, 2, 0x4c,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
+	  FDP1_CAPTURE | FDP1_OUTPUT },
+	{ V4L2_PIX_FMT_YVU420M, { 8, 8, 8}, 3, 2, 2, 0x4c | WPF_FORMAT_WSPUVS,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
+	  FDP1_CAPTURE | FDP1_OUTPUT },
 };
 
 #define NUM_FORMATS ARRAY_SIZE(formats)
@@ -1093,8 +1141,10 @@ static int __fdp1_try_fmt(struct fdp1_ctx *ctx, const struct fdp1_fmt **fmtinfo,
 			  enum v4l2_buf_type type)
 {
 	const struct fdp1_fmt *fmt;
+	unsigned int width = pix->width;
+	unsigned int height = pix->height;
 	unsigned int fmt_type;
-	unsigned int i, bpl = 0;
+	unsigned int i;
 
 	fmt_type = V4L2_TYPE_IS_OUTPUT(type) ? FDP1_OUTPUT : FDP1_CAPTURE;
 
@@ -1112,29 +1162,53 @@ static int __fdp1_try_fmt(struct fdp1_ctx *ctx, const struct fdp1_fmt **fmtinfo,
 
 	pix->pixelformat = fmt->fourcc;
 	// TODO: pix->colorspace = fmt->colorspace;
-	pix->field = V4L2_FIELD_NONE;
+	pix->colorspace = V4L2_COLORSPACE_SRGB;
+
+	/* We should be allowing FIELDS through on the Output queue !*/
+	if (V4L2_TYPE_IS_OUTPUT(type)) {
+		/* Clamp to allowable field types */
+		dprintk(ctx->fdp1, "Output Field Type set as %d\n", pix->field);
+	} else
+		pix->field = V4L2_FIELD_NONE;
+
 	pix->num_planes = fmt->num_planes;
 	memset(pix->reserved, 0, sizeof(pix->reserved));
 
-	pix->width = clamp_t(unsigned int, pix->width, MIN_W, MAX_W);
-	pix->height = clamp_t(unsigned int, pix->height, MIN_H, MAX_H);
+	/* Align the width and height for YUV 4:2:2 and 4:2:0 formats. */
+	width = round_down(width, fmt->hsub);
+	height = round_down(height, fmt->vsub);
 
-	for (i = 0; i < pix->num_planes; ++i)
-		bpl = max(bpl, pix->plane_fmt[i].bytesperline);
+	/* Clamp the width and height */
+	pix->width = clamp(width, MIN_W, MAX_W);
+	pix->height = clamp(height, MIN_H, MAX_H);
 
-	bpl = clamp_t(unsigned int, bpl, pix->width, MAX_W);
-	bpl = round_up(bpl, MEMALIGN);
 
-	for (i = 0; i < pix->num_planes; ++i) {
-		pix->plane_fmt[i].bytesperline = bpl;
-		/* Todo: This just doesn't sound right below ...
-		 * Why would each plane be based upon the full height/bpl + bpp?
-		 * Maybe I'm just too sleepy now!
-		 */
-		pix->plane_fmt[i].sizeimage = bpl * pix->height * fmt->bpp[i] / 8;
-		memset(pix->plane_fmt[i].reserved, 0,
-		       sizeof(pix->plane_fmt[i].reserved));
+	/* Compute and clamp the stride and image size. While not documented in
+	 * the datasheet, strides not aligned to a multiple of 128 bytes result
+	 * in image corruption.
+	 */
+	for (i = 0; i < min(fmt->num_planes, 2U); ++i) {
+		unsigned int hsub = i > 0 ? fmt->hsub : 1;
+		unsigned int vsub = i > 0 ? fmt->vsub : 1;
+		unsigned int align = 128; /* From VSP : TODO: Confirm for FDP1 */
+		unsigned int bpl;
+
+		bpl = clamp_t(unsigned int, pix->plane_fmt[i].bytesperline,
+			      pix->width / hsub * fmt->bpp[i] / 8,
+			      round_down(65535U, align));
+
+		pix->plane_fmt[i].bytesperline = round_up(bpl, align);
+		pix->plane_fmt[i].sizeimage = pix->plane_fmt[i].bytesperline
+					    * pix->height / vsub;
 	}
+
+	if (fmt->num_planes == 3) {
+		/* The second and third planes must have the same stride. */
+		pix->plane_fmt[2].bytesperline = pix->plane_fmt[1].bytesperline;
+		pix->plane_fmt[2].sizeimage = pix->plane_fmt[1].sizeimage;
+	}
+
+	pix->num_planes = fmt->num_planes;
 
 	if (fmtinfo)
 		*fmtinfo = fmt;
