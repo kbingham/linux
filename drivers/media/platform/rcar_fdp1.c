@@ -135,6 +135,8 @@ MODULE_PARM_DESC(debug, "activate debug info");
 #define RPF_SIZE		0x0060
 #define RPF_FORMAT		0x0064
 #define RPF_PSTRIDE		0x0068
+#define RPF_PSTRIDE_Y_SHIFT	16
+#define RPF_PSTRIDE_C_SHIFT	0
 
 /* RPF0 Source Component Y Address register */
 #define RPF0_ADDR_Y		0x006C
@@ -162,6 +164,8 @@ MODULE_PARM_DESC(debug, "activate debug info");
 
 #define WPF_RND_CTL		0x00C4
 #define WPF_PSTRIDE		0x00C8
+#define WPF_PSTRIDE_Y_SHIFT	16
+#define WPF_PSTRIDE_C_SHIFT	0
 
 /* WPF Destination picture */
 #define WPF_ADDR_Y		0x00CC
@@ -824,7 +828,7 @@ static int device_process(struct fdp1_ctx *ctx,
 
 	unsigned int opmode, ipcmode;
 	unsigned int channels;
-	unsigned int picture_size, stride_y, stride_c;
+	unsigned int picture_size, pstride;
 	unsigned int format;
 
 	/* Obtain physical addresses for the HW */
@@ -911,11 +915,16 @@ static int device_process(struct fdp1_ctx *ctx,
 	dprintk(fdp1, "RPF_SIZE: 0x%08x\n", picture_size);
 	fdp1_write(fdp1, picture_size, RPF_SIZE);
 
-	/* Stride Y */
-	stride_y = src_q_data->format.width * src_q_data->fmt->bpp[0] / 8;
-	/* Stride CbCr */
-	stride_c = src_q_data->format.width * src_q_data->fmt->bpp[1] / 8;
-	fdp1_write(fdp1, (stride_y << 16) | (stride_c & 0xFFFF), RPF_PSTRIDE );
+
+	/* Strides */
+	pstride = src_q_data->format.plane_fmt[0].bytesperline
+			<< RPF_PSTRIDE_Y_SHIFT;
+
+	if (src_q_data->format.num_planes > 1)
+		pstride |= src_q_data->format.plane_fmt[1].bytesperline
+			<< RPF_PSTRIDE_C_SHIFT;
+
+	fdp1_write(fdp1, pstride, RPF_PSTRIDE );
 
 	fdp1_write(fdp1, src_q_data->fmt->fmt, RPF_FORMAT);
 	fdp1_write(fdp1, src_addr.addr[0], RPF1_ADDR_Y);
@@ -924,12 +933,14 @@ static int device_process(struct fdp1_ctx *ctx,
 
 	/* Setup the Dest Picture */
 
-	/* Stride Y */
-	stride_y = dst_q_data->format.width * dst_q_data->fmt->bpp[0] / 8;
-	/* Stride CbCr */
-	/* stride_c is not used for RGB formats, can be 0...? */
-	stride_c = dst_q_data->format.width * dst_q_data->fmt->bpp[1] / 8;
-	fdp1_write(fdp1, (stride_y << 16) | (stride_c & 0xFFFF), WPF_PSTRIDE );
+	pstride = dst_q_data->format.plane_fmt[0].bytesperline
+			<< WPF_PSTRIDE_Y_SHIFT;
+
+	if (dst_q_data->format.num_planes > 1)
+		pstride |= src_q_data->format.plane_fmt[1].bytesperline
+			<< WPF_PSTRIDE_C_SHIFT;
+
+	fdp1_write(fdp1, pstride, WPF_PSTRIDE );
 
 	format = dst_q_data->fmt->fmt; /* Output Format Code */
 	if (dst_q_data->fmt->fmt <= 0x1B) /* Last RGB fmt code */
