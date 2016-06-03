@@ -830,6 +830,7 @@ static int device_process(struct fdp1_ctx *ctx,
 	unsigned int channels;
 	unsigned int picture_size, pstride;
 	unsigned int format;
+	unsigned int swap;
 
 	/* Obtain physical addresses for the HW */
 	src_addr = vb2_dc_to_pa(src_buf, src_q_data->fmt->num_planes);
@@ -927,6 +928,8 @@ static int device_process(struct fdp1_ctx *ctx,
 	fdp1_write(fdp1, pstride, RPF_PSTRIDE );
 
 	fdp1_write(fdp1, src_q_data->fmt->fmt, RPF_FORMAT);
+	fdp1_write(fdp1, src_q_data->fmt->swap, RPF_SWAP);
+
 	fdp1_write(fdp1, src_addr.addr[0], RPF1_ADDR_Y);
 	fdp1_write(fdp1, src_addr.addr[1], RPF1_ADDR_C0);
 	fdp1_write(fdp1, src_addr.addr[2], RPF1_ADDR_C1);
@@ -950,6 +953,10 @@ static int device_process(struct fdp1_ctx *ctx,
 	format |= ctx->alpha << WPF_FORMAT_PDV_SHIFT;
 
 	fdp1_write(fdp1, format, WPF_FORMAT);
+	/* WPF Swap needs both ISWAP and OSWAP setting */
+	swap = dst_q_data->fmt->swap;
+	swap |= src_q_data->fmt->swap << WPF_SWAP_SSWAP_SHIFT;
+	fdp1_write(fdp1, swap, WPF_SWAP);
 
 	if (format & WPF_FORMAT_CSC)
 		dprintk(fdp1, "Output is RGB - CSC Enabled\n");
