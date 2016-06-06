@@ -1237,7 +1237,7 @@ static int __fdp1_try_fmt(struct fdp1_ctx *ctx, const struct fdp1_fmt **fmtinfo,
 	 * the datasheet, strides not aligned to a multiple of 128 bytes result
 	 * in image corruption.
 	 */
-	for (i = 0; i < min(fmt->num_planes, 2U); ++i) {
+	for (i = 0; i < min_t(unsigned int, fmt->num_planes, 2U); ++i) {
 		unsigned int hsub = i > 0 ? fmt->hsub : 1;
 		unsigned int vsub = i > 0 ? fmt->vsub : 1;
 		unsigned int align = 128; /* From VSP : TODO: Confirm for FDP1 */
