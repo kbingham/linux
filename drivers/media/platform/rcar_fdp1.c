@@ -134,6 +134,10 @@ MODULE_PARM_DESC(debug, "activate debug info");
 /* RPF */
 #define RPF_SIZE		0x0060
 #define RPF_FORMAT		0x0064
+#define RPF_FORMAT_RSPYCS	BIT(13)
+#define RPF_FORMAT_RSPUVS	BIT(12)
+#define RPF_FORMAT_CF		BIT(8)
+
 #define RPF_PSTRIDE		0x0068
 #define RPF_PSTRIDE_Y_SHIFT	16
 #define RPF_PSTRIDE_C_SHIFT	0
@@ -297,6 +301,8 @@ struct fdp1_fmt {
 	u8	hsub;
 	u8	vsub;
 	u32	fmt;
+	bool	swap_yc;
+	bool	swap_uv;
 	u8	swap;
 	u8	types;
 };
@@ -304,99 +310,98 @@ struct fdp1_fmt {
 static const struct fdp1_fmt formats[] = {
 	/* RGB formats are only supported by the Write Pixel Formatter */
 
-	{ V4L2_PIX_FMT_RGB332, { 8, 0, 0}, 1, 1, 1, 0x00,
+	{ V4L2_PIX_FMT_RGB332, { 8, 0, 0}, 1, 1, 1, 0x00, false, false,
 	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
 	  FDP1_CAPTURE },
 
-	{ V4L2_PIX_FMT_XRGB444, { 16, 0, 0}, 1, 1, 1, 0x01,
+	{ V4L2_PIX_FMT_XRGB444, { 16, 0, 0}, 1, 1, 1, 0x01, false, false,
 	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD,
 	  FDP1_CAPTURE },
 
-	{ V4L2_PIX_FMT_XRGB555, { 16, 0, 0}, 1, 1, 1, 0x04,
+	{ V4L2_PIX_FMT_XRGB555, { 16, 0, 0}, 1, 1, 1, 0x04, false, false,
 	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD,
 	  FDP1_CAPTURE },
 
-	{ V4L2_PIX_FMT_RGB565, { 16, 0, 0}, 1, 1, 1, 0x06,
+	{ V4L2_PIX_FMT_RGB565, { 16, 0, 0}, 1, 1, 1, 0x06, false, false,
 	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD,
 	  FDP1_CAPTURE },
 
-	{ V4L2_PIX_FMT_ABGR32, { 32, 0, 0}, 1, 1, 1, 0x13,
+	{ V4L2_PIX_FMT_ABGR32, { 32, 0, 0}, 1, 1, 1, 0x13, false, false,
 	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD,
 	  FDP1_CAPTURE }, /* Has alpha */
-	{ V4L2_PIX_FMT_XBGR32, { 32, 0, 0}, 1, 1, 1, 0x13,
+	{ V4L2_PIX_FMT_XBGR32, { 32, 0, 0}, 1, 1, 1, 0x13, false, false,
 	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD,
 	  FDP1_CAPTURE },
-	{ V4L2_PIX_FMT_ARGB32, { 32, 0, 0}, 1, 1, 1, 0x13,
+	{ V4L2_PIX_FMT_ARGB32, { 32, 0, 0}, 1, 1, 1, 0x13, false, false,
 	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
 	  FDP1_CAPTURE },
-	{ V4L2_PIX_FMT_XRGB32, { 32, 0, 0}, 1, 1, 1, 0x13,
-	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
-	  FDP1_CAPTURE },
-
-	{ V4L2_PIX_FMT_RGB24, { 24, 0, 0}, 1, 1, 1, 0x15,
+	{ V4L2_PIX_FMT_XRGB32, { 32, 0, 0}, 1, 1, 1, 0x13, false, false,
 	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
 	  FDP1_CAPTURE },
 
-	{ V4L2_PIX_FMT_BGR24, { 24, 0, 0}, 1, 1, 1, 0x18,
+	{ V4L2_PIX_FMT_RGB24, { 24, 0, 0}, 1, 1, 1, 0x15, false, false,
 	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
 	  FDP1_CAPTURE },
 
-	{ V4L2_PIX_FMT_ARGB444, { 16, 0, 0}, 1, 1, 1, 0x19,
+	{ V4L2_PIX_FMT_BGR24, { 24, 0, 0}, 1, 1, 1, 0x18, false, false,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
+	  FDP1_CAPTURE },
+
+	{ V4L2_PIX_FMT_ARGB444, { 16, 0, 0}, 1, 1, 1, 0x19, false, false,
 	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD,
 	  FDP1_CAPTURE },
 
-	{ V4L2_PIX_FMT_ARGB555, { 16, 0, 0}, 1, 1, 1, 0x1b,
+	{ V4L2_PIX_FMT_ARGB555, { 16, 0, 0}, 1, 1, 1, 0x1b, false, false,
 	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD,
 	  FDP1_CAPTURE },
 
 	/* YUV Formats are supported by Read and Write Pixel Formatters */
 
-	{ V4L2_PIX_FMT_NV16M, { 8, 16, 0}, 2, 2, 1, 0x41,
+	{ V4L2_PIX_FMT_NV16M, { 8, 16, 0}, 2, 2, 1, 0x41, false, false,
 	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
 	  FDP1_CAPTURE | FDP1_OUTPUT },
-	{ V4L2_PIX_FMT_NV61M, { 8, 16, 0}, 2, 2, 1, 0x41 | WPF_FORMAT_WSPUVS,
-	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
-	  FDP1_CAPTURE | FDP1_OUTPUT },
-
-	{ V4L2_PIX_FMT_NV12M, { 8, 16, 0}, 2, 2, 2, 0x42,
-	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
-	  FDP1_CAPTURE | FDP1_OUTPUT },
-	{ V4L2_PIX_FMT_NV21M, { 8, 16, 0}, 2, 2, 2, 0x42 | WPF_FORMAT_WSPUVS,
+	{ V4L2_PIX_FMT_NV61M, { 8, 16, 0}, 2, 2, 1, 0x41 , false, true,
 	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
 	  FDP1_CAPTURE | FDP1_OUTPUT },
 
-	{ V4L2_PIX_FMT_UYVY, { 16, 0, 0}, 1, 2, 1, 0x47,
+	{ V4L2_PIX_FMT_NV12M, { 8, 16, 0}, 2, 2, 2, 0x42, false, false,
 	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
 	  FDP1_CAPTURE | FDP1_OUTPUT },
-	{ V4L2_PIX_FMT_VYUY, { 16, 0, 0}, 1, 2, 1, 0x47 | WPF_FORMAT_WSPUVS,
-	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
-	  FDP1_CAPTURE | FDP1_OUTPUT },
-	{ V4L2_PIX_FMT_UYVY, { 16, 0, 0}, 1, 2, 1, 0x47 | WPF_FORMAT_WSPYCS,
-	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
-	  FDP1_CAPTURE | FDP1_OUTPUT },
-	{ V4L2_PIX_FMT_UYVY, { 16, 0, 0}, 1, 2, 1,
-	  0x47 | WPF_FORMAT_WSPYCS | WPF_FORMAT_WSPUVS,
+	{ V4L2_PIX_FMT_NV21M, { 8, 16, 0}, 2, 2, 2, 0x42, false, true,
 	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
 	  FDP1_CAPTURE | FDP1_OUTPUT },
 
-	{ V4L2_PIX_FMT_YUV444M, { 8, 8, 8}, 3, 1, 1, 0x4a,
+	{ V4L2_PIX_FMT_UYVY, { 16, 0, 0}, 1, 2, 1, 0x47, false, false,
 	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
 	  FDP1_CAPTURE | FDP1_OUTPUT },
-	{ V4L2_PIX_FMT_YVU444M, { 8, 8, 8}, 3, 1, 1, 0x4a | WPF_FORMAT_WSPUVS,
+	{ V4L2_PIX_FMT_VYUY, { 16, 0, 0}, 1, 2, 1, 0x47, false, true,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
+	  FDP1_CAPTURE | FDP1_OUTPUT },
+	{ V4L2_PIX_FMT_UYVY, { 16, 0, 0}, 1, 2, 1, 0x47, true, false,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
+	  FDP1_CAPTURE | FDP1_OUTPUT },
+	{ V4L2_PIX_FMT_UYVY, { 16, 0, 0}, 1, 2, 1, 0x47, true, true,
 	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
 	  FDP1_CAPTURE | FDP1_OUTPUT },
 
-	{ V4L2_PIX_FMT_YUV422M, { 8, 8, 8}, 3, 2, 1, 0x4b,
+	{ V4L2_PIX_FMT_YUV444M, { 8, 8, 8}, 3, 1, 1, 0x4a, false, false,
 	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
 	  FDP1_CAPTURE | FDP1_OUTPUT },
-	{ V4L2_PIX_FMT_YUV422M, { 8, 8, 8}, 3, 2, 1, 0x4b | WPF_FORMAT_WSPUVS,
+	{ V4L2_PIX_FMT_YVU444M, { 8, 8, 8}, 3, 1, 1, 0x4a, false, true,
 	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
 	  FDP1_CAPTURE | FDP1_OUTPUT },
 
-	{ V4L2_PIX_FMT_YUV420M, { 8, 8, 8}, 3, 2, 2, 0x4c,
+	{ V4L2_PIX_FMT_YUV422M, { 8, 8, 8}, 3, 2, 1, 0x4b, false, false,
 	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
 	  FDP1_CAPTURE | FDP1_OUTPUT },
-	{ V4L2_PIX_FMT_YVU420M, { 8, 8, 8}, 3, 2, 2, 0x4c | WPF_FORMAT_WSPUVS,
+	{ V4L2_PIX_FMT_YVU422M, { 8, 8, 8}, 3, 2, 1, 0x4b, false, true,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
+	  FDP1_CAPTURE | FDP1_OUTPUT },
+
+	{ V4L2_PIX_FMT_YUV420M, { 8, 8, 8}, 3, 2, 2, 0x4c, false, false,
+	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
+	  FDP1_CAPTURE | FDP1_OUTPUT },
+	{ V4L2_PIX_FMT_YVU420M, { 8, 8, 8}, 3, 2, 2, 0x4c, false, true,
 	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
 	  FDP1_CAPTURE | FDP1_OUTPUT },
 };
@@ -930,7 +935,19 @@ static int device_process(struct fdp1_ctx *ctx,
 
 	fdp1_write(fdp1, pstride, RPF_PSTRIDE );
 
-	fdp1_write(fdp1, src_q_data->fmt->fmt, RPF_FORMAT);
+	format = src_q_data->fmt->fmt;
+	if (src_q_data->fmt->swap_yc)
+		format |= RPF_FORMAT_RSPYCS;
+
+	if (src_q_data->fmt->swap_uv)
+		format |= RPF_FORMAT_RSPUVS;
+
+	// TODO: Device Process needs to be run multiple times per buffer
+	// when fields are in one buffer, and this will need to alternate!
+	if (V4L2_FIELD_HAS_BOTTOM(src_buf->field))
+		format |= RPF_FORMAT_CF; /* Set for Bottom field */
+
+	fdp1_write(fdp1, format, RPF_FORMAT);
 	fdp1_write(fdp1, src_q_data->fmt->swap, RPF_SWAP);
 
 	fdp1_write(fdp1, src_addr.addr[0], RPF1_ADDR_Y);
@@ -949,8 +966,20 @@ static int device_process(struct fdp1_ctx *ctx,
 	fdp1_write(fdp1, pstride, WPF_PSTRIDE );
 
 	format = dst_q_data->fmt->fmt; /* Output Format Code */
-	if (dst_q_data->fmt->fmt <= 0x1B) /* Last RGB fmt code */
-		format |= WPF_FORMAT_CSC; /* Enable Colour Space conversion */
+
+	if (dst_q_data->fmt->swap_yc)
+		format |= WPF_FORMAT_WSPYCS;
+
+	if (dst_q_data->fmt->swap_uv)
+		format |= WPF_FORMAT_WSPUVS;
+
+	if (dst_q_data->fmt->fmt <= 0x1B) { /* Last RGB fmt code */
+		/* Enable Colour Space conversion */
+		format |= WPF_FORMAT_CSC;
+
+		/* Set Dithering */
+		/* Set WRTM */
+	}
 
 	/* Set an alpha value into the Pad Value */
 	format |= ctx->alpha << WPF_FORMAT_PDV_SHIFT;
