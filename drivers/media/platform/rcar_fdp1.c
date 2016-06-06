@@ -1196,6 +1196,24 @@ static int __fdp1_try_fmt(struct fdp1_ctx *ctx, const struct fdp1_fmt **fmtinfo,
 	unsigned int fmt_type;
 	unsigned int i;
 
+	static const u32 xrgb_formats[][2] = {
+		{ V4L2_PIX_FMT_RGB444, V4L2_PIX_FMT_XRGB444 },
+		{ V4L2_PIX_FMT_RGB555, V4L2_PIX_FMT_XRGB555 },
+		{ V4L2_PIX_FMT_BGR32, V4L2_PIX_FMT_XBGR32 },
+		{ V4L2_PIX_FMT_RGB32, V4L2_PIX_FMT_XRGB32 },
+	};
+
+	/* Backward compatibility: replace deprecated RGB formats by their XRGB
+	 * equivalent. This selects the format older userspace applications want
+	 * while still exposing the new format.
+	 */
+	for (i = 0; i < ARRAY_SIZE(xrgb_formats); ++i) {
+		if (xrgb_formats[i][0] == pix->pixelformat) {
+			pix->pixelformat = xrgb_formats[i][1];
+			break;
+		}
+	}
+
 	fmt_type = V4L2_TYPE_IS_OUTPUT(type) ? FDP1_OUTPUT : FDP1_CAPTURE;
 
 	fmt = fdp1_find_format(pix->pixelformat, fmt_type);
