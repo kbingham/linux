@@ -687,6 +687,9 @@ static inline struct fdp1_ctx *fh_to_ctx(struct v4l2_fh *fh)
 static struct fdp1_q_data *get_q_data(struct fdp1_ctx *ctx,
 					 enum v4l2_buf_type type)
 {
+	/* We only support MPLANE types in this driver */
+	BUG_ON(!(V4L2_TYPE_IS_MULTIPLANAR(type)));
+
 	if (V4L2_TYPE_IS_OUTPUT(type))
 		return &ctx->out_q;
 	else
