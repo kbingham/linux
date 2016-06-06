@@ -1253,7 +1253,6 @@ static int __fdp1_try_fmt(struct fdp1_ctx *ctx, const struct fdp1_fmt **fmtinfo,
 
 		memset(pix->plane_fmt[i].reserved, 0,
 				sizeof(pix->plane_fmt[i].reserved));
-
 	}
 
 	if (fmt->num_planes == 3) {
