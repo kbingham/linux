@@ -1418,6 +1418,20 @@ static int fdp1_buf_prepare(struct vb2_buffer *vb)
 		}
 	}
 
+	/* Configure limitations for our Input buffers */
+	if (V4L2_TYPE_IS_OUTPUT(vb->vb2_queue->type)) {
+		/* Default to Progressive if ANY selected */
+		if (vbuf->field == V4L2_FIELD_ANY)
+			vbuf->field = V4L2_FIELD_NONE;
+
+		/* If we are not Progressive, or Interleaved, set interleaved */
+		// TODO: Are we allowed to change
+		//       field type on buf_prepare if not ANY?
+		if ( !(vbuf->field == V4L2_FIELD_NONE ||
+		      V4L2_FIELD_HAS_BOTH(vbuf->field) ) )
+			vbuf->field = V4L2_FIELD_INTERLACED;
+	}
+
 	for (i = 0; i < q_data->format.num_planes; i++) {
 		unsigned long size = q_data->format.plane_fmt[i].sizeimage;
 
