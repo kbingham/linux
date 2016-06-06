@@ -1218,12 +1218,19 @@ static int __fdp1_try_fmt(struct fdp1_ctx *ctx, const struct fdp1_fmt **fmtinfo,
 		pix->plane_fmt[i].bytesperline = round_up(bpl, align);
 		pix->plane_fmt[i].sizeimage = pix->plane_fmt[i].bytesperline
 					    * pix->height / vsub;
+
+		memset(pix->plane_fmt[i].reserved, 0,
+				sizeof(pix->plane_fmt[i].reserved));
+
 	}
 
 	if (fmt->num_planes == 3) {
 		/* The second and third planes must have the same stride. */
 		pix->plane_fmt[2].bytesperline = pix->plane_fmt[1].bytesperline;
 		pix->plane_fmt[2].sizeimage = pix->plane_fmt[1].sizeimage;
+
+		memset(pix->plane_fmt[2].reserved, 0,
+				sizeof(pix->plane_fmt[2].reserved));
 	}
 
 	pix->num_planes = fmt->num_planes;
