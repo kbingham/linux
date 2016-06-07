@@ -810,6 +810,109 @@ static void fdp1_set_lut(struct fdp1_dev *fdp1)
 	fdp1_write_lut(fdp1, fdp1_mdet,		LUT_MDET);
 }
 
+static void fdp1_configure_rpf(struct fdp1_ctx *ctx,
+			       struct fdp1_q_data * q_data,
+			       struct vb2_v4l2_buffer *src_buf)
+{
+	struct fdp1_dev *fdp1 = ctx->fdp1;
+
+	unsigned int picture_size;
+	unsigned int pstride;
+	unsigned int format;
+
+	struct fdp1_plane_addrs rpf_addr;
+	rpf_addr = vb2_dc_to_pa(src_buf, q_data->fmt->num_planes);
+
+	/* Picture size is common to Source AND Destination frames */
+	picture_size = ((q_data->format.width & GENMASK(12,0)) << 16);
+	picture_size |= (q_data->format.height & GENMASK(12,0));
+
+	/* Strides */
+	pstride = q_data->format.plane_fmt[0].bytesperline
+			<< RPF_PSTRIDE_Y_SHIFT;
+
+	if (q_data->format.num_planes > 1)
+		pstride |= q_data->format.plane_fmt[1].bytesperline
+			<< RPF_PSTRIDE_C_SHIFT;
+
+	/* Format control */
+	format = q_data->fmt->fmt;
+	if (q_data->fmt->swap_yc)
+		format |= RPF_FORMAT_RSPYCS;
+
+	if (q_data->fmt->swap_uv)
+		format |= RPF_FORMAT_RSPUVS;
+
+	// TODO: Device Process needs to be run multiple times per buffer
+	// when fields are in one buffer, and this will need to alternate!
+	if (V4L2_FIELD_HAS_BOTTOM(src_buf->field))
+		format |= RPF_FORMAT_CF; /* Set for Bottom field */
+
+	fdp1_write(fdp1, format, RPF_FORMAT);
+	fdp1_write(fdp1, q_data->fmt->swap, RPF_SWAP);
+	fdp1_write(fdp1, picture_size, RPF_SIZE);
+	fdp1_write(fdp1, pstride, RPF_PSTRIDE );
+
+	fdp1_write(fdp1, rpf_addr.addr[0], RPF1_ADDR_Y);
+	fdp1_write(fdp1, rpf_addr.addr[1], RPF1_ADDR_C0);
+	fdp1_write(fdp1, rpf_addr.addr[2], RPF1_ADDR_C1);
+}
+
+static void fdp1_configure_wpf(struct fdp1_ctx *ctx,
+			       struct fdp1_q_data * q_data,
+			       struct vb2_v4l2_buffer *dst_buf)
+{
+	struct fdp1_dev *fdp1 = ctx->fdp1;
+	/* I didn't want to have to reference the queue's directly,
+	 * but WPF uses the SRC queue for SWAP */
+	struct fdp1_q_data *src_q_data = &ctx->out_q;
+
+	unsigned int pstride;
+	unsigned int format;
+	unsigned int swap;
+
+	struct fdp1_plane_addrs wpf_addr;
+	wpf_addr = vb2_dc_to_pa(dst_buf, q_data->fmt->num_planes);
+
+	pstride = q_data->format.plane_fmt[0].bytesperline
+			<< WPF_PSTRIDE_Y_SHIFT;
+
+	if (q_data->format.num_planes > 1)
+		pstride |= q_data->format.plane_fmt[1].bytesperline
+			<< WPF_PSTRIDE_C_SHIFT;
+
+	format = q_data->fmt->fmt; /* Output Format Code */
+
+	if (q_data->fmt->swap_yc)
+		format |= WPF_FORMAT_WSPYCS;
+
+	if (q_data->fmt->swap_uv)
+		format |= WPF_FORMAT_WSPUVS;
+
+	if (q_data->fmt->fmt <= 0x1B) { /* Last RGB fmt code */
+		/* Enable Colour Space conversion */
+		format |= WPF_FORMAT_CSC;
+
+		/* Set Dithering */
+		/* Set WRTM */
+	}
+
+	/* Set an alpha value into the Pad Value */
+	format |= ctx->alpha << WPF_FORMAT_PDV_SHIFT;
+
+	/* WPF Swap needs both ISWAP and OSWAP setting */
+	swap = q_data->fmt->swap;
+	swap |= src_q_data->fmt->swap << WPF_SWAP_SSWAP_SHIFT;
+
+	fdp1_write(fdp1, format, WPF_FORMAT);
+	fdp1_write(fdp1, swap, WPF_SWAP);
+	fdp1_write(fdp1, pstride, WPF_PSTRIDE );
+
+	fdp1_write(fdp1, wpf_addr.addr[0], WPF_ADDR_Y);
+	fdp1_write(fdp1, wpf_addr.addr[1], WPF_ADDR_C0);
+	fdp1_write(fdp1, wpf_addr.addr[2], WPF_ADDR_C1);
+}
+
 static int device_process(struct fdp1_ctx *ctx,
 			  struct vb2_v4l2_buffer *src_buf,
 			  struct vb2_v4l2_buffer *dst_buf)
@@ -818,18 +921,8 @@ static int device_process(struct fdp1_ctx *ctx,
 	struct fdp1_q_data *src_q_data = &ctx->out_q;
 	struct fdp1_q_data *dst_q_data = &ctx->cap_q;
 
-	struct fdp1_plane_addrs src_addr;
-	struct fdp1_plane_addrs dst_addr;
-
 	unsigned int opmode, ipcmode;
 	unsigned int channels;
-	unsigned int picture_size, pstride;
-	unsigned int format;
-	unsigned int swap;
-
-	/* Obtain physical addresses for the HW */
-	src_addr = vb2_dc_to_pa(src_buf, src_q_data->fmt->num_planes);
-	dst_addr = vb2_dc_to_pa(dst_buf, dst_q_data->fmt->num_planes);
 
 	src_buf->sequence = src_q_data->sequence++;
 	dst_buf->sequence = dst_q_data->sequence++;
@@ -847,21 +940,6 @@ static int device_process(struct fdp1_ctx *ctx,
 		 V4L2_BUF_FLAG_TSTAMP_SRC_MASK);
 
 	dprintk(fdp1, "\n\n");
-
-	/* Debug the world ... Lets see what we have going through */
-	dprintk(fdp1, "SRC[%d]: 0x%08llx 0x%08llx 0x%08llx (%dx%d, 0x%x)\n",
-			src_buf->vb2_buf.index,
-			src_addr.addr[0], src_addr.addr[1], src_addr.addr[2],
-			src_q_data->format.width, src_q_data->format.height,
-			src_q_data->fmt->fmt);
-	dprintk(fdp1, "DST[%d]: 0x%08llx 0x%08llx 0x%08llx (%dx%d, 0x%x)\n",
-			dst_buf->vb2_buf.index,
-			dst_addr.addr[0], dst_addr.addr[1], dst_addr.addr[2],
-			dst_q_data->format.width, dst_q_data->format.height,
-			dst_q_data->fmt->fmt);
-
-
-	/* Non-immediate registers */
 
 	/* First Frame only? ... */
 	fdp1_write(fdp1, CTL_CLKCTRL_CSTP_N, CTL_CLKCTRL);
@@ -899,93 +977,17 @@ static int device_process(struct fdp1_ctx *ctx,
 	/* Sensor Configuration */
 	fdp1_set_ipc_sensor(ctx);
 
-	/* Enable All Interrupts */
-	fdp1_write(fdp1, CTL_IRQ_MASK, CTL_IRQENB);
-	dprintk(fdp1, "CycleStatus = %d\n", fdp1_read(fdp1, CTL_VCYCLE_STATUS));
-
 	/* Setup the source picture */
+	fdp1_configure_rpf(ctx, src_q_data, src_buf);
 
-	/* Picture size is common to Source AND Destination frames */
-	picture_size = ((src_q_data->format.width & GENMASK(12,0)) << 16);
-	picture_size |= (src_q_data->format.height & GENMASK(12,0));
-	dprintk(fdp1, "RPF_SIZE: 0x%08x\n", picture_size);
-	fdp1_write(fdp1, picture_size, RPF_SIZE);
-
-
-	/* Strides */
-	pstride = src_q_data->format.plane_fmt[0].bytesperline
-			<< RPF_PSTRIDE_Y_SHIFT;
-
-	if (src_q_data->format.num_planes > 1)
-		pstride |= src_q_data->format.plane_fmt[1].bytesperline
-			<< RPF_PSTRIDE_C_SHIFT;
-
-	fdp1_write(fdp1, pstride, RPF_PSTRIDE );
-
-	format = src_q_data->fmt->fmt;
-	if (src_q_data->fmt->swap_yc)
-		format |= RPF_FORMAT_RSPYCS;
-
-	if (src_q_data->fmt->swap_uv)
-		format |= RPF_FORMAT_RSPUVS;
-
-	// TODO: Device Process needs to be run multiple times per buffer
-	// when fields are in one buffer, and this will need to alternate!
-	if (V4L2_FIELD_HAS_BOTTOM(src_buf->field))
-		format |= RPF_FORMAT_CF; /* Set for Bottom field */
-
-	fdp1_write(fdp1, format, RPF_FORMAT);
-	fdp1_write(fdp1, src_q_data->fmt->swap, RPF_SWAP);
-
-	fdp1_write(fdp1, src_addr.addr[0], RPF1_ADDR_Y);
-	fdp1_write(fdp1, src_addr.addr[1], RPF1_ADDR_C0);
-	fdp1_write(fdp1, src_addr.addr[2], RPF1_ADDR_C1);
-
-	/* Setup the Dest Picture */
-
-	pstride = dst_q_data->format.plane_fmt[0].bytesperline
-			<< WPF_PSTRIDE_Y_SHIFT;
-
-	if (dst_q_data->format.num_planes > 1)
-		pstride |= dst_q_data->format.plane_fmt[1].bytesperline
-			<< WPF_PSTRIDE_C_SHIFT;
-
-	fdp1_write(fdp1, pstride, WPF_PSTRIDE );
-
-	format = dst_q_data->fmt->fmt; /* Output Format Code */
-
-	if (dst_q_data->fmt->swap_yc)
-		format |= WPF_FORMAT_WSPYCS;
-
-	if (dst_q_data->fmt->swap_uv)
-		format |= WPF_FORMAT_WSPUVS;
-
-	if (dst_q_data->fmt->fmt <= 0x1B) { /* Last RGB fmt code */
-		/* Enable Colour Space conversion */
-		format |= WPF_FORMAT_CSC;
-
-		/* Set Dithering */
-		/* Set WRTM */
-	}
-
-	/* Set an alpha value into the Pad Value */
-	format |= ctx->alpha << WPF_FORMAT_PDV_SHIFT;
-
-	fdp1_write(fdp1, format, WPF_FORMAT);
-	/* WPF Swap needs both ISWAP and OSWAP setting */
-	swap = dst_q_data->fmt->swap;
-	swap |= src_q_data->fmt->swap << WPF_SWAP_SSWAP_SHIFT;
-	fdp1_write(fdp1, swap, WPF_SWAP);
-
-	if (format & WPF_FORMAT_CSC)
-		dprintk(fdp1, "Output is RGB - CSC Enabled\n");
-
-	fdp1_write(fdp1, dst_addr.addr[0], WPF_ADDR_Y);
-	fdp1_write(fdp1, dst_addr.addr[1], WPF_ADDR_C0);
-	fdp1_write(fdp1, dst_addr.addr[2], WPF_ADDR_C1);
+	/* Setup the destination picture */
+	fdp1_configure_wpf(ctx, dst_q_data, dst_buf);
 
 	/* Line Memory Pixel Number Register for linear access */
 	fdp1_write(fdp1, 1024, IPC_LMEM);
+
+	/* Enable All Interrupts */
+	fdp1_write(fdp1, CTL_IRQ_MASK, CTL_IRQENB);
 
 	/* Finally, the Immediate Registers */
 
