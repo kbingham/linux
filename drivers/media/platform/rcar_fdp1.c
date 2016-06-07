@@ -947,7 +947,7 @@ static int device_process(struct fdp1_ctx *ctx,
 			<< WPF_PSTRIDE_Y_SHIFT;
 
 	if (dst_q_data->format.num_planes > 1)
-		pstride |= src_q_data->format.plane_fmt[1].bytesperline
+		pstride |= dst_q_data->format.plane_fmt[1].bytesperline
 			<< WPF_PSTRIDE_C_SHIFT;
 
 	fdp1_write(fdp1, pstride, WPF_PSTRIDE );
