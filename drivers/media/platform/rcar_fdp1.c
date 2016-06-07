@@ -1235,6 +1235,11 @@ static int __fdp1_try_fmt(struct fdp1_ctx *ctx, const struct fdp1_fmt **fmtinfo,
 	/* We should be allowing FIELDS through on the Output queue !*/
 	if (V4L2_TYPE_IS_OUTPUT(type)) {
 		/* Clamp to allowable field types */
+		if (pix->field == V4L2_FIELD_ANY || pix->field == V4L2_FIELD_NONE)
+			pix->field = V4L2_FIELD_NONE;
+		else if (!V4L2_FIELD_HAS_BOTH(pix->field))
+			pix->field = V4L2_FIELD_INTERLACED;
+
 		dprintk(ctx->fdp1, "Output Field Type set as %d\n", pix->field);
 	} else
 		pix->field = V4L2_FIELD_NONE;
@@ -1452,6 +1457,10 @@ static int fdp1_buf_prepare(struct vb2_buffer *vb)
 
 	q_data = get_q_data(ctx, vb->vb2_queue->type);
 
+	/* Default to Progressive if ANY selected */
+	if (vbuf->field == V4L2_FIELD_ANY)
+		vbuf->field = V4L2_FIELD_NONE;
+
 	/* We only support progressive CAPTURE */
 	if (!V4L2_TYPE_IS_OUTPUT(vb->vb2_queue->type)) {
 		if (vbuf->field == V4L2_FIELD_ANY)
@@ -1466,10 +1475,6 @@ static int fdp1_buf_prepare(struct vb2_buffer *vb)
 
 	/* Configure limitations for our Input buffers */
 	if (V4L2_TYPE_IS_OUTPUT(vb->vb2_queue->type)) {
-		/* Default to Progressive if ANY selected */
-		if (vbuf->field == V4L2_FIELD_ANY)
-			vbuf->field = V4L2_FIELD_NONE;
-
 		/* If we are not Progressive, or Interleaved, set interleaved */
 		// TODO: Are we allowed to change
 		//       field type on buf_prepare if not ANY?
