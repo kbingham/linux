@@ -1,13 +1,13 @@
 /*
  * Renesas RCar Fine Display Processor
  *
- * ...
+ * Video format converter and frame deinterlacer device.
  *
  * Author: Kieran Bingham, <kieran@bingham.xyz>
  * Copyright (c) 2016 Renesas Electronics Corporation.
  *
  * This code is developed and inspired from the vim2m, rcar_jpu,
- * and m2m-deinterlace drivers.
+ * m2m-deinterlace, and vsp1 drivers.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by the
