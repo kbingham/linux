@@ -377,10 +377,10 @@ static const struct fdp1_fmt formats[] = {
 	{ V4L2_PIX_FMT_VYUY, { 16, 0, 0}, 1, 2, 1, 0x47, false, true,
 	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
 	  FDP1_CAPTURE | FDP1_OUTPUT },
-	{ V4L2_PIX_FMT_UYVY, { 16, 0, 0}, 1, 2, 1, 0x47, true, false,
+	{ V4L2_PIX_FMT_YUYV, { 16, 0, 0}, 1, 2, 1, 0x47, true, false,
 	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
 	  FDP1_CAPTURE | FDP1_OUTPUT },
-	{ V4L2_PIX_FMT_UYVY, { 16, 0, 0}, 1, 2, 1, 0x47, true, true,
+	{ V4L2_PIX_FMT_YVYU, { 16, 0, 0}, 1, 2, 1, 0x47, true, true,
 	  RWPF_SWAP_LLWD | RWPF_SWAP_LWRD | RWPF_SWAP_WORD | RWPF_SWAP_BYTE,
 	  FDP1_CAPTURE | FDP1_OUTPUT },
 
