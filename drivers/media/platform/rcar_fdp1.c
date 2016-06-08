@@ -980,7 +980,8 @@ static int device_process(struct fdp1_ctx *ctx,
 	{
 		/* De-interlacing */
 		channels |= (CTL_CHACT_WR | CTL_CHACT_RD1);
-		/* ... */
+		/* ... A Work In Progress for the next version ... */
+		WARN_ON(1);
 	}
 
 	fdp1_write(fdp1, channels,	CTL_CHACT);
