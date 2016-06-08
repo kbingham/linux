@@ -1500,24 +1500,12 @@ static int fdp1_buf_prepare(struct vb2_buffer *vb)
 
 	/* We only support progressive CAPTURE */
 	if (!V4L2_TYPE_IS_OUTPUT(vb->vb2_queue->type)) {
-		if (vbuf->field == V4L2_FIELD_ANY)
-			vbuf->field = V4L2_FIELD_NONE;
 		if (vbuf->field != V4L2_FIELD_NONE) {
-			dprintk(ctx->fdp1,
+			dev_err(ctx->fdp1->dev,
 				"%s field isn't supported on capture\n",
 				__func__);
 			return -EINVAL;
 		}
-	}
-
-	/* Configure limitations for our Input buffers */
-	if (V4L2_TYPE_IS_OUTPUT(vb->vb2_queue->type)) {
-		/* If we are not Progressive, or Interleaved, set interleaved */
-		// TODO: Are we allowed to change
-		//       field type on buf_prepare if not ANY?
-		if ( !(vbuf->field == V4L2_FIELD_NONE ||
-		      V4L2_FIELD_HAS_BOTH(vbuf->field) ) )
-			vbuf->field = V4L2_FIELD_INTERLACED;
 	}
 
 	for (i = 0; i < q_data->format.num_planes; i++) {
