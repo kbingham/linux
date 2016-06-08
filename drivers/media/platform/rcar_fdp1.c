@@ -2037,7 +2037,9 @@ static int fdp1_pm_runtime_resume(struct device *dev)
 }
 
 static const struct dev_pm_ops fdp1_pm_ops = {
-	SET_RUNTIME_PM_OPS(fdp1_pm_runtime_suspend, fdp1_pm_runtime_resume, NULL)
+	SET_RUNTIME_PM_OPS(fdp1_pm_runtime_suspend,
+			   fdp1_pm_runtime_resume,
+			   NULL)
 };
 
 static const struct of_device_id fdp1_dt_ids[] = {
