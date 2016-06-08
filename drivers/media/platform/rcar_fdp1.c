@@ -1907,9 +1907,6 @@ static int fdp1_probe(struct platform_device *pdev)
 	/* Bring the device up ready for reading registers */
 	pm_runtime_enable(&pdev->dev);
 
-	/* Power up the cells for the probe function */
-	fdp1_get(fdp1);
-
 #ifndef QEMU_TESTING
 	/* Determine our clock rate */
 	clk = clk_get(&pdev->dev, NULL);
@@ -1926,21 +1923,6 @@ static int fdp1_probe(struct platform_device *pdev)
 
 	dprintk(fdp1, "**********************************\n");
 
-#ifndef QEMU_TESTING
-	hw_version = fdp1_read(fdp1, IP_INTDATA);
-	switch (hw_version) {
-	case IP_H3:
-		dprintk(fdp1, "FDP1 Version R-Car H3\n");
-		break;
-	case IP_M3W:
-		dprintk(fdp1, "FDP1 Version R-Car M3-W\n");
-		break;
-	default:
-		dprintk(fdp1, "FDP1 Version unidentified: 0x%08x\n", hw_version);
-		break;
-	}
-
-#endif
 	ret = v4l2_device_register(&pdev->dev, &fdp1->v4l2_dev);
 	if (ret)
 		return ret;
@@ -1953,6 +1935,22 @@ static int fdp1_probe(struct platform_device *pdev)
 	vfd->lock = &fdp1->dev_mutex;
 	vfd->v4l2_dev = &fdp1->v4l2_dev;
 
+	/* Power up the cells for the probe function */
+	fdp1_get(fdp1);
+
+	hw_version = fdp1_read(fdp1, IP_INTDATA);
+	switch (hw_version) {
+	case IP_H3:
+		dprintk(fdp1, "FDP1 Version R-Car H3\n");
+		break;
+	case IP_M3W:
+		dprintk(fdp1, "FDP1 Version R-Car M3-W\n");
+		break;
+	default:
+		dev_err(fdp1->dev, "FDP1 Unidentifiable (0x%08x)\n",
+				hw_version);
+		goto unreg_dev;
+	}
 
 	/* Memory allocation contexts */
 	fdp1->alloc_ctx = vb2_dma_contig_init_ctx(&pdev->dev);
@@ -2007,6 +2005,7 @@ vb2_allocator_rollback:
 
 unreg_dev:
 	v4l2_device_unregister(&fdp1->v4l2_dev);
+	fdp1_put(fdp1);
 
 	dprintk(fdp1, ":-( ??????????????????????????????????????\n");
 
