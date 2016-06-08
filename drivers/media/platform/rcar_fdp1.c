@@ -42,7 +42,7 @@
 #define QEMU_TESTING
 #endif
 
-static unsigned debug;
+static unsigned int debug;
 module_param(debug, uint, 0644);
 MODULE_PARM_DESC(debug, "activate debug info");
 
@@ -1095,7 +1095,7 @@ static void device_isr(struct fdp1_dev *fdp1, enum vb2_buffer_state state)
 
 	curr_ctx = v4l2_m2m_get_curr_priv(fdp1->m2m_dev);
 
-	if (NULL == curr_ctx) {
+	if (curr_ctx == NULL) {
 		pr_err("Instance released before the end of transaction\n");
 		return;
 	}
@@ -1528,7 +1528,7 @@ static void fdp1_buf_queue(struct vb2_buffer *vb)
 	v4l2_m2m_buf_queue(ctx->fh.m2m_ctx, vbuf);
 }
 
-static int fdp1_start_streaming(struct vb2_queue *q, unsigned count)
+static int fdp1_start_streaming(struct vb2_queue *q, unsigned int count)
 {
 	struct fdp1_ctx *ctx = vb2_get_drv_priv(q);
 	struct fdp1_q_data *q_data = get_q_data(ctx, q->type);
