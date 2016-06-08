@@ -1593,6 +1593,7 @@ static int queue_init(void *priv, struct vb2_queue *src_vq, struct vb2_queue *ds
 	return vb2_queue_init(dst_vq);
 }
 
+/* This should move to a proper frame-interval setting */
 static const struct v4l2_ctrl_config fdp1_ctrl_fps = {
 	.ops = &fdp1_ctrl_ops,
 	.id = V4L2_CID_FPS,
