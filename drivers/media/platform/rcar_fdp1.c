@@ -1271,7 +1271,7 @@ static int __fdp1_try_fmt(struct fdp1_ctx *ctx, const struct fdp1_fmt **fmtinfo,
 	}
 
 	pix->pixelformat = fmt->fourcc;
-	// TODO: pix->colorspace = fmt->colorspace;
+	/* TODO: pix->colorspace = fmt->colorspace; */
 	pix->colorspace = V4L2_COLORSPACE_SRGB;
 
 	/* We should be allowing FIELDS through on the Output queue !*/
