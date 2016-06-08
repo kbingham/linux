@@ -404,6 +404,11 @@ static const struct fdp1_fmt formats[] = {
 
 #define NUM_FORMATS ARRAY_SIZE(formats)
 
+static int fdp1_fmt_is_rgb(const struct fdp1_fmt * fmt)
+{
+	 return (fmt->fmt <= 0x1B); /* Last RGB code */
+}
+
 /* FDP1 Lookup tables range from 0...255 only */
 typedef unsigned char fdp1_lut;
 
@@ -900,7 +905,7 @@ static void fdp1_configure_wpf(struct fdp1_ctx *ctx,
 	if (q_data->fmt->swap_uv)
 		format |= WPF_FORMAT_WSPUVS;
 
-	if (q_data->fmt->fmt <= 0x1B) { /* Last RGB fmt code */
+	if (fdp1_fmt_is_rgb(q_data->fmt)) {
 		/* Enable Colour Space conversion */
 		format |= WPF_FORMAT_CSC;
 
