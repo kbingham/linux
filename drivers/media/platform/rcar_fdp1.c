@@ -1451,22 +1451,16 @@ static int fdp1_queue_setup(struct vb2_queue *vq,
 			return -EINVAL;
 
 		for (i = 0; i < *nplanes; i++) {
-			unsigned int q_size = q_data->format.plane_fmt[i].sizeimage;
+			unsigned int q_size;
 
-			if (sizes[i] < q_size) {
-				dprintk(ctx->fdp1, "Failed due to sizes[%d] = %d < %d\n",
-						i, sizes[i], q_size);
+			q_size = q_data->format.plane_fmt[i].sizeimage;
+
+			if (sizes[i] < q_size)
 				return -EINVAL;
-			}
 
 			alloc_ctxs[i] = ctx->fdp1->alloc_ctx;
 		}
 
-		dprintk(ctx->fdp1, "get %d buffer(s) of size [%d,%d,%d] each.\n",
-				*nbuffers,
-				sizes[0],
-				*nplanes > 1 ? sizes[1] : 0,
-				*nplanes > 2 ? sizes[2] : 0);
 		return 0;
 	}
 
@@ -1476,12 +1470,6 @@ static int fdp1_queue_setup(struct vb2_queue *vq,
 		sizes[i] = q_data->format.plane_fmt[i].sizeimage;
 		alloc_ctxs[i] = ctx->fdp1->alloc_ctx;
 	}
-
-	dprintk(ctx->fdp1, "get %d buffer(s) of size [%d,%d,%d] each.\n",
-			*nbuffers,
-			sizes[0],
-			*nplanes > 1 ? sizes[1] : 0,
-			*nplanes > 2 ? sizes[2] : 0);
 
 	return 0;
 }
