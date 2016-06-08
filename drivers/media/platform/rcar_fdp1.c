@@ -297,7 +297,10 @@ static struct debugfs_reg32 fdp1_regset[] = {
  * @num_planes: number of planes
  * @hsub: horizontal subsampling factor
  * @vsub: vertical subsampling factor
- * @fmt: 7-bit format code for the fdp1 hardware, with yc/uv swap settings
+ * @fmt: 7-bit format code for the fdp1 hardware
+ * @swap_yc: the Y and C components are swapped (Y comes before C)
+ * @swap_uv: the U and V components are swapped (V comes before U)
+ * @swap: swap register control
  * @types: types of queue this format is applicable to
  */
 struct fdp1_fmt {
@@ -306,7 +309,7 @@ struct fdp1_fmt {
 	u8	num_planes;
 	u8	hsub;
 	u8	vsub;
-	u32	fmt;
+	u8	fmt;
 	bool	swap_yc;
 	bool	swap_uv;
 	u8	swap;
