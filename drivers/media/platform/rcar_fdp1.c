@@ -133,6 +133,10 @@ MODULE_PARM_DESC(debug, "activate debug info");
 
 /* RPF */
 #define RPF_SIZE		0x0060
+#define RPF_SIZE_MASK		GENMASK(12, 0)
+#define RPF_SIZE_H_SHIFT	16
+#define RPF_SIZE_V_SHIFT	0
+
 #define RPF_FORMAT		0x0064
 #define RPF_FORMAT_RSPYCS	BIT(13)
 #define RPF_FORMAT_RSPUVS	BIT(12)
@@ -826,8 +830,10 @@ static void fdp1_configure_rpf(struct fdp1_ctx *ctx,
 	rpf_addr = vb2_dc_to_pa(src_buf, q_data->fmt->num_planes);
 
 	/* Picture size is common to Source AND Destination frames */
-	picture_size = ((q_data->format.width & GENMASK(12,0)) << 16);
-	picture_size |= (q_data->format.height & GENMASK(12,0));
+	picture_size = ((q_data->format.width & RPF_SIZE_MASK)
+			<< RPF_SIZE_H_SHIFT);
+	picture_size |= ((q_data->format.height & RPF_SIZE_MASK)
+			<< RPF_SIZE_V_SHIFT);
 
 	/* Strides */
 	pstride = q_data->format.plane_fmt[0].bytesperline
