@@ -230,10 +230,21 @@ MODULE_PARM_DESC(debug, "activate debug info");
 
 /* Sensor registers */
 #define IPC_SENSOR_TH0		0x0140
+#define IPC_SENSOR_TH0_CONST	0x20208080
+
 #define IPC_SENSOR_CTL0		0x0170
+#define IPC_SENSOR_CTL0_CONST	0x00002201
+
 #define IPC_SENSOR_CTL1		0x0174
+#define IPC_SENSOR_CTL1_CONST	0
+
 #define IPC_SENSOR_CTL2		0x0178
+#define IPC_SENSOR_CTL2_X_SHIFT	16
+#define IPC_SENSOR_CTL2_Y_SHIFT	0
+
 #define IPC_SENSOR_CTL3		0x017C
+#define IPC_SENSOR_CTL3_0_SHIFT	16
+#define IPC_SENSOR_CTL3_1_SHIFT	0
 
 /* Line memory pixel number register */
 #define IPC_LMEM		0x01E0
@@ -804,9 +815,9 @@ static void fdp1_set_ipc_sensor(struct fdp1_ctx *ctx)
 	unsigned int hsize = src_q_data->format.width;
 	unsigned int vsize = src_q_data->format.height;
 
-	fdp1_write(fdp1, 0x20208080, IPC_SENSOR_TH0);
-	fdp1_write(fdp1, (2<<12)|(2<<8)|1, IPC_SENSOR_CTL0); // Tidy me up
-	fdp1_write(fdp1, 0x00, IPC_SENSOR_CTL1);
+	fdp1_write(fdp1, IPC_SENSOR_TH0_CONST,	IPC_SENSOR_TH0);
+	fdp1_write(fdp1, IPC_SENSOR_CTL0_CONST,	IPC_SENSOR_CTL0);
+	fdp1_write(fdp1, IPC_SENSOR_CTL1_CONST, IPC_SENSOR_CTL1);
 
 	if (src_q_data->format.field != V4L2_FIELD_NONE)
 		ye = (vsize * 2) - 1;
@@ -814,12 +825,14 @@ static void fdp1_set_ipc_sensor(struct fdp1_ctx *ctx)
 		ye = vsize - 1;
 
 	xe = src_q_data->format.width - 1;
-	fdp1_write(fdp1, (xe << 16) | ye, IPC_SENSOR_CTL2); // Tidy me up
+	fdp1_write(fdp1, (xe << IPC_SENSOR_CTL2_X_SHIFT) |
+			 (ye << IPC_SENSOR_CTL2_Y_SHIFT), IPC_SENSOR_CTL2);
 
 	x0 = hsize / 3;
 	x1 = 2 * hsize / 3;
 
-	fdp1_write(fdp1, (x0 << 16) | (x1), IPC_SENSOR_CTL3);
+	fdp1_write(fdp1, (x0 << IPC_SENSOR_CTL3_0_SHIFT) |
+			 (x1 << IPC_SENSOR_CTL3_1_SHIFT), IPC_SENSOR_CTL3);
 }
 
 
