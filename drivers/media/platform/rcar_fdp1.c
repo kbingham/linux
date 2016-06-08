@@ -891,8 +891,10 @@ static void fdp1_configure_rpf(struct fdp1_ctx *ctx,
 	if (q_data->fmt->swap_uv)
 		format |= RPF_FORMAT_RSPUVS;
 
-	// TODO: Device Process needs to be run multiple times per buffer
-	// when fields are in one buffer, and this will need to alternate!
+	/*
+	 * TODO: Device Process needs to be run multiple times per buffer
+	 * when fields are in one buffer, and this will need to alternate!
+	 */
 	if (V4L2_FIELD_HAS_BOTTOM(src_buf->field))
 		format |= RPF_FORMAT_CF; /* Set for Bottom field */
 
@@ -1706,7 +1708,7 @@ static int fdp1_open(struct file *file)
 		goto open_unlock;
 	}
 
-	ctx->fh.ctrl_handler = &ctx->hdl; // don't set the handle unless it's registered!
+	ctx->fh.ctrl_handler = &ctx->hdl;
 	v4l2_ctrl_handler_setup(&ctx->hdl);
 
 	/* Configure default parameters. */
@@ -2076,7 +2078,7 @@ static struct platform_driver fdp1_pdrv = {
 	.driver		= {
 		.name	= DRIVER_NAME,
 		.of_match_table = fdp1_dt_ids,
-		//.pm	= &fdp1_pm_ops,
+		/* .pm	= &fdp1_pm_ops, */
 	},
 };
 
