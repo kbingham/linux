@@ -1264,7 +1264,8 @@ static int __fdp1_try_fmt(struct fdp1_ctx *ctx, const struct fdp1_fmt **fmtinfo,
 	/* We should be allowing FIELDS through on the Output queue !*/
 	if (V4L2_TYPE_IS_OUTPUT(type)) {
 		/* Clamp to allowable field types */
-		if (pix->field == V4L2_FIELD_ANY || pix->field == V4L2_FIELD_NONE)
+		if (pix->field == V4L2_FIELD_ANY ||
+		    pix->field == V4L2_FIELD_NONE)
 			pix->field = V4L2_FIELD_NONE;
 		else if (!V4L2_FIELD_HAS_BOTH(pix->field))
 			pix->field = V4L2_FIELD_INTERLACED;
@@ -1292,7 +1293,8 @@ static int __fdp1_try_fmt(struct fdp1_ctx *ctx, const struct fdp1_fmt **fmtinfo,
 	for (i = 0; i < min_t(unsigned int, fmt->num_planes, 2U); ++i) {
 		unsigned int hsub = i > 0 ? fmt->hsub : 1;
 		unsigned int vsub = i > 0 ? fmt->vsub : 1;
-		unsigned int align = 128; /* From VSP : TODO: Confirm for FDP1 */
+		 /* From VSP : TODO: Confirm alignment limits for FDP1 */
+		unsigned int align = 128;
 		unsigned int bpl;
 
 		bpl = clamp_t(unsigned int, pix->plane_fmt[i].bytesperline,
@@ -1574,7 +1576,8 @@ static struct vb2_ops fdp1_qops = {
 	.wait_finish	 = vb2_ops_wait_finish,
 };
 
-static int queue_init(void *priv, struct vb2_queue *src_vq, struct vb2_queue *dst_vq)
+static int queue_init(void *priv, struct vb2_queue *src_vq,
+		      struct vb2_queue *dst_vq)
 {
 	struct fdp1_ctx *ctx = priv;
 	int ret;
@@ -1790,7 +1793,8 @@ static irqreturn_t fdp1_irq_handler(int irq, void *dev_id)
 			int_status & CTL_IRQ_FREE ? "[FrameEnd]" : "[!F]");
 
 	cycles = fdp1_read(fdp1, CTL_VCYCLE_STATUS);
-	dprintk(fdp1, "CycleStatus = %d (%dms)\n", cycles, cycles/(fdp1->clk_rate/1000));
+	dprintk(fdp1, "CycleStatus = %d (%dms)\n",
+		      cycles, cycles/(fdp1->clk_rate/1000));
 
 	scratch = fdp1_read(fdp1, CTL_STATUS);
 	dprintk(fdp1, "Control Status = 0x%08x : VINT_CNT = %d %s:%s:%s:%s\n",
