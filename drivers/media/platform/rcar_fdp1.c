@@ -213,8 +213,10 @@ MODULE_PARM_DESC(debug, "activate debug info");
 #define IPC_SENSOR_CTL2		0x0178
 #define IPC_SENSOR_CTL3		0x017C
 
-/* Line memory pixel number register - Vupdt */
+/* Line memory pixel number register */
 #define IPC_LMEM		0x01E0
+#define IPC_LMEM_LINEAR		1024
+#define IPC_LMEM_TILE		960
 
 /* Internal Data (HW Version) */
 #define IP_INTDATA 		0x0800
@@ -984,7 +986,7 @@ static int device_process(struct fdp1_ctx *ctx,
 	fdp1_configure_wpf(ctx, dst_q_data, dst_buf);
 
 	/* Line Memory Pixel Number Register for linear access */
-	fdp1_write(fdp1, 1024, IPC_LMEM);
+	fdp1_write(fdp1, IPC_LMEM_LINEAR, IPC_LMEM);
 
 	/* Enable All Interrupts */
 	fdp1_write(fdp1, CTL_IRQ_MASK, CTL_IRQENB);
