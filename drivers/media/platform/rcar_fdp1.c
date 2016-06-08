@@ -705,7 +705,8 @@ struct fdp1_ctx {
 	int			fps;
 
 	/* Capture pipeline, can specify an alpha value
-	 * for supported formats. 0-255 only */
+	 * for supported formats. 0-255 only
+	 */
 	unsigned char		alpha;
 
 	/* Source and destination queue data */
@@ -729,14 +730,6 @@ static struct fdp1_q_data *get_q_data(struct fdp1_ctx *ctx,
 		return &ctx->out_q;
 	else
 		return &ctx->cap_q;
-
-	/* TODO: Do we want to restrict buffer types, to say
-	 * V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE
-	 * and
-	 * V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE
-	 * + the non MPLANE variants perhaps?
-	 */
-
 }
 
 static u32 fdp1_read(struct fdp1_dev *fdp1, unsigned int reg)
@@ -914,7 +907,8 @@ static void fdp1_configure_wpf(struct fdp1_ctx *ctx,
 {
 	struct fdp1_dev *fdp1 = ctx->fdp1;
 	/* I didn't want to have to reference the queue's directly,
-	 * but WPF uses the SRC queue for SWAP */
+	 * but WPF uses the SRC queue for SWAP
+	 */
 	struct fdp1_q_data *src_q_data = &ctx->out_q;
 
 	unsigned int pstride;
@@ -1038,17 +1032,14 @@ static int device_process(struct fdp1_ctx *ctx,
 	/* Line Memory Pixel Number Register for linear access */
 	fdp1_write(fdp1, IPC_LMEM_LINEAR, IPC_LMEM);
 
-	/* Enable All Interrupts */
+	/* Enable Interrupts */
 	fdp1_write(fdp1, CTL_IRQ_MASK, CTL_IRQENB);
 
 	/* Finally, the Immediate Registers */
 
 	/* Start the command */
-	 /* set after all relevant registers are surely set except for
-	  * REGEND and SGCMD	  */
 	fdp1_write(fdp1, CTL_CMD_STRCMD, CTL_CMD);
 
-	/* Register End */
 	/* Registers will update to HW at next VINT */
 	fdp1_write(fdp1, CTL_REGEND_REGEND, CTL_REGEND);
 
