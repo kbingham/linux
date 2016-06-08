@@ -201,16 +201,32 @@ MODULE_PARM_DESC(debug, "activate debug info");
 #define IPC_MODE_DIM_NEXTFIELD	4
 
 #define IPC_SMSK_THRESH		0x0104
+#define IPC_SMSK_THRESH_CONST	0x00010002
+
 #define IPC_COMB_DET		0x0108
+#define IPC_COMB_DET_CONST	0x00200040
+
 #define IPC_MOTDEC		0x010C
+#define IPC_MOTDEC_CONST	0x00008020
 
 /* DLI registers */
 #define IPC_DLI_BLEND		0x0120
+#define IPC_DLI_BLEND_CONST	0x0080FF02
+
 #define IPC_DLI_HGAIN		0x0124
+#define IPC_DLI_HGAIN_CONST	0x001000FF
+
 #define IPC_DLI_SPRS		0x0128
+#define IPC_DLI_SPRS_CONST	0x009004FF
+
 #define IPC_DLI_ANGLE		0x012C
+#define IPC_DLI_ANGLE_CONST	0x0004080C
+
 #define IPC_DLI_ISOPIX0		0x0130
+#define IPC_DLI_ISOPIX0_CONST	0xFF10FF10
+
 #define IPC_DLI_ISOPIX1		0x0134
+#define IPC_DLI_ISOPIX1_CONST	0x0000FF10
 
 /* Sensor registers */
 #define IPC_SENSOR_TH0		0x0140
@@ -766,16 +782,16 @@ static void fdp1_set_ipc_dli(struct fdp1_ctx *ctx)
 {
 	struct fdp1_dev *fdp1 = ctx->fdp1;
 
-	fdp1_write(fdp1, 0x00010002, IPC_SMSK_THRESH);
-	fdp1_write(fdp1, 0x00200040, IPC_COMB_DET);
-	fdp1_write(fdp1, 0x00008020, IPC_MOTDEC);
+	fdp1_write(fdp1, IPC_SMSK_THRESH_CONST,	IPC_SMSK_THRESH);
+	fdp1_write(fdp1, IPC_COMB_DET_CONST,	IPC_COMB_DET);
+	fdp1_write(fdp1, IPC_MOTDEC_CONST,	IPC_MOTDEC);
 
-	fdp1_write(fdp1, 0x0080FF02, IPC_DLI_BLEND);
-	fdp1_write(fdp1, 0x001000FF, IPC_DLI_HGAIN);
-	fdp1_write(fdp1, 0x009004FF, IPC_DLI_SPRS);
-	fdp1_write(fdp1, 0x0004080C, IPC_DLI_ANGLE);
-	fdp1_write(fdp1, 0xFF10FF10, IPC_DLI_ISOPIX0);
-	fdp1_write(fdp1, 0x0000FF10, IPC_DLI_ISOPIX1);
+	fdp1_write(fdp1, IPC_DLI_BLEND_CONST,	IPC_DLI_BLEND);
+	fdp1_write(fdp1, IPC_DLI_HGAIN_CONST,	IPC_DLI_HGAIN);
+	fdp1_write(fdp1, IPC_DLI_SPRS_CONST,	IPC_DLI_SPRS);
+	fdp1_write(fdp1, IPC_DLI_ANGLE_CONST,	IPC_DLI_ANGLE);
+	fdp1_write(fdp1, IPC_DLI_ISOPIX0_CONST,	IPC_DLI_ISOPIX0);
+	fdp1_write(fdp1, IPC_DLI_ISOPIX1_CONST,	IPC_DLI_ISOPIX1);
 }
 
 
