@@ -994,8 +994,7 @@ static int device_process(struct fdp1_ctx *ctx,
 	ipcmode = IPC_MODE_DLI | IPC_MODE_DIM_FIXED2D;
 
 	/* Determine Mode, and Rate if requested */
-	if (ctx->fps)
-	{
+	if (ctx->fps) {
 		unsigned int period = fdp1->clk_rate / ctx->fps;
 
 		fdp1_write(fdp1, period, CTL_VPERIOD);
@@ -1005,8 +1004,7 @@ static int device_process(struct fdp1_ctx *ctx,
 
 	if (src_q_data->format.field == V4L2_FIELD_NONE)
 		opmode |= CTL_OPMODE_PRG;
-	else
-	{
+	else {
 		/* De-interlacing */
 		channels |= (CTL_CHACT_WR | CTL_CHACT_RD1);
 		/* ... A Work In Progress for the next version ... */
@@ -1455,8 +1453,7 @@ static int fdp1_queue_setup(struct vb2_queue *vq,
 		for (i = 0; i < *nplanes; i++) {
 			unsigned int q_size = q_data->format.plane_fmt[i].sizeimage;
 
-			if (sizes[i] < q_size)
-			{
+			if (sizes[i] < q_size) {
 				dprintk(ctx->fdp1, "Failed due to sizes[%d] = %d < %d\n",
 						i, sizes[i], q_size);
 				return -EINVAL;
@@ -1931,8 +1928,7 @@ static int fdp1_probe(struct platform_device *pdev)
 
 #ifndef QEMU_TESTING
 	hw_version = fdp1_read(fdp1, IP_INTDATA);
-	switch (hw_version)
-	{
+	switch (hw_version) {
 	case IP_H3:
 		dprintk(fdp1, "FDP1 Version R-Car H3\n");
 		break;
