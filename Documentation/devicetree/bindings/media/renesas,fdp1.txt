@@ -1,0 +1,34 @@
+Renesas R-Car Fine Display Processor (FDP1)
+-----------------------------------------------
+
+The FDP1 is a de-interlacing module which converts interlaced video to
+progressive video. It is capable of performing pixel format conversion between
+YCbCr/YUV formats and RGB formats. Only YCbCr/YUV formats are supported as
+an input to the module.
+
+ - compatible: Must be one or more of the following
+
+   - "renesas,r8a7795-fdp1" for R8A7795 (R-Car H3)
+   - "renesas,r8a7796-fdp1" for R8A7796 (R-Car M3-W)
+   - "renesas,fdp1" for generic compatible
+
+   When compatible with the generic version, nodes must list the
+   SoC-specific version corresponding to the platform first, followed by the
+   family-specific and/or generic versions.
+
+ - reg: the register base and size for the device registers
+ - clocks: Reference to the functional clock
+ - renesas,fcp: Reference to the FCPF connected to the FDP1
+
+
+Device node example
+-------------------
+
+	fdp1ch1: fdp1@fe940000 {
+		compatible = "renesas,r8a7795-fdp1", "renesas,fdp1";
+		reg = <0 0xfe940000 0 0x2400>;
+		interrupts = <GIC_SPI 262 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&cpg CPG_MOD 119>;
+		power-domains = <&sysc R8A7795_PD_A3VP>;
+		renesas,fcp = <&fcpf0>;
+	};
