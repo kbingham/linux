@@ -845,6 +845,9 @@ for my $filename (@ARGV) {
 		open($FILE, '<', "$filename") ||
 			die "$P: $filename: open failed - $!\n";
 	}
+	if ($filename =~ /.*0000-cover-letter.patch$/ ) {
+		next;
+	}
 	if ($filename eq '-') {
 		$vname = 'Your patch';
 	} elsif ($git) {
