@@ -43,32 +43,93 @@ static inline void vsp1_wpf_write(struct vsp1_rwpf *wpf,
 enum wpf_flip_ctrl {
 	WPF_CTRL_VFLIP = 0,
 	WPF_CTRL_HFLIP = 1,
-	WPF_CTRL_MAX,
+	WPF_CTRL_ROTATE = 2,
 };
+
+static int vsp1_wpf_set_rotation(struct vsp1_rwpf *wpf, unsigned int rotation)
+{
+	struct media_device *mdev = &wpf->entity.vsp1->media_dev;
+	struct v4l2_mbus_framefmt *sink_format;
+	struct v4l2_mbus_framefmt *source_format;
+	bool rotate;
+	int ret = 0;
+
+	/* Only consider the 0°/180° from/to 90°/270° modifications, the rest
+	 * is taken care of by the flipping configuration.
+	 */
+	rotate = rotation == 90 || rotation == 270;
+
+	if (rotate == wpf->flip.rotate)
+		goto done;
+
+	/* Changing rotation isn't allowed during streaming. */
+	mutex_lock(&mdev->graph_mutex);
+
+	if (wpf->entity.subdev.entity.stream_count) {
+		ret = -EBUSY;
+		goto done;
+	}
+
+	sink_format = vsp1_entity_get_pad_format(&wpf->entity,
+						 wpf->entity.config,
+						 RWPF_PAD_SINK);
+	source_format = vsp1_entity_get_pad_format(&wpf->entity,
+						   wpf->entity.config,
+						   RWPF_PAD_SOURCE);
+
+	mutex_lock(&wpf->entity.lock);
+
+	if (rotate) {
+		source_format->width = sink_format->height;
+		source_format->height = sink_format->width;
+	} else {
+		source_format->width = sink_format->width;
+		source_format->height = sink_format->height;
+	}
+
+	wpf->flip.rotate = rotate;
+
+	mutex_unlock(&wpf->entity.lock);
+
+done:
+	mutex_unlock(&mdev->graph_mutex);
+	return ret;
+}
 
 static int vsp1_wpf_s_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct vsp1_rwpf *wpf =
 		container_of(ctrl->handler, struct vsp1_rwpf, ctrls);
-	unsigned int i;
+	unsigned int rotation;
 	u32 flip = 0;
+	int ret;
 
-	switch (ctrl->id) {
-	case V4L2_CID_HFLIP:
-	case V4L2_CID_VFLIP:
-		for (i = 0; i < WPF_CTRL_MAX; ++i) {
-			if (wpf->flip.ctrls[i])
-				flip |= wpf->flip.ctrls[i]->val ? BIT(i) : 0;
-		}
+	/* Update the rotation. */
+	rotation = wpf->flip.ctrls[WPF_CTRL_ROTATE]
+		 ? wpf->flip.ctrls[WPF_CTRL_ROTATE]->val : 0;
 
-		spin_lock_irq(&wpf->flip.lock);
-		wpf->flip.pending = flip;
-		spin_unlock_irq(&wpf->flip.lock);
-		break;
+	ret = vsp1_wpf_set_rotation(wpf, rotation);
+	if (ret < 0)
+		return ret;
 
-	default:
-		return -EINVAL;
-	}
+	/* Compute the flip value resulting from all three controls, with
+	 * rotation by 180° flipping the image in both directions. Store the
+	 * result in the pending flip field for the next frame that will be
+	 * processed.
+	 */
+	if (wpf->flip.ctrls[WPF_CTRL_VFLIP]->val)
+		flip |= BIT(WPF_CTRL_VFLIP);
+
+	if (wpf->flip.ctrls[WPF_CTRL_HFLIP] &&
+	    wpf->flip.ctrls[WPF_CTRL_HFLIP]->val)
+		flip |= BIT(WPF_CTRL_HFLIP);
+
+	if (rotation == 180 || rotation == 270)
+		flip ^= BIT(WPF_CTRL_VFLIP) | BIT(WPF_CTRL_HFLIP);
+
+	spin_lock_irq(&wpf->flip.lock);
+	wpf->flip.pending = flip;
+	spin_unlock_irq(&wpf->flip.lock);
 
 	return 0;
 }
@@ -88,10 +149,10 @@ static int wpf_init_controls(struct vsp1_rwpf *wpf)
 		/* Only WPF0 supports flipping. */
 		num_flip_ctrls = 0;
 	} else if (vsp1->info->features & VSP1_HAS_WPF_HFLIP) {
-		/* When horizontal flip is supported the WPF implements two
-		 * controls (horizontal flip and vertical flip).
+		/* When horizontal flip is supported the WPF implements three
+		 * controls (horizontal flip, vertical flip and rotation).
 		 */
-		num_flip_ctrls = 2;
+		num_flip_ctrls = 3;
 	} else if (vsp1->info->features & VSP1_HAS_WPF_VFLIP) {
 		/* When only vertical flip is supported the WPF implements a
 		 * single control (vertical flip).
@@ -110,12 +171,14 @@ static int wpf_init_controls(struct vsp1_rwpf *wpf)
 					  V4L2_CID_VFLIP, 0, 1, 1, 0);
 	}
 
-	if (num_flip_ctrls == 2) {
+	if (num_flip_ctrls == 3) {
 		wpf->flip.ctrls[WPF_CTRL_HFLIP] =
 			v4l2_ctrl_new_std(&wpf->ctrls, &vsp1_wpf_ctrl_ops,
 					  V4L2_CID_HFLIP, 0, 1, 1, 0);
-
-		v4l2_ctrl_cluster(2, wpf->flip.ctrls);
+		wpf->flip.ctrls[WPF_CTRL_ROTATE] =
+			v4l2_ctrl_new_std(&wpf->ctrls, &vsp1_wpf_ctrl_ops,
+					  V4L2_CID_ROTATE, 0, 270, 90, 0);
+		v4l2_ctrl_cluster(3, wpf->flip.ctrls);
 	}
 
 	if (wpf->ctrls.error) {
@@ -193,9 +256,10 @@ static void wpf_set_memory(struct vsp1_entity *entity, struct vsp1_dl_list *dl)
 
 	/* Update the memory offsets based on flipping configuration. The
 	 * destination addresses point to the locations where the VSP starts
-	 * writing to memory, which can be different corners of the image
-	 * depending on vertical flipping. Horizontal flipping is handled
-	 * through a line buffer and doesn't modify the start address.
+	 * writing to memory, which can be any corner of the image depending on
+	 * the combination of vertical flipping and rotation. Horizontal
+	 * flipping is handled through a line buffer and doesn't modify the
+	 * start address.
 	 */
 	if (flip & BIT(WPF_CTRL_VFLIP)) {
 		mem.addr[0] += (format->height - 1)
@@ -206,6 +270,19 @@ static void wpf_set_memory(struct vsp1_entity *entity, struct vsp1_dl_list *dl)
 			       * format->plane_fmt[1].bytesperline;
 			mem.addr[1] += offset;
 			mem.addr[2] += offset;
+		}
+	}
+
+	if (wpf->flip.rotate && !(flip & BIT(WPF_CTRL_HFLIP))) {
+		unsigned int hoffset = max(0, (int)format->width - 16);
+
+		mem.addr[0] += hoffset * wpf->fmtinfo->bpp[0] / 8;
+
+		if (format->num_planes > 1) {
+			mem.addr[1] += hoffset * wpf->fmtinfo->bpp[1]
+				     / wpf->fmtinfo->hsub / 8;
+			mem.addr[2] += hoffset * wpf->fmtinfo->bpp[2]
+				     / wpf->fmtinfo->hsub / 8;
 		}
 	}
 
@@ -270,6 +347,9 @@ static void wpf_configure(struct vsp1_entity *entity,
 		const struct vsp1_format_info *fmtinfo = wpf->fmtinfo;
 
 		outfmt = fmtinfo->hwfmt << VI6_WPF_OUTFMT_WRFMT_SHIFT;
+
+		if (wpf->flip.rotate)
+			outfmt |= VI6_WPF_OUTFMT_ROT;
 
 		if (fmtinfo->alpha)
 			outfmt |= VI6_WPF_OUTFMT_PXA;
