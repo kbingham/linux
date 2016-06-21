@@ -21,6 +21,7 @@
 #include <linux/mount.h>
 #include <linux/huge_mm.h>
 #include <linux/vmalloc.h>
+#include <linux/kieran.h>
 
 /* We need to stringify expanded macros so that they can be parsed */
 
