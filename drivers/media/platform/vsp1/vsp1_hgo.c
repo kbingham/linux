@@ -171,13 +171,18 @@ static int hgo_get_selection(struct v4l2_subdev *subdev,
 	struct v4l2_subdev_pad_config *config;
 	struct v4l2_mbus_framefmt *format;
 	struct v4l2_rect *crop;
+	int ret = 0;
 
 	if (sel->pad != HGO_PAD_SINK)
 		return -EINVAL;
 
+	mutex_lock(&hgo->entity.lock);
+
 	config = vsp1_entity_get_pad_config(&hgo->entity, cfg, sel->which);
-	if (!config)
-		return -EINVAL;
+	if (!config) {
+		ret = -EINVAL;
+		goto done;
+	}
 
 	switch (sel->target) {
 	case V4L2_SEL_TGT_COMPOSE_BOUNDS:
@@ -189,7 +194,7 @@ static int hgo_get_selection(struct v4l2_subdev *subdev,
 		sel->r.top = 0;
 		sel->r.width = crop->width;
 		sel->r.height = crop->height;
-		return 0;
+		break;
 
 	case V4L2_SEL_TGT_CROP_BOUNDS:
 	case V4L2_SEL_TGT_CROP_DEFAULT:
@@ -199,17 +204,22 @@ static int hgo_get_selection(struct v4l2_subdev *subdev,
 		sel->r.top = 0;
 		sel->r.width = format->width;
 		sel->r.height = format->height;
-		return 0;
+		break;
 
 	case V4L2_SEL_TGT_COMPOSE:
 	case V4L2_SEL_TGT_CROP:
 		sel->r = *vsp1_entity_get_pad_selection(&hgo->entity, config,
 							sel->pad, sel->target);
-		return 0;
+		break;
 
 	default:
-		return -EINVAL;
+		ret = -EINVAL;
+		break;
 	}
+
+done:
+	mutex_unlock(&hgo->entity.lock);
+	return ret;
 }
 
 static int hgo_set_crop(struct v4l2_subdev *subdev,
@@ -296,20 +306,29 @@ static int hgo_set_selection(struct v4l2_subdev *subdev,
 {
 	struct vsp1_hgo *hgo = to_hgo(subdev);
 	struct v4l2_subdev_pad_config *config;
+	int ret;
 
 	if (sel->pad != HGO_PAD_SINK)
 		return -EINVAL;
 
+	mutex_lock(&hgo->entity.lock);
+
 	config = vsp1_entity_get_pad_config(&hgo->entity, cfg, sel->which);
-	if (!config)
-		return -EINVAL;
+	if (!config) {
+		ret = -EINVAL;
+		goto done;
+	}
 
 	if (sel->target == V4L2_SEL_TGT_CROP)
-		return hgo_set_crop(subdev, config, sel);
+		ret = hgo_set_crop(subdev, config, sel);
 	else if (sel->target == V4L2_SEL_TGT_COMPOSE)
-		return hgo_set_compose(subdev, config, sel);
+		ret = hgo_set_compose(subdev, config, sel);
 	else
-		return -EINVAL;
+		ret = -EINVAL;
+
+done:
+	mutex_unlock(&hgo->entity.lock);
+	return ret;
 }
 
 static int hgo_get_format(struct v4l2_subdev *subdev,
@@ -336,13 +355,18 @@ static int hgo_set_format(struct v4l2_subdev *subdev,
 	struct v4l2_subdev_pad_config *config;
 	struct v4l2_mbus_framefmt *format;
 	struct v4l2_rect *selection;
+	int ret = 0;
 
 	if (fmt->pad != HGO_PAD_SINK)
 		return hgo_get_format(subdev, cfg, fmt);
 
+	mutex_lock(&hgo->entity.lock);
+
 	config = vsp1_entity_get_pad_config(&hgo->entity, cfg, fmt->which);
-	if (!config)
-		return -EINVAL;
+	if (!config) {
+		ret = -EINVAL;
+		goto done;
+	}
 
 	/* Default to YUV if the requested format is not supported. */
 	if (fmt->format.code != MEDIA_BUS_FMT_ARGB8888_1X32 &&
@@ -378,7 +402,9 @@ static int hgo_set_format(struct v4l2_subdev *subdev,
 	selection->width = format->width;
 	selection->height = format->height;
 
-	return 0;
+done:
+	mutex_unlock(&hgo->entity.lock);
+	return ret;
 }
 
 static const struct v4l2_subdev_pad_ops hgo_pad_ops = {
