@@ -85,8 +85,6 @@ struct vb2_queue *v4l2_m2m_get_vq(struct v4l2_m2m_ctx *m2m_ctx,
 	struct v4l2_m2m_queue_ctx *q_ctx;
 
 	q_ctx = get_queue_ctx(m2m_ctx, type);
-	if (!q_ctx)
-		return NULL;
 
 	return &q_ctx->q;
 }
