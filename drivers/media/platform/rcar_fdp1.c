@@ -36,6 +36,14 @@
 #include <media/v4l2-mem2mem.h>
 #include <media/videobuf2-dma-contig.h>
 
+/*
+ * Debug level 1:
+ *	Enable verbose error messages and status
+ * Debug level 2:
+ *	Enable interrupt request handler status
+ * Debug level 3:
+ *	Print every interaction with HW through fdp1_{read,write}
+ */
 static unsigned int debug;
 module_param(debug, uint, 0644);
 MODULE_PARM_DESC(debug, "activate debug info");
@@ -817,7 +825,7 @@ static u32 fdp1_read(struct fdp1_dev *fdp1, unsigned int reg)
 {
 	u32 value = ioread32(fdp1->regs + reg);
 
-	if (debug >= 2)
+	if (debug >= 3)
 		dprintk(fdp1, "Read 0x%08x from 0x%04x\n", value, reg);
 
 	return value;
@@ -825,7 +833,7 @@ static u32 fdp1_read(struct fdp1_dev *fdp1, unsigned int reg)
 
 static void fdp1_write(struct fdp1_dev *fdp1, u32 val, unsigned int reg)
 {
-	if (debug >= 2)
+	if (debug >= 3)
 		dprintk(fdp1, "Write 0x%08x to 0x%04x\n", val, reg);
 
 	iowrite32(val, fdp1->regs + reg);
