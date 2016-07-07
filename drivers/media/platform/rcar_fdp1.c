@@ -1606,7 +1606,7 @@ static int __fdp1_try_fmt(struct fdp1_ctx *ctx, const struct fdp1_fmt **fmtinfo,
 		unsigned int hsub = i > 0 ? fmt->hsub : 1;
 		unsigned int vsub = i > 0 ? fmt->vsub : 1;
 		 /* From VSP : TODO: Confirm alignment limits for FDP1 */
-		unsigned int align = 128;
+		unsigned int align = 4;
 		unsigned int bpl;
 
 		bpl = clamp_t(unsigned int, pix->plane_fmt[i].bytesperline,
