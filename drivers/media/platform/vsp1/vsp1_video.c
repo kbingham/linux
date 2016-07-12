@@ -288,14 +288,11 @@ static void vsp1_video_frame_end(struct vsp1_pipeline *pipe,
 	spin_unlock_irqrestore(&pipe->irqlock, flags);
 }
 
-static void vsp1_video_pipeline_run(struct vsp1_pipeline *pipe)
+static void vsp1_video_pipeline_run_partition(struct vsp1_pipeline *pipe)
 {
 	struct vsp1_device *vsp1 = pipe->output->entity.vsp1;
 	struct vsp1_entity *entity;
 	unsigned int i;
-
-	if (!pipe->dl)
-		pipe->dl = vsp1_dl_list_get(pipe->output->dlm);
 
 	list_for_each_entry(entity, &pipe->entities, list_pipe) {
 		if (entity->ops->configure)
@@ -311,9 +308,50 @@ static void vsp1_video_pipeline_run(struct vsp1_pipeline *pipe)
 
 	if (!pipe->lif)
 		vsp1_rwpf_set_memory(pipe->output, pipe->dl);
+}
 
-	vsp1_dl_list_commit(pipe->dl);
+static void vsp1_video_pipeline_run(struct vsp1_pipeline *pipe)
+{
+	struct vsp1_device *vsp1 = pipe->output->entity.vsp1;
+	struct vsp1_dl_list *dl_head;
+
+	if (!pipe->dl)
+		pipe->dl = vsp1_dl_list_get(pipe->output->dlm);
+
+	/* Run the first partition */
+	pipe->current_partition = 0;
+	vsp1_video_pipeline_run_partition(pipe);
+
+	dl_head = pipe->dl;
+
+	/* Process consecutive partitions as necessary */
+	for (pipe->current_partition = 1;
+	     pipe->current_partition < pipe->partitions;
+	     pipe->current_partition++) {
+
+		/* Partition configuration operations will utilise
+		 * the pipe->current_partition variable to determine
+		 * the work they should complete.
+		 */
+
+		pipe->dl = vsp1_dl_list_get(pipe->output->dlm);
+
+		/* An incomplete chain will still function, but output only
+		 * the partitions that had a dl available. The frame end
+		 * interrupt will be marked on the last dl in the chain.
+		 */
+		if (!pipe->dl) {
+			dev_err(vsp1->dev, "Failed to obtain a dl list. Frame will be incomplete\n");
+			break;
+		}
+
+		vsp1_video_pipeline_run_partition(pipe);
+		vsp1_dl_list_add_chain(dl_head, pipe->dl);
+	}
+
+	/* Complete, and commit the head display list */
 	pipe->dl = NULL;
+	vsp1_dl_list_commit(dl_head);
 
 	vsp1_pipeline_run(pipe);
 }
