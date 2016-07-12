@@ -170,6 +170,45 @@ static int __vsp1_video_try_format(struct vsp1_video *video,
 }
 
 /* -----------------------------------------------------------------------------
+ * VSP1 Partition Algorithm support
+ */
+
+static unsigned int
+vsp1_video_pipeline_max_div_size(struct vsp1_pipeline *pipe)
+{
+	struct vsp1_entity *entity;
+	const struct v4l2_rect *crop = vsp1_rwpf_get_crop(pipe->output,
+			pipe->output->entity.config);
+	unsigned int div_size = crop->width;
+
+	list_for_each_entry(entity, &pipe->entities, list_pipe) {
+		unsigned int entity_max = VSP1_VIDEO_MAX_WIDTH;
+
+		if (entity->ops->max_width) {
+			entity_max = entity->ops->max_width(entity, pipe);
+			if (entity_max)
+				div_size = min(div_size, entity_max);
+		}
+	}
+
+	return div_size;
+}
+
+static unsigned int
+vsp1_video_calculate_parititions(struct vsp1_pipeline *pipe, unsigned int div_size)
+{
+	const struct v4l2_rect *crop = vsp1_rwpf_get_crop(pipe->output,
+			pipe->output->entity.config);
+	unsigned int partitions = crop->width / div_size;
+	unsigned int modulus = crop->width % div_size;
+
+	if (modulus)
+		partitions++;
+
+	return partitions;
+}
+
+/* -----------------------------------------------------------------------------
  * Pipeline Management
  */
 
@@ -850,6 +889,10 @@ vsp1_video_streamon(struct file *file, void *fh, enum v4l2_buf_type type)
 	ret = vsp1_video_verify_format(video);
 	if (ret < 0)
 		goto err_stop;
+
+	/* Determine this pipelines sizes for partition algorithm support */
+	pipe->div_size = vsp1_video_pipeline_max_div_size(pipe);
+	pipe->partitions = vsp1_video_calculate_parititions(pipe, pipe->div_size);
 
 	/* Start the queue. */
 	ret = vb2_streamon(&video->queue, type);
