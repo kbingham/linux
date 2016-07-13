@@ -30,8 +30,15 @@ void vsp1_dlm_reset(struct vsp1_dl_manager *dlm);
 void vsp1_dlm_irq_display_start(struct vsp1_dl_manager *dlm);
 void vsp1_dlm_irq_frame_end(struct vsp1_dl_manager *dlm);
 
-struct vsp1_dl_list *vsp1_dl_list_get(struct vsp1_dl_manager *dlm);
-void vsp1_dl_list_put(struct vsp1_dl_list *dl);
+struct vsp1_dl_list *dbg_vsp1_dl_list_get(struct vsp1_dl_manager *dlm, const char * f, int l);
+void dbg_vsp1_dl_list_put(struct vsp1_dl_list *dl, const char * f, int l);
+
+#define vsp1_dl_list_get(dl) \
+	dbg_vsp1_dl_list_get(dl, __FUNCTION__, __LINE__)
+
+#define vsp1_dl_list_put(dl) \
+	dbg_vsp1_dl_list_put(dl, __FUNCTION__, __LINE__)
+
 void vsp1_dl_list_write(struct vsp1_dl_list *dl, u32 reg, u32 data);
 void vsp1_dl_list_commit(struct vsp1_dl_list *dl);
 

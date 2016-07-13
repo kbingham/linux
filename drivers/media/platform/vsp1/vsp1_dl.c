@@ -286,10 +286,12 @@ static void vsp1_dl_list_free(struct vsp1_dl_list *dl)
  *
  * This function must be called without the display list manager lock held.
  */
-struct vsp1_dl_list *vsp1_dl_list_get(struct vsp1_dl_manager *dlm)
+struct vsp1_dl_list *dbg_vsp1_dl_list_get(struct vsp1_dl_manager *dlm, const char *f, int l)
 {
 	struct vsp1_dl_list *dl = NULL;
 	unsigned long flags;
+	int i = 0;
+	struct vsp1_dl_list *iter;
 
 	spin_lock_irqsave(&dlm->lock, flags);
 
@@ -303,15 +305,26 @@ struct vsp1_dl_list *vsp1_dl_list_get(struct vsp1_dl_manager *dlm)
 		INIT_LIST_HEAD(&dl->chain);
 	}
 
+	/* Count the free list */
+	list_for_each_entry(iter, &dlm->free, list)
+		i++;
+
 	spin_unlock_irqrestore(&dlm->lock, flags);
+
+	dprintk(DEBUG_INFO, "From %s:%d: Free DL's %d\n", f, l, i);
 
 	return dl;
 }
 
+#define __vsp1_dl_list_put(dl) dbg__vsp1_dl_list_put(dl, __FUNCTION__, __LINE__)
+
 /* This function must be called with the display list manager lock held.*/
-static void __vsp1_dl_list_put(struct vsp1_dl_list *dl)
+static void dbg__vsp1_dl_list_put(struct vsp1_dl_list *dl, const char *f, int l)
 {
 	struct vsp1_dl_list *dl_child;
+	int i = 0;
+	struct vsp1_dl_list *iter;
+
 	if (!dl)
 		return;
 
@@ -337,7 +350,14 @@ static void __vsp1_dl_list_put(struct vsp1_dl_list *dl)
 	dl->body0.num_entries = 0;
 
 	list_add_tail(&dl->list, &dl->dlm->free);
+
+	/* Count the free list */
+	list_for_each_entry(iter, &dl->dlm->free, list)
+		i++;
+
+	dprintk(DEBUG_INFO, "From %s:%d: Free DL's %d\n", f, l, i);
 }
+
 
 /**
  * vsp1_dl_list_put - Release a display list
@@ -348,7 +368,7 @@ static void __vsp1_dl_list_put(struct vsp1_dl_list *dl)
  * Passing a NULL pointer to this function is safe, in that case no operation
  * will be performed.
  */
-void vsp1_dl_list_put(struct vsp1_dl_list *dl)
+void dbg_vsp1_dl_list_put(struct vsp1_dl_list *dl, const char *f, int l)
 {
 	unsigned long flags;
 
@@ -356,7 +376,7 @@ void vsp1_dl_list_put(struct vsp1_dl_list *dl)
 		return;
 
 	spin_lock_irqsave(&dl->dlm->lock, flags);
-	__vsp1_dl_list_put(dl);
+	dbg__vsp1_dl_list_put(dl, f, l);
 	spin_unlock_irqrestore(&dl->dlm->lock, flags);
 }
 
