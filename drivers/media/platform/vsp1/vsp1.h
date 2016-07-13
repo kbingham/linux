@@ -23,6 +23,18 @@
 
 #include "vsp1_regs.h"
 
+enum debug_levels {
+	DEBUG_DISABLED	= 0,
+	DEBUG_ERROR	= 1,
+	DEBUG_WARNING	= 2,
+	DEBUG_INFO	= 3,
+	DEBUG_DL_LIST	= 4,
+};
+
+extern int vsp1_debug;
+
+#define dprintk(lvl, fmt, args...) if (lvl <= vsp1_debug) printk("%s:%d: " fmt,  __FUNCTION__, __LINE__, ##args)
+
 struct clk;
 struct device;
 struct rcar_fcp_device;
