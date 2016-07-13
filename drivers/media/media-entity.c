@@ -390,6 +390,7 @@ __must_check int __media_entity_pipeline_start(struct media_entity *entity,
 		entity->stream_count++;
 
 		if (WARN_ON(entity->pipe && entity->pipe != pipe)) {
+			printk("entity->pipe = %p : pipe = %p\n", entity->pipe, pipe);
 			ret = -EBUSY;
 			goto error;
 		}
