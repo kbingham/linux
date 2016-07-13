@@ -66,6 +66,7 @@ static int vsp1_wpf_set_rotation(struct vsp1_rwpf *wpf, unsigned int rotation)
 	mutex_lock(&mdev->graph_mutex);
 
 	if (wpf->entity.subdev.entity.stream_count) {
+		dprintk(DEBUG_ERROR, "I'm sorry dave, I can't allow that... -EBUSY\n");
 		ret = -EBUSY;
 		goto done;
 	}

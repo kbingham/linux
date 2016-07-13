@@ -927,6 +927,7 @@ vsp1_video_set_format(struct file *file, void *fh, struct v4l2_format *format)
 	mutex_lock(&video->lock);
 
 	if (vb2_is_busy(&video->queue)) {
+		dprintk(DEBUG_ERROR, "I'm sorry dave, I can't allow that... -EBUSY\n");
 		ret = -EBUSY;
 		goto done;
 	}
@@ -948,8 +949,10 @@ vsp1_video_streamon(struct file *file, void *fh, enum v4l2_buf_type type)
 	struct vsp1_pipeline *pipe;
 	int ret;
 
-	if (video->queue.owner && video->queue.owner != file->private_data)
+	if (video->queue.owner && video->queue.owner != file->private_data) {
+		dprintk(DEBUG_ERROR, "I'm sorry dave, I can't allow that... -EBUSY\n");
 		return -EBUSY;
+	}
 
 	/* Get a pipeline for the video node and start streaming on it. No link
 	 * touching an entity in the pipeline can be activated or deactivated

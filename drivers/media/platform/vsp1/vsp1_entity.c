@@ -319,8 +319,10 @@ static int vsp1_entity_link_setup_source(const struct media_pad *source_pad,
 		 * optional HGO. We ignore the HGO here.
 		 */
 		if (sink->type != VSP1_ENTITY_HGO) {
-			if (source->sink)
+			if (source->sink) {
+				dprintk(DEBUG_ERROR, "I'm sorry dave, I can't allow that... -EBUSY\n");
 				return -EBUSY;
+			}
 			source->sink = sink_pad->entity;
 			source->sink_pad = sink_pad->index;
 		}
@@ -342,8 +344,10 @@ static int vsp1_entity_link_setup_sink(const struct media_pad *source_pad,
 
 	if (flags & MEDIA_LNK_FL_ENABLED) {
 		/* Fan-in is limited to one. */
-		if (sink->sources[sink_pad->index])
+		if (sink->sources[sink_pad->index]) {
+			dprintk(DEBUG_ERROR, "I'm sorry dave, I can't allow that... -EBUSY\n");
 			return -EBUSY;
+		}
 
 		sink->sources[sink_pad->index] = source_pad->entity;
 	} else {
