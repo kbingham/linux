@@ -351,10 +351,14 @@ static void vsp1_video_pipeline_run_partition(struct vsp1_pipeline *pipe)
 		vsp1_rwpf_set_memory(pipe->output, pipe->dl);
 }
 
-static void vsp1_video_pipeline_run(struct vsp1_pipeline *pipe)
+#define vsp1_video_pipeline_run(pipe) \
+	dbg_vsp1_video_pipeline_run(pipe, __FUNCTION__, __LINE__)
+static void dbg_vsp1_video_pipeline_run(struct vsp1_pipeline *pipe, const char *f, int l)
 {
 	struct vsp1_device *vsp1 = pipe->output->entity.vsp1;
 	struct vsp1_dl_list *dl_head;
+
+	dprintk(DEBUG_INFO, "From %s:%d: pipe->dl = %p\n", f, l, pipe->dl);
 
 	if (!pipe->dl)
 		pipe->dl = vsp1_dl_list_get(pipe->output->dlm);
@@ -614,6 +618,7 @@ static struct vsp1_pipeline *vsp1_video_pipeline_get(struct vsp1_video *video)
 
 		ret = vsp1_video_pipeline_init(pipe, video);
 		if (ret < 0) {
+			dprintk(DEBUG_ERROR, "********** Failed to init vsp1_video_pipeline_init\n");
 			vsp1_pipeline_reset(pipe);
 			kfree(pipe);
 			return ERR_PTR(ret);
@@ -737,8 +742,11 @@ static int vsp1_video_setup_pipeline(struct vsp1_pipeline *pipe)
 
 	/* Prepare the display list. */
 	pipe->dl = vsp1_dl_list_get(pipe->output->dlm);
-	if (!pipe->dl)
+	if (!pipe->dl) {
+		dprintk(DEBUG_ERROR, "!pipe->dl return -ENOMEM\n");
 		return -ENOMEM;
+	}
+
 
 	if (pipe->uds) {
 		struct vsp1_uds *uds = to_uds(&pipe->uds->subdev);
@@ -780,6 +788,7 @@ static int vsp1_video_start_streaming(struct vb2_queue *vq, unsigned int count)
 		ret = vsp1_video_setup_pipeline(pipe);
 		if (ret < 0) {
 			mutex_unlock(&pipe->lock);
+			dprintk(DEBUG_ERROR, "vsp1_video_setup_pipeline failed\n");
 			return ret;
 		}
 	}
