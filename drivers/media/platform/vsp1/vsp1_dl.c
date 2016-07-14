@@ -139,8 +139,10 @@ static int vsp1_dl_body_init(struct vsp1_device *vsp1,
 
 	dlb->entries = dma_alloc_wc(vsp1->dev, dlb->size, &dlb->dma,
 				    GFP_KERNEL);
-	if (!dlb->entries)
+	if (!dlb->entries) {
+		dprintk(DEBUG_ERROR, "Failed to dma_alloc_wc %lu bytes for %u entries\n", dlb->size, dlb->num_entries);
 		return -ENOMEM;
+	}
 
 	return 0;
 }
@@ -171,8 +173,10 @@ struct vsp1_dl_body *vsp1_dl_fragment_alloc(struct vsp1_device *vsp1,
 	int ret;
 
 	dlb = kzalloc(sizeof(*dlb), GFP_KERNEL);
-	if (!dlb)
+	if (!dlb) {
+		dprintk(DEBUG_ERROR, "Failed to KZalloc\n");
 		return NULL;
+	}
 
 	ret = vsp1_dl_body_init(vsp1, dlb, num_entries, 0);
 	if (ret < 0) {
