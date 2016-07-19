@@ -222,6 +222,21 @@ void vsp1_dl_fragment_free(struct vsp1_dl_body *dlb)
  */
 void vsp1_dl_fragment_write(struct vsp1_dl_body *dlb, u32 reg, u32 data)
 {
+	if ((uintptr_t)dlb < 1024)
+	{
+		dprintk(DEBUG_ERROR, "DLB is NULL or worse ... (%p)\n", dlb);
+	}
+
+	if (!dlb->entries)
+	{
+		dprintk(DEBUG_ERROR, "DLB Entries is NULL (Num-entries %u, Size was %lu)", dlb->num_entries, dlb->size);
+	}
+
+	if ((dlb->num_entries * sizeof(struct vsp1_dl_entry)) >= dlb->size)
+	{
+		dprintk(DEBUG_ERROR, "DLB IS FULL!!!!! num_entries %u : size %lu\n", dlb->num_entries, dlb->size);
+	}
+
 	dlb->entries[dlb->num_entries].addr = reg;
 	dlb->entries[dlb->num_entries].data = data;
 	dlb->num_entries++;
