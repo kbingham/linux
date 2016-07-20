@@ -812,6 +812,7 @@ static void vsp1_video_stop_streaming(struct vb2_queue *vq)
 	unsigned long flags;
 	int ret;
 
+	dprintk(DEBUG_INFO, "+ - NumBuffers %u\n", vq->num_buffers);
 	/* Clear the buffers ready flag to make sure the device won't be started
 	 * by a QBUF on the video node on the other side of the pipeline.
 	 */
@@ -840,6 +841,8 @@ static void vsp1_video_stop_streaming(struct vb2_queue *vq)
 		vb2_buffer_done(&buffer->buf.vb2_buf, VB2_BUF_STATE_ERROR);
 	INIT_LIST_HEAD(&video->irqqueue);
 	spin_unlock_irqrestore(&video->irqlock, flags);
+
+	dprintk(DEBUG_INFO, "- - NumBuffers %u\n", vq->num_buffers);
 }
 
 static const struct vb2_ops vsp1_video_queue_qops = {
@@ -917,6 +920,11 @@ vsp1_video_set_format(struct file *file, void *fh, struct v4l2_format *format)
 	const struct vsp1_format_info *info;
 	int ret;
 
+	dprintk(DEBUG_INFO, "+ pipeindex %d\n", video->pipe_index);
+	dprintk(DEBUG_INFO, " buffers_ready = %d\n",
+			video->rwpf && video->rwpf->pipe ?
+				video->rwpf->pipe->buffers_ready : -1);
+
 	if (format->type != video->queue.type)
 		return -EINVAL;
 
@@ -927,7 +935,7 @@ vsp1_video_set_format(struct file *file, void *fh, struct v4l2_format *format)
 	mutex_lock(&video->lock);
 
 	if (vb2_is_busy(&video->queue)) {
-		dprintk(DEBUG_ERROR, "I'm sorry dave, I can't allow that... -EBUSY\n");
+		dprintk(DEBUG_ERROR, "I'm sorry dave, I can't allow that... -EBUSY - Q-num_buffers = %u pipeindex %d\n", video->queue.num_buffers, video->pipe_index);
 		ret = -EBUSY;
 		goto done;
 	}
@@ -965,6 +973,8 @@ vsp1_video_streamon(struct file *file, void *fh, enum v4l2_buf_type type)
 		mutex_unlock(&mdev->graph_mutex);
 		return PTR_ERR(pipe);
 	}
+
+	dprintk(DEBUG_INFO, "Index %d : Pipe->buffers-ready = 0x%08x : NumBuffers %d\n", video->pipe_index, pipe->buffers_ready, video->queue.num_buffers);
 
 	ret = __media_entity_pipeline_start(&video->video.entity, &pipe->pipe);
 	if (ret < 0) {
@@ -1027,6 +1037,8 @@ static int vsp1_video_open(struct file *file)
 	struct v4l2_fh *vfh;
 	int ret = 0;
 
+	dprintk(DEBUG_INFO, "+ index %d\n", video->pipe_index);
+
 	vfh = kzalloc(sizeof(*vfh), GFP_KERNEL);
 	if (vfh == NULL)
 		return -ENOMEM;
@@ -1050,8 +1062,11 @@ static int vsp1_video_release(struct file *file)
 	struct vsp1_video *video = video_drvdata(file);
 	struct v4l2_fh *vfh = file->private_data;
 
+	dprintk(DEBUG_INFO, "+ index %d\n", video->pipe_index);
+
 	mutex_lock(&video->lock);
 	if (video->queue.owner == vfh) {
+		dprintk(DEBUG_INFO, "Releasing Video->Queue\n");
 		vb2_queue_release(&video->queue);
 		video->queue.owner = NULL;
 	}
