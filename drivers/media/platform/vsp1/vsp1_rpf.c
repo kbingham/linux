@@ -78,11 +78,57 @@ static void rpf_configure(struct vsp1_entity *entity,
 	const struct v4l2_mbus_framefmt *source_format;
 	const struct v4l2_mbus_framefmt *sink_format;
 	const struct v4l2_rect *crop;
+	struct v4l2_rect partition;
 	unsigned int left = 0;
 	unsigned int top = 0;
 	u32 pstride;
 	u32 infmt;
 
+	/* Source size, stride and crop offsets.
+	 *
+	 * The crop offsets correspond to the location of the crop rectangle top
+	 * left corner in the plane buffer. Only two offsets are needed, as
+	 * planes 2 and 3 always have identical strides.
+	 */
+	crop = vsp1_rwpf_get_crop(rpf, rpf->entity.config);
+	partition = *crop;
+
+	/* The partition algorithm can split this into multiple slices */
+	if (pipe->partitions > 1)
+	{
+		/* TODO: RPF needs to be reverse scaled for the partition size
+		 * based on the configuration of any scaling pipeline .. ????
+		 */
+		partition.width = min(partition.width, pipe->div_size);
+		partition.left += pipe->current_partition * pipe->div_size;
+	}
+
+	vsp1_rpf_write(rpf, dl, VI6_RPF_SRC_BSIZE,
+		       (partition.width << VI6_RPF_SRC_BSIZE_BHSIZE_SHIFT) |
+		       (partition.height << VI6_RPF_SRC_BSIZE_BVSIZE_SHIFT));
+	vsp1_rpf_write(rpf, dl, VI6_RPF_SRC_ESIZE,
+		       (partition.width << VI6_RPF_SRC_ESIZE_EHSIZE_SHIFT) |
+		       (partition.height << VI6_RPF_SRC_ESIZE_EVSIZE_SHIFT));
+
+	rpf->offsets[0] = partition.top * format->plane_fmt[0].bytesperline
+			+ partition.left * fmtinfo->bpp[0] / 8;
+	pstride = format->plane_fmt[0].bytesperline
+		<< VI6_RPF_SRCM_PSTRIDE_Y_SHIFT;
+
+	if (format->num_planes > 1) {
+		rpf->offsets[1] = partition.top * format->plane_fmt[1].bytesperline
+				+ partition.left * fmtinfo->bpp[1] / 8;
+		pstride |= format->plane_fmt[1].bytesperline
+			<< VI6_RPF_SRCM_PSTRIDE_C_SHIFT;
+	} else {
+		rpf->offsets[1] = 0;
+	}
+
+	vsp1_rpf_write(rpf, dl, VI6_RPF_SRCM_PSTRIDE, pstride);
+
+	/* If a full configuration is not needed, we can return *after*
+	 * setting any required partition sizes
+	 */
 	if (!full) {
 		vsp1_rpf_write(rpf, dl, VI6_RPF_VRTCOL_SET,
 			       rpf->alpha << VI6_RPF_VRTCOL_SET_LAYA_SHIFT);
@@ -92,37 +138,6 @@ static void rpf_configure(struct vsp1_entity *entity,
 		vsp1_pipeline_propagate_alpha(pipe, dl, rpf->alpha);
 		return;
 	}
-
-	/* Source size, stride and crop offsets.
-	 *
-	 * The crop offsets correspond to the location of the crop rectangle top
-	 * left corner in the plane buffer. Only two offsets are needed, as
-	 * planes 2 and 3 always have identical strides.
-	 */
-	crop = vsp1_rwpf_get_crop(rpf, rpf->entity.config);
-
-	vsp1_rpf_write(rpf, dl, VI6_RPF_SRC_BSIZE,
-		       (crop->width << VI6_RPF_SRC_BSIZE_BHSIZE_SHIFT) |
-		       (crop->height << VI6_RPF_SRC_BSIZE_BVSIZE_SHIFT));
-	vsp1_rpf_write(rpf, dl, VI6_RPF_SRC_ESIZE,
-		       (crop->width << VI6_RPF_SRC_ESIZE_EHSIZE_SHIFT) |
-		       (crop->height << VI6_RPF_SRC_ESIZE_EVSIZE_SHIFT));
-
-	rpf->offsets[0] = crop->top * format->plane_fmt[0].bytesperline
-			+ crop->left * fmtinfo->bpp[0] / 8;
-	pstride = format->plane_fmt[0].bytesperline
-		<< VI6_RPF_SRCM_PSTRIDE_Y_SHIFT;
-
-	if (format->num_planes > 1) {
-		rpf->offsets[1] = crop->top * format->plane_fmt[1].bytesperline
-				+ crop->left * fmtinfo->bpp[1] / 8;
-		pstride |= format->plane_fmt[1].bytesperline
-			<< VI6_RPF_SRCM_PSTRIDE_C_SHIFT;
-	} else {
-		rpf->offsets[1] = 0;
-	}
-
-	vsp1_rpf_write(rpf, dl, VI6_RPF_SRCM_PSTRIDE, pstride);
 
 	/* Format */
 	sink_format = vsp1_entity_get_pad_format(&rpf->entity,

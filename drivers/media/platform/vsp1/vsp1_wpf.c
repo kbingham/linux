@@ -254,6 +254,11 @@ static void wpf_set_memory(struct vsp1_entity *entity, struct vsp1_dl_list *dl)
 	unsigned int flip = wpf->flip.active;
 	unsigned int offset;
 
+	/* First update the offsets based on partition slices */
+	mem.addr[0] += wpf->offsets[0];
+	mem.addr[1] += wpf->offsets[1];
+	mem.addr[2] += wpf->offsets[1];
+
 	/* Update the memory offsets based on flipping configuration. The
 	 * destination addresses point to the locations where the VSP starts
 	 * writing to memory, which can be any corner of the image depending on
@@ -297,12 +302,43 @@ static void wpf_configure(struct vsp1_entity *entity,
 {
 	struct vsp1_rwpf *wpf = to_rwpf(&entity->subdev);
 	struct vsp1_device *vsp1 = wpf->entity.vsp1;
+	const struct vsp1_format_info *fmtinfo = wpf->fmtinfo;
+	const struct v4l2_pix_format_mplane *format = &wpf->format;
 	const struct v4l2_mbus_framefmt *source_format;
 	const struct v4l2_mbus_framefmt *sink_format;
 	const struct v4l2_rect *crop;
+	struct v4l2_rect partition;
 	unsigned int i;
 	u32 outfmt = 0;
 	u32 srcrpf = 0;
+
+	/* Cropping */
+	crop = vsp1_rwpf_get_crop(wpf, wpf->entity.config);
+	partition = *crop;
+
+	/* The partition algorithm can split this into multiple slices */
+	if (pipe->partitions > 1) {
+		partition.width = min(partition.width, pipe->div_size);
+		partition.left += pipe->current_partition * pipe->div_size;
+
+		/* Configure can be (/is) called before fmtinfo is set,
+		 * Dereferencing after pipe->partitions is set lets us be sure
+		 * that the fmt has been configured. */
+		wpf->offsets[0] = partition.left * fmtinfo->bpp[0] / 8;
+
+		if (format->num_planes > 1)
+			wpf->offsets[1] = partition.left * fmtinfo->bpp[1] / 8;
+		else
+			wpf->offsets[1] = 0;
+	} else
+		wpf->offsets[0] = wpf->offsets[1] = 0;
+
+	vsp1_wpf_write(wpf, dl, VI6_WPF_HSZCLIP, VI6_WPF_SZCLIP_EN |
+		       (partition.left << VI6_WPF_SZCLIP_OFST_SHIFT) |
+		       (partition.width << VI6_WPF_SZCLIP_SIZE_SHIFT));
+	vsp1_wpf_write(wpf, dl, VI6_WPF_VSZCLIP, VI6_WPF_SZCLIP_EN |
+		       (partition.top << VI6_WPF_SZCLIP_OFST_SHIFT) |
+		       (partition.height << VI6_WPF_SZCLIP_SIZE_SHIFT));
 
 	if (!full) {
 		const unsigned int mask = BIT(WPF_CTRL_VFLIP)
@@ -323,16 +359,6 @@ static void wpf_configure(struct vsp1_entity *entity,
 		vsp1_wpf_write(wpf, dl, VI6_WPF_OUTFMT, outfmt);
 		return;
 	}
-
-	/* Cropping */
-	crop = vsp1_rwpf_get_crop(wpf, wpf->entity.config);
-
-	vsp1_wpf_write(wpf, dl, VI6_WPF_HSZCLIP, VI6_WPF_SZCLIP_EN |
-		       (crop->left << VI6_WPF_SZCLIP_OFST_SHIFT) |
-		       (crop->width << VI6_WPF_SZCLIP_SIZE_SHIFT));
-	vsp1_wpf_write(wpf, dl, VI6_WPF_VSZCLIP, VI6_WPF_SZCLIP_EN |
-		       (crop->top << VI6_WPF_SZCLIP_OFST_SHIFT) |
-		       (crop->height << VI6_WPF_SZCLIP_SIZE_SHIFT));
 
 	/* Format */
 	sink_format = vsp1_entity_get_pad_format(&wpf->entity,
