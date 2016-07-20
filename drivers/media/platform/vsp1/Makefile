@@ -7,3 +7,5 @@ vsp1-y					+= vsp1_hgo.o vsp1_histo.o
 vsp1-y					+= vsp1_lif.o
 
 obj-$(CONFIG_VIDEO_RENESAS_VSP1)	+= vsp1.o
+
+UBSAN_SANITIZE := y
