@@ -344,6 +344,9 @@ static void wpf_configure(struct vsp1_entity *entity,
 	} else
 		wpf->offsets[0] = wpf->offsets[1] = 0;
 
+	dprintk(DEBUG_ERROR, "IN CONFIGURE : WPF = %p\n", wpf);
+	dprintk(DEBUG_ERROR, "IN CONFIGURE : WPF->FMTINFO = %p\n", wpf->fmtinfo);
+
 	vsp1_wpf_write(wpf, dl, VI6_WPF_HSZCLIP, VI6_WPF_SZCLIP_EN |
 		       (partition.left << VI6_WPF_SZCLIP_OFST_SHIFT) |
 		       (partition.width << VI6_WPF_SZCLIP_SIZE_SHIFT));
