@@ -208,6 +208,44 @@ vsp1_video_calculate_parititions(struct vsp1_pipeline *pipe, unsigned int div_si
 	return partitions;
 }
 
+static unsigned int
+vsp1_video_partition_width(struct vsp1_pipeline *pipe, unsigned int div_size)
+{
+	const struct v4l2_rect *crop = vsp1_rwpf_get_crop(pipe->output,
+			pipe->output->entity.config);
+	unsigned int width = crop->width;
+	unsigned int modulus = width % div_size;
+	unsigned int left_width = pipe->current_partition * div_size;
+
+	if (pipe->partitions <= 1)
+		return width;
+
+	width = div_size;
+
+	/* We need to prevent the last partition from being smaller
+	 * than the *minimum* width of the hardware capabilities.
+	 *
+	 * If the modulus is less than half of the partition size,
+	 * the penultimate partition is reduced to half, which is added
+	 * to the final partition:  |1234|1234|1234|12|341|
+	 */
+	if (modulus) {
+		/* pipe->partitions is 1 based, whilst pipe->current_partition
+		 * is a 0 based index. Normalise this locally */
+		unsigned int partitions = pipe->partitions - 1;
+
+		if (modulus < ( div_size / 2) ) {
+			if (pipe->current_partition == (partitions - 1))
+				width = div_size / 2;
+			else if (pipe->current_partition == partitions)
+				width = (div_size / 2) + modulus;
+		} else if (pipe->current_partition == partitions)
+			width = modulus;
+	}
+
+	return width;
+}
+
 /* -----------------------------------------------------------------------------
  * Pipeline Management
  */
@@ -293,6 +331,9 @@ static void vsp1_video_pipeline_run_partition(struct vsp1_pipeline *pipe)
 	struct vsp1_device *vsp1 = pipe->output->entity.vsp1;
 	struct vsp1_entity *entity;
 	unsigned int i;
+
+	/* TODO: NOT CURRENTLY USED : FIXME */
+	pipe->partition_width = vsp1_video_partition_width(pipe, pipe->div_size);
 
 	list_for_each_entry(entity, &pipe->entities, list_pipe) {
 		if (entity->ops->configure)

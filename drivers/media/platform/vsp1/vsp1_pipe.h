@@ -112,6 +112,7 @@ struct vsp1_pipeline {
 
 	unsigned int div_size;
 	unsigned int partitions;
+	unsigned int partition_width;
 	unsigned int current_partition;
 };
 
