@@ -99,8 +99,14 @@ static void rpf_configure(struct vsp1_entity *entity,
 		/* TODO: RPF needs to be reverse scaled for the partition size
 		 * based on the configuration of any scaling pipeline .. ????
 		 */
+		dprintk(DEBUG_INFO, "RPF:P%u %u,%u %ux%u\n", pipe->current_partition,
+				partition.top, partition.left, partition.width, partition.height);
+
 		partition.width = min(partition.width, pipe->div_size);
 		partition.left += pipe->current_partition * pipe->div_size;
+
+		dprintk(DEBUG_INFO, "RPF:P%u %u,%u %ux%u\n", pipe->current_partition,
+				partition.top, partition.left, partition.width, partition.height);
 	}
 
 	vsp1_rpf_write(rpf, dl, VI6_RPF_SRC_BSIZE,

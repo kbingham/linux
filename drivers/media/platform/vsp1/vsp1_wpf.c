@@ -255,6 +255,8 @@ static void wpf_set_memory(struct vsp1_entity *entity, struct vsp1_dl_list *dl)
 	unsigned int flip = wpf->flip.active;
 	unsigned int offset;
 
+	dprintk(DEBUG_WARNING, "Offsets %u : %u\n", wpf->offsets[0], wpf->offsets[1]);
+
 	/* First update the offsets based on partition slices */
 	mem.addr[0] += wpf->offsets[0];
 	mem.addr[1] += wpf->offsets[1];
@@ -319,8 +321,14 @@ static void wpf_configure(struct vsp1_entity *entity,
 
 	/* The partition algorithm can split this into multiple slices */
 	if (pipe->partitions > 1) {
+		dprintk(DEBUG_INFO, "WPF:P%u %u,%u %ux%u\n", pipe->current_partition,
+				partition.top, partition.left, partition.width, partition.height);
+
 		partition.width = min(partition.width, pipe->div_size);
 		partition.left += pipe->current_partition * pipe->div_size;
+
+		dprintk(DEBUG_INFO, "WPF:P%u %u,%u %ux%u\n", pipe->current_partition,
+				partition.top, partition.left, partition.width, partition.height);
 
 		/* Configure can be (/is) called before fmtinfo is set,
 		 * Dereferencing after pipe->partitions is set lets us be sure
@@ -331,6 +339,8 @@ static void wpf_configure(struct vsp1_entity *entity,
 			wpf->offsets[1] = partition.left * fmtinfo->bpp[1] / 8;
 		else
 			wpf->offsets[1] = 0;
+
+		dprintk(DEBUG_WARNING, "Setting WFP partition offsets %u:%u\n", wpf->offsets[0], wpf->offsets[1]);
 	} else
 		wpf->offsets[0] = wpf->offsets[1] = 0;
 
