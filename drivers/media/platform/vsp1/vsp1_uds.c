@@ -310,8 +310,41 @@ static void uds_configure(struct vsp1_entity *entity,
 		       (output->height << VI6_UDS_CLIP_SIZE_VSIZE_SHIFT));
 }
 
+static unsigned int uds_max_width(struct vsp1_entity *entity,
+				  struct vsp1_pipeline *pipe)
+{
+	struct vsp1_uds *uds = to_uds(&entity->subdev);
+	const struct v4l2_mbus_framefmt *output;
+	const struct v4l2_mbus_framefmt *input;
+	unsigned int hscale;
+
+	input = vsp1_entity_get_pad_format(&uds->entity, uds->entity.config,
+					   UDS_PAD_SINK);
+	output = vsp1_entity_get_pad_format(&uds->entity, uds->entity.config,
+					    UDS_PAD_SOURCE);
+
+	/* Downscaling always uses an output partition width of 256 */
+	if (input->width >= output->width)
+		return 256;
+
+	hscale = output->width / input->width;
+
+	if (hscale <= 2)
+		return 256;
+
+	if (hscale <= 4)
+		return 512;
+
+	if (hscale <= 8)
+		return 1024;
+
+	return 2048;
+}
+
+
 static const struct vsp1_entity_operations uds_entity_ops = {
 	.configure = uds_configure,
+	.max_width = uds_max_width,
 };
 
 /* -----------------------------------------------------------------------------
