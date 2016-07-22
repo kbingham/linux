@@ -320,6 +320,8 @@ static unsigned int sru_max_width(struct vsp1_entity *entity,
 	if (input->width != output->width)
 		return 512;
 
+	/* Tricky one - If SRU = x1, and UDS = x4 ~ x16 max_width = 128 ... */
+
 	/* No limit imposed */
 	return SRU_MAX_SIZE;
 }
