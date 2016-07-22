@@ -191,6 +191,9 @@ vsp1_video_pipeline_max_div_size(struct vsp1_pipeline *pipe)
 		}
 	}
 
+	dprintk(DEBUG_INFO, "Width: %u, div_size: %u\n",
+			crop->width, div_size);
+
 	return div_size;
 }
 
@@ -204,6 +207,9 @@ vsp1_video_calculate_parititions(struct vsp1_pipeline *pipe, unsigned int div_si
 
 	if (modulus)
 		partitions++;
+
+	dprintk(DEBUG_INFO, "Width: %u, Partitions: %u, Modulus: %u\n",
+			crop->width, partitions, modulus);
 
 	return partitions;
 }
