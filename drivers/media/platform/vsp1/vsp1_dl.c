@@ -451,8 +451,8 @@ int vsp1_dl_list_add_fragment(struct vsp1_dl_list *dl,
  * list in the chain has completed processing
  *
  * Adding a display list to a chain passes ownership of the display list to
- * the head display list item.
- * free it explicitly with vsp1_dl_fragment_free().
+ * the head display list item. The chain is released when the head dl item is
+ * put back with __vsp1_dl_list_put()
  *
  * Chained display lists are only usable in header mode. Attempts to add a
  * display list to a chain in header-less mode will return an error.
