@@ -256,6 +256,9 @@ EXPORT_SYMBOL_GPL(media_entity_pads_init);
 bool media_entity_has_route(struct media_entity *entity, unsigned int pad0,
 			    unsigned int pad1)
 {
+	unsigned int i;
+	bool has_route;
+
 	if (pad0 >= entity->num_pads || pad1 >= entity->num_pads)
 		return false;
 
@@ -269,7 +272,34 @@ bool media_entity_has_route(struct media_entity *entity, unsigned int pad0,
 	    && entity->pads[pad1].flags & MEDIA_PAD_FL_SINK)
 		swap(pad0, pad1);
 
-	return entity->ops->has_route(entity, pad0, pad1);
+	has_route = entity->ops->has_route(entity, pad0, pad1);
+	/* A direct route is returned immediately */
+	if (has_route ||
+	    (entity->pads[pad0].flags & MEDIA_PAD_FL_SINK &&
+	     entity->pads[pad1].flags & MEDIA_PAD_FL_SOURCE))
+		return true;
+
+	/* Look for indirect routes */
+	for (i = 0; i < entity->num_pads; i++) {
+		if (i == pad0 || i == pad1)
+			continue;
+
+		/*
+		 * There are no direct routes between same types of
+		 * pads, so skip checking this route
+		 */
+		if (!((entity->pads[pad0].flags ^ entity->pads[i].flags) &
+		      (MEDIA_PAD_FL_SOURCE | MEDIA_PAD_FL_SINK)))
+			continue;
+
+		/* Is there an indirect route? */
+		if (entity->ops->has_route(entity, i, pad0) &&
+		    entity->ops->has_route(entity, i, pad1))
+			return true;
+	}
+
+	return false;
+
 }
 EXPORT_SYMBOL_GPL(media_entity_has_route);
 
