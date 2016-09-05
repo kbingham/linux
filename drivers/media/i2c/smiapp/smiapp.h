@@ -162,6 +162,9 @@ struct smiapp_csi_data_format {
 #define SMIAPP_PAD_SRC			1
 #define SMIAPP_PADS			2
 
+#define SMIAPP_STREAM_PIXEL		0
+#define SMIAPP_STREAM_META		1
+
 struct smiapp_binning_subtype {
 	u8 horizontal:4;
 	u8 vertical:4;
