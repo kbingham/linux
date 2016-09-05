@@ -65,6 +65,46 @@ static const struct smiapp_module_ident smiapp_module_idents[] = {
  *
  */
 
+static u8 smiapp_mipi_csi2_data_type(unsigned int bpp)
+{
+	switch (bpp) {
+	case 6:
+		return SMIAPP_MIPI_CSI2_TYPE_RAW6;
+	case 7:
+		return SMIAPP_MIPI_CSI2_TYPE_RAW7;
+	case 8:
+		return SMIAPP_MIPI_CSI2_TYPE_RAW8;
+	case 10:
+		return SMIAPP_MIPI_CSI2_TYPE_RAW10;
+	case 12:
+		return SMIAPP_MIPI_CSI2_TYPE_RAW12;
+	case 14:
+		return SMIAPP_MIPI_CSI2_TYPE_RAW14;
+	case 16:
+		return SMIAPP_MIPI_CSI2_TYPE_RAW16;
+	default:
+		WARN_ON(1);
+		return 0;
+	}
+}
+
+static unsigned int smiapp_metadata_mbus_code(unsigned int bpp)
+{
+	switch (bpp) {
+	case 8:
+		return MEDIA_BUS_FMT_SMIAPP_EMBEDDED_8;
+	case 10:
+		return MEDIA_BUS_FMT_SMIAPP_EMBEDDED_10;
+	case 12:
+		return MEDIA_BUS_FMT_SMIAPP_EMBEDDED_12;
+	case 14:
+		return MEDIA_BUS_FMT_SMIAPP_EMBEDDED_14;
+	default:
+		WARN_ON(1);
+		return 0;
+	}
+}
+
 static int smiapp_read_frame_fmt(struct smiapp_sensor *sensor)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(&sensor->src->sd);
@@ -2295,6 +2335,43 @@ static int smiapp_set_selection(struct v4l2_subdev *subdev,
 	return ret;
 }
 
+static int smiapp_get_frame_desc(struct v4l2_subdev *subdev, unsigned int pad,
+				 struct v4l2_mbus_frame_desc *desc)
+{
+	struct smiapp_sensor *sensor = to_smiapp_sensor(subdev);
+	struct v4l2_mbus_frame_desc_entry *entry = desc->entry;
+
+	memset(desc, 0, sizeof(*desc));
+
+	if (smiapp_has_quirk(sensor, frame_desc))
+		return smiapp_call_quirk(sensor, frame_desc, desc);
+
+	switch (sensor->hwcfg->csi_signalling_mode) {
+	case SMIAPP_CSI_SIGNALLING_MODE_CSI2:
+		desc->type = V4L2_MBUS_FRAME_DESC_TYPE_CSI2;
+		break;
+	default:
+		/* FIXME: CCP2 support */
+		return -EINVAL;
+	}
+
+	if (sensor->embedded_start != sensor->embedded_end) {
+		entry->stream = SMIAPP_STREAM_META;
+		entry->bus.csi2.data_type = SMIAPP_MIPI_CSI2_TYPE_EMBEDDED8;
+		entry++;
+		desc->num_entries++;
+	}
+
+	entry->pixelcode = sensor->csi_format->code;
+	entry->stream = SMIAPP_STREAM_PIXEL;
+	entry->bus.csi2.data_type =
+		smiapp_mipi_csi2_data_type(sensor->csi_format->compressed);
+	entry++;
+	desc->num_entries++;
+
+	return 0;
+}
+
 static int smiapp_get_skip_frames(struct v4l2_subdev *subdev, u32 *frames)
 {
 	struct smiapp_sensor *sensor = to_smiapp_sensor(subdev);
@@ -2688,6 +2765,7 @@ static const struct v4l2_subdev_pad_ops smiapp_pad_ops = {
 	.set_fmt = smiapp_set_format,
 	.get_selection = smiapp_get_selection,
 	.set_selection = smiapp_set_selection,
+	.get_frame_desc = smiapp_get_frame_desc,
 };
 
 static const struct v4l2_subdev_sensor_ops smiapp_sensor_ops = {
