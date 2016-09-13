@@ -2678,6 +2678,7 @@ static void smiapp_cleanup(struct smiapp_sensor *sensor)
 }
 
 static void smiapp_create_subdev(struct smiapp_sensor *sensor,
+				 const struct v4l2_subdev_ops *ops,
 				 struct smiapp_subdev *ssd, const char *name,
 				 unsigned short num_pads)
 {
@@ -2687,7 +2688,7 @@ static void smiapp_create_subdev(struct smiapp_sensor *sensor,
 		return;
 
 	if (ssd != sensor->src)
-		v4l2_subdev_init(&ssd->sd, &smiapp_ops);
+		v4l2_subdev_init(&ssd->sd, ops);
 
 	ssd->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
 	ssd->sensor = sensor;
@@ -2934,9 +2935,13 @@ static int smiapp_probe(struct i2c_client *client,
 	sensor->hwcfg = hwcfg;
 	mutex_init(&sensor->mutex);
 	sensor->src = &sensor->ssds[sensor->ssds_used];
-
-	v4l2_i2c_subdev_init(&sensor->src->sd, client, &smiapp_ops);
 	sensor->src->sd.internal_ops = &smiapp_internal_src_ops;
+	/*
+	 * Make sure the information is available early enough. This
+	 * will be re-set in v4l2_i2c_subdev_init().
+	 */
+	v4l2_set_subdevdata(&sensor->src->sd, client);
+	i2c_set_clientdata(client, &sensor->src->sd);
 
 	sensor->vana = devm_regulator_get(&client->dev, "vana");
 	if (IS_ERR(sensor->vana)) {
@@ -3127,9 +3132,11 @@ static int smiapp_probe(struct i2c_client *client,
 	if (sensor->minfo.smiapp_profile == SMIAPP_PROFILE_0)
 		sensor->pll.flags |= SMIAPP_PLL_FLAG_NO_OP_CLOCKS;
 
-	smiapp_create_subdev(sensor, sensor->scaler, "scaler", 2);
-	smiapp_create_subdev(sensor, sensor->binner, "binner", 2);
-	smiapp_create_subdev(sensor, sensor->pixel_array, "pixel_array", 1);
+	smiapp_create_subdev(sensor, &smiapp_ops, sensor->scaler,
+			     "scaler", 2);
+	smiapp_create_subdev(sensor, &smiapp_ops, sensor->binner, "binner", 2);
+	smiapp_create_subdev(sensor, &smiapp_ops, sensor->pixel_array,
+			     "pixel_array", 1);
 
 	dev_dbg(&client->dev, "profile %d\n", sensor->minfo.smiapp_profile);
 
