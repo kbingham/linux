@@ -106,7 +106,7 @@ int vsp1_du_setup_lif(struct device *dev, unsigned int pipe_index,
 		if (ret == -ETIMEDOUT)
 			dev_err(vsp1->dev, "DRM pipeline stop timeout\n");
 
-		media_pipeline_stop(&pipe->output->entity.subdev.entity);
+		media_pipeline_stop(pipe->output->entity.subdev.entity.pads);
 
 		for (i = 0; i < ARRAY_SIZE(pipe->inputs); ++i) {
 			struct vsp1_rwpf *rpf = pipe->inputs[i];
@@ -238,7 +238,7 @@ int vsp1_du_setup_lif(struct device *dev, unsigned int pipe_index,
 	drm_pipe->du_complete = cfg->callback;
 	drm_pipe->du_private = cfg->callback_data;
 
-	ret = media_pipeline_start(&pipe->output->entity.subdev.entity,
+	ret = media_pipeline_start(pipe->output->entity.subdev.entity.pads,
 					  &pipe->pipe);
 	if (ret < 0) {
 		dev_dbg(vsp1->dev, "%s: pipeline start failed\n", __func__);
