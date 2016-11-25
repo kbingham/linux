@@ -266,13 +266,14 @@ EXPORT_SYMBOL_GPL(v4l_vb2q_enable_media_source);
 static int pipeline_pm_use_count(struct media_entity *entity,
 	struct media_graph *graph)
 {
+	struct media_pad *pad;
 	int use = 0;
 
 	media_graph_walk_start(graph, entity->pads);
 
-	while ((entity = media_graph_walk_next(graph))) {
-		if (is_media_entity_v4l2_video_device(entity))
-			use += entity->use_count;
+	while ((pad = media_graph_walk_next(graph))) {
+		if (is_media_entity_v4l2_video_device(pad->entity))
+			use += pad->entity->use_count;
 	}
 
 	return use;
@@ -325,7 +326,7 @@ static int pipeline_pm_power_one(struct media_entity *entity, int change)
 static int pipeline_pm_power(struct media_entity *entity, int change,
 	struct media_graph *graph)
 {
-	struct media_entity *first = entity;
+	struct media_pad *tmp_pad, *pad;
 	int ret = 0;
 
 	if (!change)
@@ -333,19 +334,19 @@ static int pipeline_pm_power(struct media_entity *entity, int change,
 
 	media_graph_walk_start(graph, entity->pads);
 
-	while (!ret && (entity = media_graph_walk_next(graph)))
-		if (is_media_entity_v4l2_subdev(entity))
-			ret = pipeline_pm_power_one(entity, change);
+	while (!ret && (pad = media_graph_walk_next(graph)))
+		if (is_media_entity_v4l2_subdev(pad->entity))
+			ret = pipeline_pm_power_one(pad->entity, change);
 
 	if (!ret)
 		return ret;
 
-	media_graph_walk_start(graph, first->pads);
+	media_graph_walk_start(graph, entity->pads);
 
-	while ((first = media_graph_walk_next(graph))
-	       && first != entity)
-		if (is_media_entity_v4l2_subdev(first))
-			pipeline_pm_power_one(first, -change);
+	while ((tmp_pad = media_graph_walk_next(graph))
+	       && tmp_pad != pad)
+		if (is_media_entity_v4l2_subdev(tmp_pad->entity))
+			pipeline_pm_power_one(tmp_pad->entity, -change);
 
 	return ret;
 }
