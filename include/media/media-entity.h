@@ -888,6 +888,33 @@ __must_check int media_graph_walk_init(
 bool media_entity_has_route(struct media_entity *entity, unsigned int pad0,
 			    unsigned int pad1);
 
+static inline struct media_pad *__media_entity_for_routed_pads_next(
+	struct media_pad *start, struct media_pad *iter)
+{
+	struct media_entity *entity = start->entity;
+
+	while (iter < &entity->pads[entity->num_pads] &&
+	       !media_entity_has_route(entity, start->index, iter->index))
+		iter++;
+
+	return iter;
+}
+
+/**
+ * media_entity_for_routed_pads - Iterate over entity pads connected by routes
+ *
+ * @start: The stating pad
+ * @iter: The iterator pad
+ *
+ * Iterate over all pads connected through routes from a given pad
+ * within an entity. The iteration will include the starting pad itself.
+ */
+#define media_entity_for_routed_pads(start, iter)			\
+	for (iter = __media_entity_for_routed_pads_next(		\
+		     start, (start)->entity->pads);			\
+	     iter < &(start)->entity->pads[(start)->entity->num_pads];	\
+	     iter = __media_entity_for_routed_pads_next(start, iter + 1))
+
 /**
  * media_graph_walk_cleanup - Release resources used by graph walk.
  *
