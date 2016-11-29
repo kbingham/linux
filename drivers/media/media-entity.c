@@ -435,7 +435,7 @@ __must_check int __media_pipeline_start(struct media_entity *entity,
 	struct media_pad *pad = entity->pads;
 	struct media_pad *pad_err = pad;
 	struct media_link *link;
-	int ret;
+	int ret = 0;
 
 	if (!pipe->streaming_count++) {
 		ret = media_graph_walk_init(&pipe->graph, mdev);
@@ -447,21 +447,27 @@ __must_check int __media_pipeline_start(struct media_entity *entity,
 
 	while ((pad = media_graph_walk_next(graph))) {
 		struct media_entity *entity = pad->entity;
+		unsigned int i;
+		bool skip_validation = pad->pipe;
 
 		DECLARE_BITMAP(active, MEDIA_ENTITY_MAX_PADS);
 		DECLARE_BITMAP(has_no_links, MEDIA_ENTITY_MAX_PADS);
 
-		entity->stream_count++;
+		for (i = 0; i < entity->num_pads; i++) {
+			struct media_pad *iter = &entity->pads[i];
 
-		if (WARN_ON(entity->pipe && entity->pipe != pipe)) {
-			ret = -EBUSY;
-			goto error;
+			if (iter->pipe && WARN_ON(iter->pipe != pipe))
+				ret = -EBUSY;
+			else
+				iter->pipe = pipe;
+			iter->stream_count++;
 		}
 
-		entity->pipe = pipe;
+		if (ret)
+			goto error;
 
 		/* Already streaming --- no need to check. */
-		if (entity->stream_count > 1)
+		if (skip_validation)
 			continue;
 
 		if (!entity->ops || !entity->ops->link_validate)
@@ -530,19 +536,24 @@ error:
 
 	while ((pad_err = media_graph_walk_next(graph))) {
 		struct media_entity *entity_err = pad_err->entity;
+		unsigned int i;
 
-		/* Sanity check for negative stream_count */
-		if (!WARN_ON_ONCE(entity_err->stream_count <= 0)) {
-			entity_err->stream_count--;
-			if (entity_err->stream_count == 0)
-				entity_err->pipe = NULL;
+		for (i = 0; i < entity_err->num_pads; i++) {
+			struct media_pad *iter = &entity_err->pads[i];
+
+			/* Sanity check for negative stream_count */
+			if (!WARN_ON_ONCE(iter->stream_count <= 0)) {
+				--iter->stream_count;
+				if (iter->stream_count == 0)
+					iter->pipe = NULL;
+			}
 		}
 
 		/*
 		 * We haven't increased stream_count further than this
 		 * so we quit here.
 		 */
-		if (pad_err == pad)
+		if (pad_err->entity == pad->entity)
 			break;
 	}
 
@@ -569,7 +580,7 @@ EXPORT_SYMBOL_GPL(media_pipeline_start);
 
 void __media_pipeline_stop(struct media_entity *entity)
 {
-	struct media_pipeline *pipe = entity->pipe;
+	struct media_pipeline *pipe = entity->pads->pipe;
 	struct media_graph *graph = &pipe->graph;
 	struct media_pad *pad;
 
@@ -583,13 +594,17 @@ void __media_pipeline_stop(struct media_entity *entity)
 	media_graph_walk_start(graph, entity->pads);
 
 	while ((pad = media_graph_walk_next(graph))) {
-		struct media_entity *entity = pad->entity;
+		unsigned int i;
 
-		/* Sanity check for negative stream_count */
-		if (!WARN_ON_ONCE(entity->stream_count <= 0)) {
-			entity->stream_count--;
-			if (entity->stream_count == 0)
-				entity->pipe = NULL;
+		for (i = 0; i < entity->num_pads; i++) {
+			struct media_pad *iter = &entity->pads[i];
+
+			/* Sanity check for negative stream_count */
+			if (!WARN_ON_ONCE(iter->stream_count <= 0)) {
+				iter->stream_count--;
+				if (iter->stream_count == 0)
+					iter->pipe = NULL;
+			}
 		}
 	}
 
@@ -855,7 +870,7 @@ int __media_entity_setup_link(struct media_link *link, u32 flags)
 {
 	const u32 mask = MEDIA_LNK_FL_ENABLED;
 	struct media_device *mdev;
-	struct media_entity *source, *sink;
+	struct media_pad *source, *sink;
 	int ret = -EBUSY;
 
 	if (link == NULL)
@@ -871,8 +886,8 @@ int __media_entity_setup_link(struct media_link *link, u32 flags)
 	if (link->flags == flags)
 		return 0;
 
-	source = link->source->entity;
-	sink = link->sink->entity;
+	source = link->source;
+	sink = link->sink;
 
 	if (!(link->flags & MEDIA_LNK_FL_DYNAMIC) &&
 	    (source->stream_count || sink->stream_count))
