@@ -476,15 +476,13 @@ __must_check int __media_pipeline_start(struct media_pad *pad,
 
 	while ((pad = media_graph_walk_next(graph))) {
 		struct media_entity *entity = pad->entity;
-		unsigned int i;
+		struct media_pad *iter;
 		bool skip_validation = pad->pipe;
 
 		DECLARE_BITMAP(active, MEDIA_ENTITY_MAX_PADS);
 		DECLARE_BITMAP(has_no_links, MEDIA_ENTITY_MAX_PADS);
 
-		for (i = 0; i < entity->num_pads; i++) {
-			struct media_pad *iter = &entity->pads[i];
-
+		media_entity_for_routed_pads(pad, iter) {
 			if (iter->pipe && WARN_ON(iter->pipe != pipe))
 				ret = -EBUSY;
 			else
@@ -569,12 +567,9 @@ error:
 	media_graph_walk_start(graph, pad_err);
 
 	while ((pad_err = media_graph_walk_next(graph))) {
-		struct media_entity *entity_err = pad_err->entity;
-		unsigned int i;
+		struct media_pad *iter;
 
-		for (i = 0; i < entity_err->num_pads; i++) {
-			struct media_pad *iter = &entity_err->pads[i];
-
+		media_entity_for_routed_pads(pad_err, iter) {
 			/* Sanity check for negative stream_count */
 			if (!WARN_ON_ONCE(iter->stream_count <= 0)) {
 				--iter->stream_count;
@@ -627,12 +622,9 @@ void __media_pipeline_stop(struct media_pad *pad)
 	media_graph_walk_start(graph, pad);
 
 	while ((pad = media_graph_walk_next(graph))) {
-		struct media_entity *entity = pad->entity;
-		unsigned int i;
+		struct media_pad *iter;
 
-		for (i = 0; i < entity->num_pads; i++) {
-			struct media_pad *iter = &entity->pads[i];
-
+		media_entity_for_routed_pads(pad, iter) {
 			/* Sanity check for negative stream_count */
 			if (!WARN_ON_ONCE(iter->stream_count <= 0)) {
 				iter->stream_count--;
