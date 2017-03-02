@@ -149,13 +149,16 @@ void xilinx_drm_plane_commit(struct drm_plane *base_plane)
 {
 	struct xilinx_drm_plane *plane = to_xilinx_plane(base_plane);
 	struct dma_async_tx_descriptor *desc;
-	struct xilinx_xdma_config dma_config;
 	enum dma_ctrl_flags flags;
 	unsigned int i;
 
+#ifdef CONFIG_XILINX_FRMBUF
 	/* for xilinx video framebuffer dma, if used */
+	struct xilinx_xdma_config dma_config;
+
 	dma_config.fourcc = plane->format;
 	dma_config.type = XDMA_DRM;
+#endif
 
 	DRM_DEBUG_KMS("plane->id: %d\n", plane->id);
 
@@ -164,9 +167,10 @@ void xilinx_drm_plane_commit(struct drm_plane *base_plane)
 
 		if (dma->chan && dma->is_active) {
 
+#ifdef CONFIG_XILINX_FRMBUF
 			/* set first channel private data */
 			dma->chan->private = &dma_config;
-
+#endif
 			flags = DMA_CTRL_ACK | DMA_PREP_INTERRUPT;
 			desc = dmaengine_prep_interleaved_dma(dma->chan,
 							      &dma->xt,
