@@ -151,7 +151,9 @@ struct xv_mixer *xilinx_drm_mixer_probe(struct device *dev,
 
 	}
 
+	/* establish some global defaults subject to override via dts */
 	mixer->intrpts_enabled = false;
+	mixer->logo_pixel_alpha_enabled = false;
 
 	mixer->logo_layer_enabled = of_property_read_bool(node,
 							  "xlnx,logo-layer");
@@ -447,6 +449,7 @@ void
 xilinx_drm_mixer_layer_enable(struct xilinx_drm_plane *plane)
 {
 	struct xv_mixer *mixer;
+	struct xv_mixer_layer_data *layer_data;
 	u32 layer_id;
 
 	if (plane)
@@ -454,11 +457,17 @@ xilinx_drm_mixer_layer_enable(struct xilinx_drm_plane *plane)
 	else
 		return;
 
-	layer_id = plane->mixer_layer->id;
+	layer_data = plane->mixer_layer;
+	layer_id = layer_data->id;
 
 	if (layer_id < XVMIX_LAYER_MASTER  || layer_id > XVMIX_LAYER_LOGO) {
 		DRM_DEBUG_KMS("Attempt to activate invalid layer: %d\n",
 			layer_id);
+		return;
+	}
+
+	if (layer_id == XVMIX_LAYER_MASTER &&
+		!mixer_layer_is_streaming(layer_data)) {
 		return;
 	}
 
@@ -618,6 +627,9 @@ static int xilinx_drm_mixer_parse_dt_logo_data(struct device_node *node,
 			of_property_read_bool(logo_node,
 				"xlnx,logo-pixel-alpha");
 
+		if (mixer->logo_pixel_alpha_enabled)
+			layer_data->hw_config.vid_fmt = XVIDC_CSF_RGBA8;
+
 	}
 	return ret;
 }
@@ -629,23 +641,32 @@ static int xilinx_drm_mixer_parse_dt_bg_video_fmt(struct device_node *node,
 {
 
 	struct device_node *layer_node;
+	struct xv_mixer_layer_data *layer;
 	const char *vformat;
 	int ret = 0;
 
 	layer_node = of_get_child_by_name(node, "layer_0");
 
-	mixer->layer_data[0].hw_config.min_width = XVMIX_LAYER_WIDTH_MIN;
-	mixer->layer_data[0].hw_config.min_height = XVMIX_LAYER_HEIGHT_MIN;
+	layer = &(mixer->layer_data[0]);
+
+	/* Set default values */
+	layer->hw_config.can_alpha = false;
+	layer->hw_config.can_scale = false;
+	layer->hw_config.is_streaming = false;
+	layer->hw_config.min_width = XVMIX_LAYER_WIDTH_MIN;
+	layer->hw_config.min_height = XVMIX_LAYER_HEIGHT_MIN;
 
 
 	ret = of_property_read_string(layer_node, "xlnx,vformat", &vformat);
-
 
 	if (ret) {
 		DRM_ERROR("Failed to get mixer video format. Read %s from "
 			"dts\n", vformat);
 		return -1;
 	}
+
+	mixer_layer_is_streaming(layer) =
+		    of_property_read_bool(layer_node, "xlnx,layer-streaming");
 
 	ret = of_property_read_u32(node, "xlnx,bpc",
 				   &(mixer->bg_layer_bpc));
@@ -664,20 +685,20 @@ static int xilinx_drm_mixer_parse_dt_bg_video_fmt(struct device_node *node,
 	/* set global max width for mixer which will, ultimately, set the
 	*  limit for the crtc
 */
-	mixer->max_layer_width = mixer->layer_data[0].hw_config.max_width;
+	mixer->max_layer_width = layer->hw_config.max_width;
 
 
 	ret = of_property_read_u32(layer_node, "xlnx,layer-height",
-		&(mixer->layer_data[0].hw_config.max_height));
+		&(layer->hw_config.max_height));
 	if (ret) {
 		DRM_ERROR("Failed to get screen height prop\n");
 		return -1;
 	}
 
-	mixer->max_layer_height = mixer->layer_data[0].hw_config.max_height;
+	mixer->max_layer_height = layer->hw_config.max_height;
 
 	/*We'll use the first layer instance to store data of the master layer*/
-	mixer->layer_data[0].id = XVMIX_LAYER_MASTER;
+	layer->id = XVMIX_LAYER_MASTER;
 
 	ret = xilinx_drm_mixer_string_to_fmt(vformat,
 				&(mixer->layer_data[0].hw_config.vid_fmt));
@@ -723,10 +744,13 @@ xilinx_drm_mixer_update_logo_img(struct xilinx_drm_plane *plane,
 
 	struct drm_gem_cma_object *buffer;
 	struct xv_mixer_layer_data *logo_layer = plane->mixer_layer;
-	uint32_t pixel_cnt = src_h * src_w;
-	uint32_t comp_offset = 3; /* color comp offset in RG24 buffer */
-	uint32_t pixel_cmp_cnt = pixel_cnt * comp_offset; /* assumes RG24 */
+	size_t pixel_cnt = src_h * src_w;
+
+	/* color comp defaults to offset in RG24 buffer */
+	uint32_t pix_cmp_cnt;
+	uint32_t logo_cmp_cnt;
 	uint32_t layer_pixel_fmt = 0;
+	bool per_pixel_alpha = false;
 
 	uint32_t max_width = logo_layer->hw_config.max_width;
 	uint32_t max_height = logo_layer->hw_config.max_height;
@@ -735,9 +759,11 @@ xilinx_drm_mixer_update_logo_img(struct xilinx_drm_plane *plane,
 
 	uint32_t max_logo_pixels = max_width * max_height;
 
-	u8 r_data[max_logo_pixels];
-	u8 g_data[max_logo_pixels];
-	u8 b_data[max_logo_pixels];
+	u8 *r_data;
+	u8 *g_data;
+	u8 *b_data;
+	u8 *a_data;
+	size_t el_size = sizeof(u8);
 
 	u8 *pixel_mem_data;
 
@@ -761,6 +787,26 @@ xilinx_drm_mixer_update_logo_img(struct xilinx_drm_plane *plane,
 
 	ret = xilinx_drm_mixer_fmt_to_drm_fmt(logo_layer->hw_config.vid_fmt,
 					      &layer_pixel_fmt);
+
+	per_pixel_alpha =
+		(mixer_layer_fmt(logo_layer) == XVIDC_CSF_RGBA8) ? true : false;
+
+	r_data = kcalloc(pixel_cnt, el_size, GFP_KERNEL);
+	g_data = kcalloc(pixel_cnt, el_size, GFP_KERNEL);
+	b_data = kcalloc(pixel_cnt, el_size, GFP_KERNEL);
+
+	if (per_pixel_alpha)
+		a_data = kcalloc(pixel_cnt, el_size, GFP_KERNEL);
+
+	if (!r_data || !g_data || !b_data || (per_pixel_alpha && !a_data)) {
+		DRM_ERROR("Unable to allocate memory for logo layer data\n");
+		ret = -ENOMEM;
+		goto free;
+	}
+
+	pix_cmp_cnt = per_pixel_alpha ? 4 : 3;
+	logo_cmp_cnt = pixel_cnt * pix_cmp_cnt;
+
 	if (ret)
 		return ret;
 
@@ -770,10 +816,6 @@ xilinx_drm_mixer_update_logo_img(struct xilinx_drm_plane *plane,
 		return -EINVAL;
 	}
 
-	/* JPM TODO aside from consistency check above, we're implicitly
-	 * assuming that data in RG24 formatted for logo layer.  Need
-	 * a case() statement in the future for GR24
-	*/
 	buffer = xilinx_drm_fb_get_gem_obj(fb, 0);
 
 	/* ensure buffer attributes have changed to indicate new logo
@@ -789,17 +831,26 @@ xilinx_drm_mixer_update_logo_img(struct xilinx_drm_plane *plane,
 
 	pixel_mem_data = (u8 *)(buffer->vaddr);
 
-	for (i = 0, j = 0;
-		i < pixel_cmp_cnt && j < pixel_cnt;
-		i += comp_offset, j++) {
-		b_data[j] = pixel_mem_data[i];
-		g_data[j] = pixel_mem_data[i+1];
-		r_data[j] = pixel_mem_data[i+2];
+	for (i = 0, j = 0; j < pixel_cnt; j++) {
+
+		if (per_pixel_alpha)
+			a_data[j] = pixel_mem_data[i++];
+
+		b_data[j] = pixel_mem_data[i++];
+		g_data[j] = pixel_mem_data[i++];
+		r_data[j] = pixel_mem_data[i++];
 	}
 
 	ret = xilinx_mixer_logo_load(plane->manager->mixer,
 				src_w, src_h,
-				&(r_data[0]), &(g_data[0]), &(b_data[0]));
+				r_data, g_data, b_data,
+				per_pixel_alpha ? a_data : NULL);
+
+free:
+	kfree(r_data);
+	kfree(g_data);
+	kfree(b_data);
+	kfree(a_data);
 
 	return ret;
 }

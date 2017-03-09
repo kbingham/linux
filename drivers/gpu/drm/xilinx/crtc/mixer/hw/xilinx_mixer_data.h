@@ -454,12 +454,13 @@ xilinx_mixer_init(struct xv_mixer *mixer);
  * @param[in] r_buffer Pointer to byte buffer array of R data values
  * @param[in] g_buffer Pointer to byte buffer array of G data values
  * @param[in] b_buffer Pointer to byte buffer array of B data values
+ * @param[in] a_buffer Pointer to byte buffer array of A data values
  *
  * @returns 0 on success; -ENODEV if logo layer not enabled; -EINVAL otherwise
 */
 int
 xilinx_mixer_logo_load(struct xv_mixer *mixer, u32 logo_w, u32 logo_h,
-			u8 *r_buf, u8 *g_buf, u8 *b_buf);
+			u8 *r_buf, u8 *g_buf, u8 *b_buf, u8 *a_buf);
 
 
 int
