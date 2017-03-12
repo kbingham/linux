@@ -1004,6 +1004,7 @@ int xilinx_mixer_logo_load(struct xv_mixer *mixer,
 	u32 rbase_addr, gbase_addr, bbase_addr, abase_addr;
 
 	layer_data = xilinx_mixer_get_layer_data(mixer, XVMIX_LAYER_LOGO);
+	rword = gword = bword = aword = 0;
 
 
 	if (!layer_data)
