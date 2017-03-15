@@ -119,6 +119,8 @@ static void uvc_buffer_queue(struct vb2_buffer *vb)
 	struct uvc_buffer *buf = container_of(vbuf, struct uvc_buffer, buf);
 	unsigned long flags;
 
+	trace_printk("Queueing buffer\n");
+
 	spin_lock_irqsave(&queue->irqlock, flags);
 	if (likely(!(queue->flags & UVC_QUEUE_DISCONNECTED))) {
 		kref_init(&buf->ref);
