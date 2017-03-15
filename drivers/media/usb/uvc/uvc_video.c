@@ -963,6 +963,23 @@ static void uvc_video_stats_stop(struct uvc_streaming *stream)
  * to be called with a NULL buf parameter. uvc_video_decode_data and
  * uvc_video_decode_end will never be called with a NULL buffer.
  */
+
+static void uvc_video_urb_complete(struct kref *ref)
+{
+	struct uvc_urb *uvc_urb = container_of(ref, struct uvc_urb, ref);
+	struct urb *urb = uvc_urb->urb;
+	int ret;
+
+	/*
+	 * We may still be completed from within interrupt context, thus we must
+	 * use GFP_ATOMIC here.
+	 */
+	if ((ret = usb_submit_urb(urb, GFP_ATOMIC)) < 0) {
+		uvc_printk(KERN_ERR, "Failed to resubmit video URB (%d).\n",
+			ret);
+	}
+}
+
 static int uvc_video_decode_start(struct uvc_streaming *stream,
 		struct uvc_buffer *buf, const __u8 *data, int len)
 {
@@ -1325,7 +1342,6 @@ static void uvc_video_complete(struct urb *urb)
 	struct uvc_video_queue *queue = &stream->queue;
 	struct uvc_buffer *buf = NULL;
 	unsigned long flags;
-	int ret;
 
 	switch (urb->status) {
 	case 0:
@@ -1351,12 +1367,10 @@ static void uvc_video_complete(struct urb *urb)
 				       queue);
 	spin_unlock_irqrestore(&queue->irqlock, flags);
 
+	/* Async workloads can take a reference to the URB */
+	kref_init(&uvc_urb->ref);
 	stream->decode(uvc_urb, stream, buf);
-
-	if ((ret = usb_submit_urb(urb, GFP_ATOMIC)) < 0) {
-		uvc_printk(KERN_ERR, "Failed to resubmit video URB (%d).\n",
-			ret);
-	}
+	kref_put(&uvc_urb->ref, uvc_video_urb_complete);
 }
 
 /*

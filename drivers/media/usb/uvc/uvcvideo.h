@@ -459,6 +459,9 @@ struct uvc_stats_stream {
  * @stream: UVC streaming context
  * @urb_buffer: memory storage for the URB
  * @urb_dma: DMA coherent addressing for the urb_buffer
+ * @ref: reference counting for asynchronous completion actions.
+ * 	 Note that this refcnt is used for tracking use by parallel completion
+ * 	 threads, and not for 'free'ing the URB itself.
  */
 struct uvc_urb {
 	struct urb *urb;
@@ -466,6 +469,8 @@ struct uvc_urb {
 
 	char *urb_buffer;
 	dma_addr_t urb_dma;
+
+	struct kref ref;
 };
 
 struct uvc_streaming {
