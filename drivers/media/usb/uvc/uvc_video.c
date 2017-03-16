@@ -1159,6 +1159,8 @@ static void uvc_video_decode_data_work(struct work_struct *work)
 
 	memcpy(decode->mem, decode->data, decode->len);
 
+	decode->uvc_urb->stream->stats.stream.bytes += decode->len;
+
 	/* Release our references, and complete as necessary */
 	kref_put(&decode->buf->ref, uvc_queue_buffer_complete);
 	kref_put(&decode->uvc_urb->ref, uvc_video_urb_complete);
