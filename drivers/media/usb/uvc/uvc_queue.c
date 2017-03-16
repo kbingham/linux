@@ -121,6 +121,7 @@ static void uvc_buffer_queue(struct vb2_buffer *vb)
 
 	spin_lock_irqsave(&queue->irqlock, flags);
 	if (likely(!(queue->flags & UVC_QUEUE_DISCONNECTED))) {
+		kref_init(&buf->ref);
 		list_add_tail(&buf->queue, &queue->irqqueue);
 	} else {
 		/* If the device is disconnected return the buffer to userspace
