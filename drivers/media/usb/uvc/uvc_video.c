@@ -971,6 +971,16 @@ static void uvc_video_urb_complete(struct kref *ref)
 	int ret;
 
 	/*
+ be careful of race conditions between URB requeue and stream stop
+ when stopping the stream you need to stop resubmitting URBs
+ read documentation about usb_kill_urb() and usb_unlink_urb()
+ and see the error codes in uvc_video_complete()
+ be also careful about the race between device disconnect and URB resubmission
+
+ KPB: Current implementation performs exactly as the previous version.
+	 */
+
+	/*
 	 * We may still be completed from within interrupt context, thus we must
 	 * use GFP_ATOMIC here.
 	 */
