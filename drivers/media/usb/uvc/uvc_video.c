@@ -867,6 +867,10 @@ size_t uvc_video_stats_dump(struct uvc_streaming *stream, char *buf,
 	unsigned int duration;
 	struct timespec ts;
 	size_t count = 0;
+	unsigned int rate = 0;
+	unsigned int fps = 0; /* Frames per millisecond? */
+
+	ktime_get_ts(&stream->stats.stream.stop_ts);
 
 	ts.tv_sec = stream->stats.stream.stop_ts.tv_sec
 		  - stream->stats.stream.start_ts.tv_sec;
@@ -909,6 +913,23 @@ size_t uvc_video_stats_dump(struct uvc_streaming *stream, char *buf,
 			   stream->stats.stream.min_sof,
 			   stream->stats.stream.max_sof,
 			   scr_sof_freq / 1000, scr_sof_freq % 1000);
+
+	if (duration != 0) {
+		rate = stream->stats.stream.bytes / duration;
+		/* Duration is in milliseconds */
+		fps = stream->stats.stream.nb_frames * 1000 / duration;
+	}
+
+	count += scnprintf(buf + count, size - count,
+			   "Bytes %ld : Duration %d\n",
+			   stream->stats.stream.bytes,
+			   duration);
+
+	count += scnprintf(buf + count, size - count,
+			   "Throughput: %d.%03d mbytes / s\n",
+			   rate / 1000, rate % 1000);
+	count += scnprintf(buf + count, size - count,
+			   "FPS: %d\n", fps);
 
 	return count;
 }
@@ -1111,6 +1132,8 @@ static void uvc_video_decode_data(struct uvc_streaming *stream,
 	nbytes = min((unsigned int)len, maxlen);
 	memcpy(mem, data, nbytes);
 	buf->bytesused += nbytes;
+
+	stream->stats.stream.bytes += nbytes;
 
 	/* Complete the current frame if the buffer size was exceeded. */
 	if (len > maxlen) {
