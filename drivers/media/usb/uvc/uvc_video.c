@@ -1155,6 +1155,8 @@ static void uvc_video_decode_data_work(struct work_struct *work)
 	struct uvc_decode_work *decode = container_of(work,
 						struct uvc_decode_work, work);
 
+	trace_printk("I am%s in_interrupt();\n", in_interrupt() ? "" : " not");
+
 	memcpy(decode->mem, decode->data, decode->len);
 
 	/* Release our references, and complete as necessary */
@@ -1186,11 +1188,18 @@ static void uvc_video_decode_data_async(struct uvc_decode_work *decode,
 	kref_get(&uvc_urb->ref);
 	kref_get(&buf->ref);
 
-	/* Complete the current frame if the buffer size was exceeded. */
+	trace_printk("refs taken, tasked to copy %d bytes,", decode->len);
+	trace_printk("Buf: Used %d/%d : Error:%d State:%d",
+			buf->bytesused, buf->length,
+			buf->error, buf->state);
+
+	/* Async Complete the current frame if the buffer size was exceeded. */
 	if (len > maxlen) {
 		uvc_trace(UVC_TRACE_FRAME, "Frame complete (overflow).\n");
 		buf->state = UVC_BUF_STATE_READY;
 	}
+
+	trace_printk("I am%s in_interrupt();\n", in_interrupt() ? "" : " not");
 
 	/* Balance the work loads across all running CPUs */
 	stream->cpu = cpumask_next(stream->cpu, cpu_online_mask);
@@ -1329,6 +1338,9 @@ static void uvc_video_decode_isoc_async(struct uvc_urb *uvc_urb,
 	u8 *mem;
 	int ret, i;
 
+	/* My webcam is (and most are) using ISOC */
+	trace_printk("%d packets in URB\n", urb->number_of_packets);
+
 	for (i = 0; i < urb->number_of_packets; ++i) {
 		struct uvc_decode_work *work = &uvc_urb->work[i];
 
@@ -1351,11 +1363,14 @@ static void uvc_video_decode_isoc_async(struct uvc_urb *uvc_urb,
 				buf = uvc_queue_next_buffer_async(&stream->queue,
 							    buf);
 			}
+			trace_printk("start loop ret = %d", ret);
 
 		} while (ret == -EAGAIN);
 
-		if (ret < 0)
+		if (ret < 0) {
+			trace_printk("Ret < 0 (%d) looping", ret);
 			continue;
+		}
 
 		/* Decode the payload data. */
 		uvc_video_decode_data_async(work, uvc_urb, buf, mem + ret,
