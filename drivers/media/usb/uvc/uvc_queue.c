@@ -418,3 +418,72 @@ struct uvc_buffer *uvc_queue_next_buffer(struct uvc_video_queue *queue,
 
 	return nextbuf;
 }
+
+/* -----------------------------------------------------------------------------
+ * Asynchronous buffer queueing and management
+ */
+
+/*
+ * uvc_queue_requeue: Requeue a buffer on our internal irqqueue
+ *
+ * Reuse a buffer through our internal queue without the need to 'prepare'
+ */
+static void uvc_queue_requeue(struct uvc_video_queue *queue,
+		struct uvc_buffer *buf)
+{
+	buf->error = 0;
+	buf->state = UVC_BUF_STATE_QUEUED;
+	buf->bytesused = 0;
+	vb2_set_plane_payload(&buf->buf.vb2_buf, 0, 0);
+
+	/* Buffer will be returned to userspace if the device is disconnected */
+	uvc_buffer_queue(&buf->buf.vb2_buf);
+}
+
+/*
+ * This completion call occurs after the last packet processed in a URB, or the
+ * last packet referencing a buffer in a URB.
+ */
+void uvc_queue_buffer_complete(struct kref *ref)
+{
+	struct uvc_buffer *buf = container_of(ref, struct uvc_buffer, ref);
+	struct vb2_buffer *vb = &buf->buf.vb2_buf;
+	struct uvc_video_queue *queue = vb2_get_drv_priv(vb->vb2_queue);
+
+	if ((queue->flags & UVC_QUEUE_DROP_CORRUPTED) && buf->error) {
+		uvc_queue_requeue(queue, buf);
+		return;
+	}
+
+	buf->state = buf->error ? UVC_BUF_STATE_ERROR : UVC_BUF_STATE_DONE;
+	vb2_set_plane_payload(&buf->buf.vb2_buf, 0, buf->bytesused);
+	vb2_buffer_done(&buf->buf.vb2_buf, VB2_BUF_STATE_DONE);
+}
+
+/*
+ * Remove this buffer from the queue. Lifetime will persist while async actions
+ * are still running (if any), and completion will determine the next move for
+ * the buffer
+ */
+struct uvc_buffer *uvc_queue_next_buffer_async(struct uvc_video_queue *queue,
+		struct uvc_buffer *buf)
+{
+	struct uvc_buffer *nextbuf;
+	unsigned long flags;
+
+	spin_lock_irqsave(&queue->irqlock, flags);
+	list_del(&buf->queue);
+	spin_unlock_irqrestore(&queue->irqlock, flags);
+
+	kref_put(&buf->ref, uvc_queue_buffer_complete);
+
+	spin_lock_irqsave(&queue->irqlock, flags);
+	if (!list_empty(&queue->irqqueue))
+		nextbuf = list_first_entry(&queue->irqqueue, struct uvc_buffer,
+					   queue);
+	else
+		nextbuf = NULL;
+	spin_unlock_irqrestore(&queue->irqlock, flags);
+
+	return nextbuf;
+}
