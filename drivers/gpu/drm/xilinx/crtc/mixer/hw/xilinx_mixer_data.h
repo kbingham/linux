@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- * Copyright (C) 2016 Xilinx, Inc.  All rights reserved.
+ * Copyright (C) 2016,2017 Xilinx, Inc.  All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -125,11 +125,14 @@ typedef enum {
 typedef enum {
 	XVIDC_CSF_RGB = 0,
 	XVIDC_CSF_BGR,
+	XVIDC_CSF_BGR565,
 	XVIDC_CSF_RGBA8,
 	XVIDC_CSF_ABGR8,
 	XVIDC_CSF_ARGB8,
 	XVIDC_CSF_XBGR8,
 	XVIDC_CSF_YCRCB_444,
+	XVIDC_CSF_XYCRCB_444,
+	XVIDC_CSF_AYCRCB_444,
 	XVIDC_CSF_YCRCB_422,
 	XVIDC_CSF_YCRCB_420,
 	XVIDC_CSF_YCRCB8,

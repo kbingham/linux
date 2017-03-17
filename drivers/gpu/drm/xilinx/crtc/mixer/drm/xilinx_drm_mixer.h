@@ -35,30 +35,35 @@
 #include "crtc/mixer/hw/xilinx_mixer_data.h"
 #include "xilinx_drm_plane.h"
 
+
 /**
  * @struct xilinx_drm_mixer
- * Container for interfacing DRM driver to mixer hardware ip driver layer.
- * Contains pointers to logical constructions such as the DRM plane 
+ * Container for interfacing DRM driver to mixer hardware IP driver layer.
+ * Contains pointers to logical constructions such as the DRM plane
  * manager as well as pointers to distinquish the mixer layer serving
  * as the DRM "primary" plane from the actual mixer layer which serves
- * as the background layer in hardware.   It is possible that the 
- * DRM 
+ * as the background layer in hardware.
 */
 struct xilinx_drm_mixer {
-	struct xv_mixer mixer_hw; 
+	struct xv_mixer mixer_hw;
 	struct xilinx_drm_plane_manager *plane_manager;
 	struct xv_mixer_layer_data *drm_primary_layer;
 	struct xv_mixer_layer_data *hw_master_layer;
+	struct xv_mixer_layer_data *hw_logo_layer;
+	struct drm_property *alpha_prop;
+	struct drm_property *scale_prop;
 };
+#define get_mixer_max_height(m)      mixer_layer_height(m->hw_master_layer)
+#define get_mixer_max_width(m)       mixer_layer_width(m->hw_master_layer)
+#define get_mixer_max_logo_height(m) mixer_layer_height(m->hw_logo_layer)
+#define get_mixer_max_logo_width(m)  mixer_layer_width(m->hw_logo_layer)
+#define get_num_mixer_planes(m)      m->mixer_hw.layer_cnt
+#define get_mixer_vid_out_fmt(m)     mixer_video_fmt(&m->mixer_hw)
 
-struct xilinx_drm_mixer_plane {
-	struct xv_mixer_layer_data *layer;
-	struct xilinx_drm_mixer *drm_mixer;
-};
+#define to_xv_mixer_hw(p) (&(p->manager->mixer->mixer_hw))
 
-/* JPM TODO rpp change this manager to mixer_plane */
-#define to_xv_mixer_hw(p) &(p->manager->mixer->mixer_hw)
-#define to_xv_mixer_layer(p) p->mixer_plane->layer
+#define get_xilinx_mixer_mem_align(m)  \
+	sizeof(m->mixer_hw.layer_data[0].layer_regs.buff_addr)
 
 /**
  * Used to parse device tree for mixer node and initialize the mixer IP core
@@ -76,6 +81,92 @@ struct xilinx_drm_mixer *
 xilinx_drm_mixer_probe(struct device *dev,
 		struct device_node *node,
 		struct xilinx_drm_plane_manager *manager);
+
+/**
+* Mixer-specific implementation for xilinx_drm_plane_mode_set() call.
+* Configures a mixer layer to comply with userspace SET_PLANE icotl
+* call.
+*
+* @param[in] plane Xilinx_drm_plane object containing references to
+*		the base plane and mixer
+* @param[in] fb Framebuffer descriptor
+* @param[in] crtc_x X position of layer on crtc.  Note, if the plane
+*		represents either the master hardware layer (video0) or
+*		the layer representing the DRM primary layer, the crtc
+*		x/y coordinates are either ignored and/or set to 0/0
+*		respectively.
+* @param[in] crtc_y Y positon of layer.  See description of crtc_x handling
+*		for more inforation.
+* @param[in] src_x x-offset in memory buffer from which to start reading
+* @param[in] src_y y-offset in memory buffer from which to start reading
+* @param[in] src_w Number of horizontal pixels to read from memory per row
+* @param[in] src_h Number of rows of video data to read from memory
+*
+* @returns 0 on success.  Non-zero linux error code otherwise.
+*/
+int
+xilinx_drm_mixer_set_plane(struct xilinx_drm_plane *plane,
+			struct drm_framebuffer *fb,
+			int crtc_x, int crtc_y,
+			uint32_t src_x, uint32_t src_y,
+			uint32_t src_w, uint32_t src_h);
+
+/**
+* Create Mixer-specific drm property objects to track mixer layer
+* settings for alpha and scale
+*
+* @param[in] mixer drm mixer object
+*/
+void
+xilinx_drm_create_mixer_plane_properties(struct xilinx_drm_mixer *mixer);
+
+/**
+* Used to set the current value for a particular plane property in the
+* corresponding mixer layer hardware
+*
+* @param[in] plane Xilinx drm plane object containing references to the mixer
+* @param[in] property drm property passed in by userspace for update
+* @param[in] value new value used to set mixer layer hardware for register
+*		mapped to the drm property
+*
+* @returns 0 on success; EINVAL otherwise
+*/
+int
+xilinx_drm_mixer_set_plane_property(struct xilinx_drm_plane *plane,
+				struct drm_property *property,
+				uint64_t value);
+
+/**
+* Links the xilinx plane object to a mixer layer object
+*
+* @param[in] manager Xilinx drm plane manager object with references to all
+*		of the xilinx planes and the mixer
+* @param[in] plane The specific plane object to link a layer to
+* @param[in] node Device tree open firmware node object containing the mixer
+*		layer information from the device tree
+*
+* @returns 0 on success; -EINVAL if dts properties are missing/invalid; -ENODEV
+*		if no layer object has been create for the referenced layer node
+*		(this may indicate an out-of-memory condition or failed mixer
+*		probe)
+*/
+int
+xilinx_drm_create_mixer_layer_plane(struct xilinx_drm_plane_manager *manager,
+				struct xilinx_drm_plane *plane,
+				struct device_node *node);
+
+/**
+* Attaches mixer-specific drm properties to the given plane if it is linked
+* to a mixer layer and the layer supports those properites.  The linked
+* mixer layer will be inspected to see what capabilities it offers (e.g.
+* global layer alpha; scaling) and drm property objects that indicate those
+* capabilities will then be attached and initialized to default values.
+*
+* @param[in] plane Xilinx drm plane object to inspect and attach appropriate
+*		properties to
+*/
+void
+xilinx_drm_mixer_attach_plane_prop(struct xilinx_drm_plane *plane);
 
 /**
  * Hold the reset line for the IP core low for 300 nano seconds and then
@@ -244,12 +335,37 @@ struct xv_mixer_layer_data *
 xilinx_drm_mixer_get_layer(struct xv_mixer *mixer, xv_mixer_layer_id id);
 
 
-
+/**
+* Sets and interrupt handler function to run when the mixer generates and
+* ap_done interrupt event (when frame processing has completed)
+*
+* @param[in] mixer Mixer object upon which to run handler function when mixer
+*		generates an "done" interrupt for a frame
+* @param[in] intr_handler_fn Function pointer for interrupt handler.  Typically
+*		a drm vertical blank event generation function.
+* @param[in] data Pointer to crtc object
+*/
 void
 xilinx_drm_mixer_set_intr_handler(struct xilinx_drm_mixer *mixer,
 				void (*intr_handler_fn)(void *),
 				void *data);
 
+/**
+* Implementation of display power management system call (dpms).  Designed
+* to disable and turn off a plane and restore all attached drm properities to
+* their initial values.  Alterntively, if dpms is "on", will enable a layer.
+*
+*
+*/
+void
+xilinx_drm_mixer_plane_dpms(struct xilinx_drm_plane *plane, int dpms);
+
+
+/**
+*
+*/
+void
+xilinx_drm_mixer_dpms(struct xilinx_drm_mixer *mixer, int dpms);
 
 /**
  * Updates internal R, G and B buffer array of mixer from kernel framebuffer
@@ -267,6 +383,6 @@ xilinx_drm_mixer_set_intr_handler(struct xilinx_drm_mixer *mixer,
 */
 int
 xilinx_drm_mixer_update_logo_img(struct xilinx_drm_plane *plane,
-				struct drm_framebuffer *fb,
+				struct drm_gem_cma_object *buffer,
 				uint32_t src_w, uint32_t src_h);
 #endif /* end __XLNX_DRM_MIXER__ */

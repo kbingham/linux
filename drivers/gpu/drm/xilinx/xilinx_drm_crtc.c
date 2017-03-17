@@ -54,6 +54,10 @@ struct xilinx_drm_crtc {
 
 #define to_xilinx_crtc(x)	container_of(x, struct xilinx_drm_crtc, base)
 
+static struct drm_plane *
+xilinx_find_plane(struct xilinx_drm_plane_manager *manager,
+				enum drm_plane_type type);
+
 /* set crtc dpms */
 static void xilinx_drm_crtc_dpms(struct drm_crtc *base_crtc, int dpms)
 {
@@ -483,7 +487,8 @@ static struct drm_crtc_funcs xilinx_drm_crtc_funcs = {
 struct drm_crtc *xilinx_drm_crtc_create(struct drm_device *drm)
 {
 	struct xilinx_drm_crtc *crtc;
-	struct drm_plane *primary_plane;
+	struct drm_plane *primary_plane = NULL;
+	struct drm_plane *cursor_plane = NULL;
 	struct device_node *sub_node;
 	int possible_crtcs = 1;
 	int ret;
@@ -525,6 +530,7 @@ struct drm_crtc *xilinx_drm_crtc_create(struct drm_device *drm)
 	/* create a primary plane. there's only one crtc now */
 	primary_plane = xilinx_drm_plane_create_primary(crtc->plane_manager,
 							possible_crtcs);
+
 	if (IS_ERR(primary_plane)) {
 		DRM_ERROR("failed to create a primary plane for crtc\n");
 		ret = PTR_ERR(primary_plane);
@@ -568,9 +574,22 @@ struct drm_crtc *xilinx_drm_crtc_create(struct drm_device *drm)
 
 	crtc->dpms = DRM_MODE_DPMS_OFF;
 
+	/* permit flexible placement of primary plane among planes## in dts */
+	if (primary_plane->type != DRM_PLANE_TYPE_PRIMARY)
+		primary_plane = xilinx_find_plane(crtc->plane_manager,
+						DRM_PLANE_TYPE_PRIMARY);
+
+	if (!primary_plane)
+		return ERR_PTR(-ENODEV);
+
+	cursor_plane = xilinx_find_plane(crtc->plane_manager,
+						DRM_PLANE_TYPE_CURSOR);
+
 	/* initialize drm crtc */
-	ret = drm_crtc_init_with_planes(drm, &crtc->base, primary_plane,
-					NULL, &xilinx_drm_crtc_funcs, NULL);
+	ret = drm_crtc_init_with_planes(drm, &crtc->base,
+					primary_plane, cursor_plane,
+					&xilinx_drm_crtc_funcs,
+					NULL);
 	if (ret) {
 		DRM_ERROR("failed to initialize crtc\n");
 		goto err_plane;
@@ -582,4 +601,22 @@ struct drm_crtc *xilinx_drm_crtc_create(struct drm_device *drm)
 err_plane:
 	xilinx_drm_plane_remove_manager(crtc->plane_manager);
 	return ERR_PTR(ret);
+}
+
+
+
+static struct drm_plane *
+xilinx_find_plane(struct xilinx_drm_plane_manager *manager,
+				enum drm_plane_type type)
+{
+	int i;
+
+	for (i = 0; i < manager->num_planes; i++) {
+		struct xilinx_drm_plane *p = manager->planes[i];
+
+		if (p && (p->base.type == type))
+			return &p->base;
+	}
+
+	return NULL;
 }

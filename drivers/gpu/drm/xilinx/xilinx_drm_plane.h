@@ -102,9 +102,6 @@ struct xilinx_drm_plane {
  * @max_cursor_height: maximum pixel size for cursor layer height
  * @zpos_prop: z-position(priority) property
  * @alpha_prop: alpha value property
- * @mixer_scale_prop: set scaling (vert and horz) for plane
- *              (0=no scaling, 1=2x, 2=4x)
- * @mixer_alpha_enable_prop: alpha enable property
  * @default_alpha: default alpha value
  * @planes: xilinx drm planes
  */
@@ -125,8 +122,6 @@ struct xilinx_drm_plane_manager {
 	struct drm_property *alpha_prop;
 	struct drm_property *scale_prop;
 	struct drm_property *alpha_enable_prop;
-	struct drm_property *mixer_scale_prop;
-	struct drm_property *mixer_alpha_prop;
 	unsigned int default_alpha;
 	struct xilinx_drm_plane *planes[MAX_PLANES];
 };
