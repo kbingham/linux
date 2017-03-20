@@ -270,8 +270,14 @@ xilinx_drm_mixer_probe(struct device *dev, struct device_node *node,
 						"xlnx,mixer-reset",
 						GPIOD_OUT_LOW);
 	if (IS_ERR(mixer_hw->reset_gpio)) {
-		dev_err(dev, "No reset gpio info from dts for mixer\n");
-		return ERR_PTR(-EINVAL);
+		int ret = PTR_ERR(mixer_hw->reset_gpio);
+
+		if (ret == -EPROBE_DEFER)
+			return ret; 
+		else {
+			dev_err(dev, "No reset gpio info from dts for mixer\n");
+			return ERR_PTR(ret);
+		}
 	}
 
 	gpiod_set_raw_value(mixer_hw->reset_gpio, 0x1);
