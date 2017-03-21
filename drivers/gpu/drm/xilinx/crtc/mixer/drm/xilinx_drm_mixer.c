@@ -344,10 +344,14 @@ xilinx_drm_mixer_set_plane(struct xilinx_drm_plane *plane,
 
 	switch (layer_id) {
 	case XVMIX_LAYER_LOGO:
+
+		DRM_DEBUG_KMS("Setting mixer logo layer\n");
 		ret = xilinx_drm_mixer_update_logo_img(plane, buffer,
 							src_w, src_h);
-		if (ret)
+		if (ret) {
+			DRM_ERROR("Failed to set mixer logo layer. %d\n", ret);
 			break;
+		}
 
 		ret = xilinx_drm_mixer_set_layer_dimensions(plane,
 							crtc_x, crtc_y,
@@ -356,6 +360,7 @@ xilinx_drm_mixer_set_plane(struct xilinx_drm_plane *plane,
 		break;
 
 	case XVMIX_LAYER_MASTER:
+		DRM_DEBUG_KMS("Setting mixer master layer\n");
 		if (!mixer_layer_is_streaming(plane->mixer_layer))
 			xilinx_drm_mixer_mark_layer_inactive(plane);
 
@@ -366,6 +371,8 @@ xilinx_drm_mixer_set_plane(struct xilinx_drm_plane *plane,
 			ret = xilinx_mixer_set_active_area(mixer_hw,
 							src_w, src_h);
 
+			DRM_DEBUG_KMS("Set mixer active area with ret %d\n",
+					ret);
 			xilinx_mixer_layer_enable(mixer_hw, layer_id);
 
 		} else if (src_w != active_area_width ||
@@ -380,17 +387,24 @@ xilinx_drm_mixer_set_plane(struct xilinx_drm_plane *plane,
 		break;
 
 	default:
+		DRM_DEBUG_KMS("Setting mixer overlay layer\n");
 		ret = xilinx_drm_mixer_set_layer_dimensions(plane,
 							crtc_x, crtc_y,
 							src_w, src_h,
 							stride);
-		if (ret)
+		if (ret) {
+			DRM_ERROR("Error setting layer dimensions"
+				" for mixer layer %d", plane->mixer_layer->id);
 			break;
+		}
 
-		if (!mixer_layer_is_streaming(plane->mixer_layer))
+		if (!mixer_layer_is_streaming(plane->mixer_layer)) {
 			ret = xilinx_mixer_set_layer_buff_addr(mixer_hw,
 						plane->mixer_layer->id,
 						buffer->paddr + offset);
+			DRM_DEBUG_KMS("Set mixer layer buffer addr with "
+					"ret code %d\n", ret);
+		}
 	}
 
 	return ret;

@@ -252,6 +252,7 @@ int xilinx_drm_plane_mode_set(struct drm_plane *base_plane,
 	}
 
 	if (plane->manager->mixer) {
+		DRM_DEBUG_KMS("Updating mixer layer in response to mode_set\n");
 		ret = xilinx_drm_mixer_set_plane(plane, fb, crtc_x, crtc_y,
 					src_x, src_y, src_w, src_h);
 		if (ret)
