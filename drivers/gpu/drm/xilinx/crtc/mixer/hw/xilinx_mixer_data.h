@@ -211,7 +211,7 @@ struct xv_mixer {
 
 	int		    irq;
 
-	xv_mixer_bkg_color_id      bg_color;
+	u64		    bg_color;
 
 	struct xv_mixer_layer_data *layer_data;
 	u32 layer_cnt;
@@ -284,13 +284,10 @@ xilinx_mixer_set_active_area(struct xv_mixer *mixer,
  * is disabled
  *
  * @param[in] mixer Mixer instance to program with new background color
- * @param[in] col_id Logical id of the background color to output (see enum)
- * @param[in] bpc  Data width per color component (e.g. 8, 10, 12 or 16)
+ * @param[in] rgb_value RGB encoded as 32-bit integer in little-endian format
 */
 void
-xilinx_mixer_set_bkg_col(struct xv_mixer *mixer,
-			 xv_mixer_bkg_color_id col_id,
-			 xv_comm_colordepth bpc);
+xilinx_mixer_set_bkg_col(struct xv_mixer *mixer, u64 rgb_value);
 
 /**
  *  Enables (permit video output) for layer in mixer

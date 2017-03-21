@@ -59,7 +59,7 @@ struct color_fmt_tbl {
 };
 
 /*************************** STATIC DATA  ************************************/
-static struct color_fmt_tbl color_table[] = {
+static const struct color_fmt_tbl color_table[] = {
 	{"bgr888",    XVIDC_CSF_BGR,         DRM_FORMAT_BGR888},
 	{"rgb888",    XVIDC_CSF_RGB,         DRM_FORMAT_RGB888},
 	{"bgr565",    XVIDC_CSF_BGR565,      DRM_FORMAT_BGR565},
@@ -275,10 +275,10 @@ xilinx_drm_mixer_probe(struct device *dev, struct device_node *node,
 		if (ret == -EPROBE_DEFER) {
 			dev_info(dev, "No gpio probed for mixer. Deferring\n");
 			return ERR_PTR(ret);
-		} else {
-			dev_err(dev, "No reset gpio info from dts for mixer\n");
-			return ERR_PTR(ret);
 		}
+
+		dev_err(dev, "No reset gpio info from dts for mixer\n");
+		return ERR_PTR(ret);
 	}
 
 	gpiod_set_raw_value(mixer_hw->reset_gpio, 0x1);
@@ -409,6 +409,11 @@ xilinx_drm_mixer_set_plane_property(struct xilinx_drm_plane *plane,
 
 	if (property == mixer->scale_prop)
 		return xilinx_drm_mixer_set_layer_scale(plane, value);
+
+	if (property == mixer->bg_color) {
+		xilinx_mixer_set_bkg_col(&mixer->mixer_hw, value);
+		return 0;
+	}
 
 	return -EINVAL;
 
@@ -668,8 +673,7 @@ void xilinx_drm_mixer_reset(struct xilinx_drm_mixer *mixer)
 	gpiod_set_raw_value(mixer_hw->reset_gpio, 0x1);
 
 	/* restore layer properties and bg color after reset */
-	xilinx_mixer_set_bkg_col(mixer_hw,
-		mixer_hw->bg_color, mixer_hw->bg_layer_bpc);
+	xilinx_mixer_set_bkg_col(mixer_hw, mixer_hw->bg_color);
 
 	if (mixer_hw->intrpts_enabled)
 		xilinx_mixer_intrpt_enable(mixer_hw);
@@ -837,6 +841,10 @@ xilinx_drm_create_mixer_plane_properties(struct xilinx_drm_mixer *mixer)
 						"alpha",
 						XVMIX_ALPHA_MIN,
 						XVMIX_ALPHA_MAX);
+
+		mixer->bg_color =
+			drm_property_create_range(mixer->plane_manager->drm, 0,
+						"bg_color", 0, 0xFFFFFFFFFFFF);
 }
 
 
@@ -845,16 +853,23 @@ xilinx_drm_mixer_attach_plane_prop(struct xilinx_drm_plane *plane)
 {
 
 	struct xilinx_drm_plane_manager *manager = plane->manager;
+	struct xilinx_drm_mixer *mixer = manager->mixer;
+	struct drm_mode_object *base = &plane->base.base;
 
 	if (plane->mixer_layer->hw_config.can_scale)
-		drm_object_attach_property(&plane->base.base,
+		drm_object_attach_property(base,
 					   manager->mixer->scale_prop,
 					   XVMIX_SCALE_FACTOR_1X);
 
 	if (plane->mixer_layer->hw_config.can_alpha)
-		drm_object_attach_property(&plane->base.base,
+		drm_object_attach_property(base,
 					   manager->mixer->alpha_prop,
 					   XVMIX_ALPHA_MAX);
+
+	if (mixer->drm_primary_layer == plane->mixer_layer)
+		drm_object_attach_property(base,
+					   manager->mixer->bg_color,
+					   0xFFFF00000000);
 }
 
 

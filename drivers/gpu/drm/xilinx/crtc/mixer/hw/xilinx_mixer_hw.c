@@ -41,14 +41,6 @@
 #define XVMIX_MASK_DISABLE_ALL_LAYERS   (0)
 #define XVMIX_REG_OFFSET                (8)
 
-/* Pixel values in RGB color space*/
-static const u8 bkgndColorRGB[XVMIX_BKGND_LAST][3] = {
-	{0, 0, 0}, /*Black*/
-	{1, 1, 1}, /*White*/
-	{1, 0, 0}, /*Red*/
-	{0, 1, 0}, /*Green*/
-	{0, 0, 1}  /*Blue*/
-};
 
 /************************** Function Prototypes ******************************/
 static int is_window_valid(struct xv_mixer *mixer,
@@ -66,6 +58,7 @@ void xilinx_mixer_init(struct xv_mixer *mixer)
 {
 
 	int i;
+	u32 init_rgb_bg_color = 0xFF0000;
 	xv_mixer_layer_id layer_id;
 	struct xv_mixer_layer_data *layer_data;
 
@@ -80,8 +73,8 @@ void xilinx_mixer_init(struct xv_mixer *mixer)
 		reg_writel(mixer->reg_base_addr,
 		XV_MIX_CTRL_ADDR_HWREG_VIDEO_FORMAT_DATA, 2);
 
-	xilinx_mixer_set_bkg_col(mixer, XVMIX_BKGND_BLUE, mixer->bg_layer_bpc);
-	mixer->bg_color = XVMIX_BKGND_BLUE;
+	/* default to blue */
+	xilinx_mixer_set_bkg_col(mixer, init_rgb_bg_color);
 
 	for (i = 0; i <= mixer->layer_cnt; i++) {
 
@@ -315,27 +308,25 @@ int xilinx_mixer_is_layer_enabled(struct xv_mixer *mixer,
 * Sets the background color to be displayed when stream layer is
 * disabled
 ******************************************************************************/
-void xilinx_mixer_set_bkg_col(struct xv_mixer *mixer,
-				xv_mixer_bkg_color_id col_id,
-				xv_comm_colordepth bpc)
+void xilinx_mixer_set_bkg_col(struct xv_mixer *mixer, u64 rgb_value)
 {
-	u16 y_r_val;
-	u16 u_g_val;
-	u16 v_b_val;
-	u16 scale;
+	u32 bpc = mixer->bg_layer_bpc;
+	u32 bpc_mask_shift = 16 - bpc;
+	u32 val_mask = (0xFFFF >> bpc_mask_shift);
 
-	scale = ((1<<bpc)-1);
-	y_r_val = bkgndColorRGB[col_id][0] * scale;
-	u_g_val = bkgndColorRGB[col_id][1] * scale;
-	v_b_val = bkgndColorRGB[col_id][2] * scale;
+	u16 b_val = (rgb_value >> (bpc * 2)) & val_mask;
+	u16 g_val = (rgb_value >> bpc) & val_mask;
+	u16 r_val = (rgb_value >> 0) &  val_mask;
 
 	/* Set Background Color */
 	reg_writel(mixer->reg_base_addr,
-		XV_MIX_CTRL_ADDR_HWREG_BACKGROUND_Y_R_DATA, y_r_val);
+		XV_MIX_CTRL_ADDR_HWREG_BACKGROUND_Y_R_DATA, r_val);
 	reg_writel(mixer->reg_base_addr,
-		XV_MIX_CTRL_ADDR_HWREG_BACKGROUND_U_G_DATA, u_g_val);
+		XV_MIX_CTRL_ADDR_HWREG_BACKGROUND_U_G_DATA, g_val);
 	reg_writel(mixer->reg_base_addr,
-		XV_MIX_CTRL_ADDR_HWREG_BACKGROUND_V_B_DATA, v_b_val);
+		XV_MIX_CTRL_ADDR_HWREG_BACKGROUND_V_B_DATA, b_val);
+
+	mixer->bg_color = rgb_value;
 }
 
 /******************************************************************************

@@ -52,6 +52,7 @@ struct xilinx_drm_mixer {
 	struct xv_mixer_layer_data *hw_logo_layer;
 	struct drm_property *alpha_prop;
 	struct drm_property *scale_prop;
+	struct drm_property *bg_color;
 };
 #define get_mixer_max_height(m)      mixer_layer_height(m->hw_master_layer)
 #define get_mixer_max_width(m)       mixer_layer_width(m->hw_master_layer)
