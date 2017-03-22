@@ -460,12 +460,14 @@ struct uvc_stats_stream {
  *
  * @urb: described URB. Must be allocated with usb_alloc_urb()
  * @stream: UVC streaming context
+ * @work: asynchronous work descriptor
  * @urb_buffer: memory storage for the URB
  * @urb_dma: DMA coherent addressing for the urb_buffer
  */
 struct uvc_urb {
 	struct urb *urb;
 	struct uvc_streaming *stream;
+	struct work_struct work;
 
 	char *urb_buffer;
 	dma_addr_t urb_dma;

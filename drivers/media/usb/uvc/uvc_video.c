@@ -1312,13 +1312,29 @@ static void uvc_video_encode_bulk(struct uvc_urb *uvc_urb,
 	urb->transfer_buffer_length = stream->urb_size - len;
 }
 
+static void uvc_video_decode(struct work_struct *work)
+{
+	struct uvc_urb *uvc_urb = container_of(work, struct uvc_urb, work);
+	struct uvc_streaming *stream = uvc_urb->stream;
+	struct uvc_video_queue *queue = &stream->queue;
+	struct uvc_buffer *buf = NULL;
+	int ret;
+
+	buf = uvc_queue_get_current_buffer(queue);
+	stream->decode(uvc_urb, stream, buf);
+
+	ret = usb_submit_urb(uvc_urb->urb, GFP_ATOMIC);
+	if (ret  < 0) {
+		uvc_printk(KERN_ERR, "Failed to resubmit video URB (%d).\n",
+			ret);
+	}
+}
+
 static void uvc_video_complete(struct urb *urb)
 {
 	struct uvc_urb *uvc_urb = urb->context;
 	struct uvc_streaming *stream = uvc_urb->stream;
 	struct uvc_video_queue *queue = &stream->queue;
-	struct uvc_buffer *buf = NULL;
-	int ret;
 
 	switch (urb->status) {
 	case 0:
@@ -1338,14 +1354,8 @@ static void uvc_video_complete(struct urb *urb)
 		return;
 	}
 
-	buf = uvc_queue_get_current_buffer(queue);
-
-	stream->decode(uvc_urb, stream, buf);
-
-	if ((ret = usb_submit_urb(urb, GFP_ATOMIC)) < 0) {
-		uvc_printk(KERN_ERR, "Failed to resubmit video URB (%d).\n",
-			ret);
-	}
+	/* Process the URB outside of interrupt context */
+	schedule_work(&uvc_urb->work);
 }
 
 /*
@@ -1683,6 +1693,9 @@ static int uvc_init_video(struct uvc_streaming *stream, gfp_t gfp_flags)
 	/* Submit the URBs. */
 	for (i = 0; i < UVC_URBS; ++i) {
 		struct uvc_urb *uvc_urb = &stream->uvc_urb[i];
+
+		/* URB completions context */
+		INIT_WORK(&uvc_urb->work, uvc_video_decode);
 
 		ret = usb_submit_urb(uvc_urb->urb, gfp_flags);
 		if (ret < 0) {
