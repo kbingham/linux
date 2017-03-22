@@ -432,6 +432,13 @@ struct uvc_stats_frame {
 	u32 scr_stc;			/* SCR.STC of the last packet */
 };
 
+struct uvc_stats_time {
+	unsigned int qty;
+	unsigned long long duration;
+	unsigned int min;
+	unsigned int max;
+};
+
 struct uvc_stats_stream {
 	struct timespec start_ts;	/* Stream start timestamp */
 	struct timespec stop_ts;	/* Stream stop timestamp */
@@ -453,6 +460,8 @@ struct uvc_stats_stream {
 	unsigned int scr_sof;		/* STC.SOF of the last packet */
 	unsigned int min_sof;		/* Minimum STC.SOF value */
 	unsigned int max_sof;		/* Maximum STC.SOF value */
+
+	unsigned long bytes;		/* Successful bytes transferred */
 };
 
 /**
@@ -497,6 +506,9 @@ struct uvc_urb {
 
 	struct uvc_decode_work packet_work[UVC_MAX_PACKETS];
 	struct kref ref;
+
+	struct timespec recieved;	/* URB interrupt timestamp */
+	struct timespec decode_start;	/* URB processing start timestamp */
 };
 
 struct uvc_streaming {
@@ -552,6 +564,11 @@ struct uvc_streaming {
 	struct {
 		struct uvc_stats_frame frame;
 		struct uvc_stats_stream stream;
+		struct uvc_stats_urb {
+			struct uvc_stats_time latency;
+			struct uvc_stats_time decode;
+			struct uvc_stats_time urb;
+		} urbstat;
 	} stats;
 
 	/* Timestamps support. */
