@@ -681,6 +681,12 @@ extern unsigned int uvc_hw_timestamps_param;
 			printk(KERN_DEBUG "uvcvideo: " msg); \
 	} while (0)
 
+#undef uvc_trace
+#define uvc_trace(flag, msg...) \
+	do { \
+		trace_printk("uvcvideo: " msg); \
+	} while (0)
+
 #define uvc_warn_once(dev, warn, msg...) \
 	do { \
 		if (!test_and_set_bit(warn, &dev->warnings)) \
@@ -688,7 +694,10 @@ extern unsigned int uvc_hw_timestamps_param;
 	} while (0)
 
 #define uvc_printk(level, msg...) \
-	printk(level "uvcvideo: " msg)
+	do { \
+		printk(level "uvcvideo: " msg); \
+		trace_printk("uvcvideo: " msg); \
+	} while (0)
 
 /* --------------------------------------------------------------------------
  * Internal functions.

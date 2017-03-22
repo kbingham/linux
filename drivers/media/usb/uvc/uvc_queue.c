@@ -119,6 +119,8 @@ static void uvc_buffer_queue(struct vb2_buffer *vb)
 	struct uvc_buffer *buf = container_of(vbuf, struct uvc_buffer, buf);
 	unsigned long flags;
 
+	trace_printk("Queueing buffer\n");
+
 	spin_lock_irqsave(&queue->irqlock, flags);
 	if (likely(!(queue->flags & UVC_QUEUE_DISCONNECTED))) {
 		kref_init(&buf->ref);
@@ -435,6 +437,8 @@ static void uvc_queue_buffer_complete(struct kref *ref)
 	struct uvc_video_queue *queue = vb2_get_drv_priv(vb->vb2_queue);
 
 	if ((queue->flags & UVC_QUEUE_DROP_CORRUPTED) && buf->error) {
+		trace_printk("Completed a buffer.. - requeuing");
+
 		uvc_queue_requeue(queue, buf);
 		return;
 	}
@@ -442,6 +446,9 @@ static void uvc_queue_buffer_complete(struct kref *ref)
 	buf->state = buf->error ? UVC_BUF_STATE_ERROR : UVC_BUF_STATE_DONE;
 	vb2_set_plane_payload(&buf->buf.vb2_buf, 0, buf->bytesused);
 	vb2_buffer_done(&buf->buf.vb2_buf, VB2_BUF_STATE_DONE);
+
+	trace_printk("Completed a buffer.. %s", buf->error ?
+			"UVC_BUF_STATE_ERROR" : "UVC_BUF_STATE_DONE");
 }
 
 /*
@@ -463,6 +470,8 @@ struct uvc_buffer *uvc_queue_next_buffer(struct uvc_video_queue *queue,
 {
 	unsigned long flags;
 
+	/* Release the queue reference, lifetime will be held by any
+	 * async tasks still running */
 	spin_lock_irqsave(&queue->irqlock, flags);
 	list_del(&buf->queue);
 	spin_unlock_irqrestore(&queue->irqlock, flags);

@@ -1133,6 +1133,7 @@ static int uvc_video_decode_start(struct uvc_streaming *stream,
 	 */
 	if (len < 2 || data[0] < 2 || data[0] > len) {
 		stream->stats.frame.nb_invalid++;
+		trace_printk("Buffer length invalid");
 		return -EINVAL;
 	}
 
@@ -1158,6 +1159,7 @@ static int uvc_video_decode_start(struct uvc_streaming *stream,
 	 */
 	if (buf == NULL) {
 		stream->last_fid = fid;
+		trace_printk("NullBuf - No data");
 		return -ENODATA;
 	}
 
@@ -1185,6 +1187,7 @@ static int uvc_video_decode_start(struct uvc_streaming *stream,
 			if ((stream->dev->quirks & UVC_QUIRK_STREAM_NO_FID) &&
 			    (data[1] & UVC_STREAM_EOF))
 				stream->last_fid ^= UVC_STREAM_FID;
+			trace_printk("Quirk Out of Sync");
 			return -ENODATA;
 		}
 
@@ -1221,6 +1224,8 @@ static int uvc_video_decode_start(struct uvc_streaming *stream,
 	}
 
 	stream->last_fid = fid;
+
+	trace_printk("Header length %d, Fid = %d\n", (unsigned int)data[0], (unsigned int)fid);
 
 	return data[0];
 }
@@ -1372,6 +1377,9 @@ static void uvc_video_decode_isoc(struct uvc_urb *uvc_urb,
 	struct uvc_streaming *stream = uvc_urb->stream;
 	u8 *mem;
 	int ret, i;
+
+	/* My webcam is (and most are) using ISOC */
+	trace_printk("%d packets in URB\n", urb->number_of_packets);
 
 	for (i = 0; i < urb->number_of_packets; ++i) {
 		struct uvc_decode_work *work = &uvc_urb->packet_work[i];
