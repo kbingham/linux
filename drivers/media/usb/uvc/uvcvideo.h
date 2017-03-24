@@ -465,6 +465,27 @@ struct uvc_stats_stream {
 };
 
 /**
+ * struct uvc_decode_work: Context structure to schedule asynchronous memcpy
+ * @work:
+ * @stream:
+ * @buf:
+ * @uvc_urb:
+ * @dst:
+ * @src:
+ * @len:
+ */
+struct uvc_decode_work {
+	struct work_struct work;
+	struct uvc_streaming *stream;
+	struct uvc_buffer *buf;
+	struct uvc_urb *uvc_urb;
+
+	void *dst;
+	const __u8 *src;
+	int len;
+};
+
+/**
  * struct uvc_urb - URB context management structure
  *
  * @urb: described URB. Must be allocated with usb_alloc_urb()
@@ -472,14 +493,21 @@ struct uvc_stats_stream {
  * @work: asynchronous work descriptor
  * @urb_buffer: memory storage for the URB
  * @urb_dma: DMA coherent addressing for the urb_buffer
+ * @ref: reference counting for asynchronous completion actions.
+ * 	 Note that this refcnt is used for tracking use by parallel completion
+ * 	 threads, and not for 'free'ing the URB itself.
  */
 struct uvc_urb {
 	struct urb *urb;
 	struct uvc_streaming *stream;
+	struct uvc_buffer *buf;
 	struct work_struct work;
 
 	char *urb_buffer;
 	dma_addr_t urb_dma;
+
+	struct uvc_decode_work packet_work[UVC_MAX_PACKETS];
+	struct kref ref;
 
 	struct timespec recieved;	/* URB interrupt timestamp */
 	struct timespec decode_start;	/* URB processing start timestamp */
@@ -515,8 +543,11 @@ struct uvc_streaming {
 	/* Buffers queue. */
 	unsigned int frozen : 1;
 	struct uvc_video_queue queue;
+	struct workqueue_struct * async_wq;
 	void (*decode) (struct uvc_urb *uvc_urb, struct uvc_streaming *video,
 			struct uvc_buffer *buf);
+
+	int cpu;
 
 	/* Context data used by the bulk completion handler. */
 	struct {
