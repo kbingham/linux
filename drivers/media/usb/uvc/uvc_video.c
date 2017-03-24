@@ -1555,6 +1555,9 @@ static void uvc_video_complete(struct urb *urb)
 	case 0:
 		break;
 
+	case -EPROTO:
+		uvc_printk(KERN_WARNING, "USB Protocol error (-71)\n");
+
 	default:
 		uvc_printk(KERN_WARNING, "Non-zero status (%d) in video "
 			"completion handler.\n", urb->status);
