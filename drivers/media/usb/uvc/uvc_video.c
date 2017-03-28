@@ -1108,6 +1108,18 @@ static void uvc_video_urb_complete(struct kref *ref)
 			&uvc_urb->recieved, &now);
 
 	/*
+	 *  be careful of race conditions between URB requeue and stream stop
+	 *  when stopping the stream you need to stop resubmitting URBs read
+	 *  documentation about usb_kill_urb() and usb_unlink_urb() and see the
+	 *  error codes in uvc_video_complete() be also careful about the race
+	 *  between device disconnect and URB resubmission
+	 *
+	 *     KPB: Current implementation should perform
+	 *          exactly as the previous version.
+	 */
+
+
+	/*
 	 * We 'may' still be completed from within interrupt context, thus we
 	 * must use GFP_ATOMIC here.
 	 */
@@ -1244,6 +1256,7 @@ static void uvc_video_decode_data_work(struct work_struct *work)
 						struct uvc_decode_work, work);
 	struct timespec now;
 
+	trace_printk("I am%s in_interrupt();\n", in_interrupt() ? "" : " not");
 
 	/* Measure decode performance */
 	ktime_get_ts(&decode->uvc_urb->decode_start);
@@ -1262,7 +1275,11 @@ static void uvc_video_decode_data_work(struct work_struct *work)
 
 	/* Release our references, and complete as necessary */
 	uvc_queue_buffer_release(decode->buf);
+
 	kref_put(&decode->uvc_urb->ref, uvc_video_urb_complete);
+
+	trace_printk("REFS: uvc_urb->ref-- = %d\n", atomic_read(&decode->uvc_urb->ref.refcount));
+	trace_printk("REFS: buf->ref-- = %d\n", atomic_read(&decode->buf->ref.refcount));
 }
 
 static void uvc_video_decode_data(struct uvc_decode_work *decode,
@@ -1288,6 +1305,16 @@ static void uvc_video_decode_data(struct uvc_decode_work *decode,
 	/* Take references before async work */
 	kref_get(&uvc_urb->ref);
 	kref_get(&buf->ref);
+
+	trace_printk("REFS: uvc_urb->ref++ = %d\n", atomic_read(&uvc_urb->ref.refcount));
+	trace_printk("REFS: buf->ref++ = %d\n", atomic_read(&buf->ref.refcount));
+
+	trace_printk("refs taken, tasked to copy %d bytes,", decode->len);
+	trace_printk("Buf: Used %d/%d : Error:%d State:%d",
+			buf->bytesused, buf->length,
+			buf->error, buf->state);
+
+	trace_printk("I am%s in_interrupt();\n", in_interrupt() ? "" : " not");
 
 	/* Complete the current frame if the buffer size was exceeded. */
 	if (len > maxlen) {
@@ -1403,10 +1430,19 @@ static void uvc_video_decode_isoc(struct uvc_urb *uvc_urb,
 				buf = uvc_queue_next_buffer(&stream->queue,
 							    buf);
 			}
+			trace_printk("start loop ret = %d", ret);
+
 		} while (ret == -EAGAIN);
 
-		if (ret < 0)
+		if (ret < 0) {
+			trace_printk("Ret < 0 (%d) looping", ret);
 			continue;
+		}
+
+		trace_printk("Packet: Header %d : Buffer %d Alignment: %lx\n",
+			      ret,
+			      urb->iso_frame_desc[i].actual_length - ret,
+			      (uintptr_t)(mem + ret) & 0xFFFF);
 
 		/* Decode the payload data. */
 		uvc_video_decode_data(work, uvc_urb, buf, mem + ret,
@@ -1588,6 +1624,7 @@ static void uvc_video_complete(struct urb *urb)
 
 	/* Release the completion reference */
 	kref_put(&uvc_urb->ref, uvc_video_urb_complete);
+	trace_printk("REFS: uvc_urb->ref-- = %d\n", atomic_read(&uvc_urb->ref.refcount));
 }
 
 /*
