@@ -1017,15 +1017,6 @@ size_t uvc_video_stats_dump(struct uvc_streaming *stream, char *buf,
 			   urbs, UVC_URBS - urbs, UVC_URBS, UVC_MAX_PACKETS, stream->urb_size,
 			   stream->urbs_active_stats.total / stream->urbs_active_stats.qty,
 			   stream->urbs_active_stats.max);
-			   
-	if (duration > 30 * 1000) {
-		/* Clear the stats */
-		stream->stats.stream = (struct uvc_stats_stream){0};
-		stream->stats.frame = (struct uvc_stats_frame){0};
-		stream->stats.urbstat = (struct uvc_stats_urb){0};
-
-		stream->urbs_active_stats = (struct uvc_urbs_active_stats){0};
-	}
 
 	return count;
 }
