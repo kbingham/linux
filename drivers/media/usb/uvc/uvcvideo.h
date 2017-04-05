@@ -544,6 +544,8 @@ struct uvc_streaming {
 	struct workqueue_struct * async_wq;
 	void (*decode) (struct uvc_urb *uvc_urb, struct uvc_buffer *buf);
 
+	int cpu;
+
 	/* Context data used by the bulk completion handler. */
 	struct {
 		__u8 header[256];

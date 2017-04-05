@@ -1290,8 +1290,13 @@ static void uvc_video_decode_data(struct uvc_decode_work *decode,
 		buf->state = UVC_BUF_STATE_READY;
 	}
 
+	/* Balance the work loads across all running CPUs */
+	stream->cpu = cpumask_next(stream->cpu, cpu_online_mask);
+	if (stream->cpu > nr_cpu_ids)
+		stream->cpu = 0;
+
 	INIT_WORK(&decode->work, uvc_video_decode_data_work);
-	queue_work(stream->async_wq, &decode->work);
+	queue_work_on(stream->cpu, stream->async_wq, &decode->work);
 }
 
 static void uvc_video_decode_end(struct uvc_streaming *stream,
