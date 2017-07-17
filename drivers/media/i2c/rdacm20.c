@@ -149,19 +149,7 @@ static int rdacm20_s_stream(struct v4l2_subdev *sd, int enable)
 {
 	struct rdacm20_device *dev = sd_to_rdacm20(sd);
 	int cam_idx = dev->client->addr - CAM;
-	int tmp_addr;
 
-	if (!(dev->client->addr == (CAM + 0) || dev->client->addr == (CAM + 4)))
-		return 0;
-
-	/* switch to GMSL conf_link to access sensor registers */
-	tmp_addr = dev->client->addr;
-	dev->client->addr = maxim_map[0][cam_idx];	/* MAX9286-CAMx */
-	max9271_write(dev, 0x15, 0x93);
-		/* disable CSI output,
-		 *	VC is set accordingly to Link number,
-		 *	BIT7 magic must be set
-		 */
 #if 0
 	max9271_write(dev, 0x0a, 0xff);
 				/* enable reverse_control/conf_link */
@@ -174,31 +162,16 @@ static int rdacm20_s_stream(struct v4l2_subdev *sd, int enable)
 				/* enable reverse_control/conf_link */
 #endif
 	mdelay(5);		/* wait 5ms for conf_link to establish */
-	dev->client->addr = tmp_addr;
 #if 0
 	ov10635_write(dev, 0x0100, enable); /* stream on/off */
 #endif
 	if (enable) {
 		/* switch to GMSL serial_link for streaming video */
-		tmp_addr = dev->client->addr;
 		dev->client->addr = maxim_map[1][cam_idx];	/* MAX9271-CAMx */
 		max9271_write(dev, 0x04, 0x83);
 				/* enable reverse_control/serial_link */
 		mdelay(2);
 				/* wait 2ms after changing reverse_control */
-		dev->client->addr = maxim_map[0][cam_idx];	/* MAX9286-CAMx */
-#if 0
-		max9271_write(dev, 0x0a, 0xf0);
-			/* disable reverse_control, enable serial_link */
-#endif
-		max9271_write(dev, 0x15, 0x9b);
-			/* enable CSI output,
-			 *  VC is set accordingly to Link number,
-			 *  BIT7 magic must be set
-			 */
-		mdelay(5);
-			/* wait 2ms after changing reverse_control */
-		dev->client->addr = tmp_addr;
 	}
 
 	return 0;
