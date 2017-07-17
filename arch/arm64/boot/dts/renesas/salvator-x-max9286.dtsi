@@ -114,8 +114,6 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		status = "disabled";
-
 		i2c@0 {
 			#address-cells = <1>;
 			#size-cells = <0>;
