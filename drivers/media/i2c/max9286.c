@@ -59,6 +59,7 @@ struct max9286_device {
 	struct i2c_client *client;
 	struct regulator *regulator;
 	struct i2c_mux_core *mux;
+	unsigned int mux_channel;
 };
 
 static inline int max9286_write(struct max9286_device *dev, u8 reg, u8 val)
@@ -84,14 +85,13 @@ static int max9286_i2c_mux_select(struct i2c_mux_core *muxc, u32 chan)
 {
 	struct max9286_device *dev = i2c_mux_priv(muxc);
 
-	return max9286_write(dev, 0x0a, 0xf0 | (0x01 << chan));
-}
+	if (dev->mux_channel == chan)
+		return 0;
 
-static int max9286_i2c_mux_deselect(struct i2c_mux_core *muxc, u32 chan)
-{
-	struct max9286_device *dev = i2c_mux_priv(muxc);
+	dev->mux_channel = chan;
+	max9286_write(dev, 0x0a, 0xf0 | (0x01 << chan));
 
-	return max9286_write(dev, 0x0a, 0xf0);
+	return 0;
 }
 
 static int max9286_i2c_mux_init(struct max9286_device *dev)
@@ -105,8 +105,7 @@ static int max9286_i2c_mux_init(struct max9286_device *dev)
 
 	dev->mux = i2c_mux_alloc(dev->client->adapter, &dev->client->dev,
 				 MAX9286_NUM_PORTS, 0, I2C_MUX_LOCKED,
-				 max9286_i2c_mux_select,
-				 max9286_i2c_mux_deselect);
+				 max9286_i2c_mux_select, NULL);
 	dev_info(&dev->client->dev, "%s: mux %p\n", __func__, dev->mux);
 	if (!dev->mux)
 		return -ENOMEM;
@@ -312,15 +311,6 @@ static int max9286_setup(struct max9286_device *dev)
 	dev->client->addr = des_addr;			/* MAX9286-CAMx I2C */
 	max9286_write(dev, 0x1b, 0x0f);
 				/* enable equalizer for all links */
-	if (MAX9286_NUM_PORTS == 1)
-		max9286_write(dev, 0x0a, 0xf1);
-				/* enable reverse control only for link0 */
-	else
-		max9286_write(dev, 0x0a, 0xff);
-				/* enable reverse control for all cams */
-	mdelay(2);	/* wait 2ms after any change of reverse
-			* channel settings
-			*/
 
 	return 0;
 }
@@ -430,7 +420,7 @@ static int max9286_probe(struct i2c_client *client,
 	 * if all other MAX9286 on the parent bus have been probed, proceed
 	 * to initialize them all, including the current one.
 	 */
-
+	dev->mux_channel = MAX9286_NUM_PORTS + 1;
 	max9286_write(dev, 0x0a, 0x00);
 	ret = device_for_each_child(client->dev.parent, &client->dev,
 				    max9286_is_bound);
