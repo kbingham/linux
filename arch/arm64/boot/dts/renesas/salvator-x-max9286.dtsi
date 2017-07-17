@@ -1,0 +1,356 @@
+/*
+ * Device Tree Source for the Salvator-X MAX9286 expansion board
+ *
+ * Copyright (C) 2017 Ideas on Board <laurent.pinchart@ideasonboard.com>
+ *
+ * This file is licensed under the terms of the GNU General Public License
+ * version 2.  This program is licensed "as is" without any warranty of any
+ * kind, whether express or implied.
+ */
+
+#include <dt-bindings/gpio/gpio.h>
+
+/*
+ * MAX9286 A
+ */
+#define MAXIM_CAMERA0 "imi,rdacm20"
+#define MAXIM_CAMERA1 "imi,rdacm20"
+#define MAXIM_CAMERA2 "imi,rdacm20"
+#define MAXIM_CAMERA3 "imi,rdacm20"
+
+/*
+ * MAX9286 B
+ */
+#define MAXIM_CAMERA4 "imi,rdacm20"
+#define MAXIM_CAMERA5 "imi,rdacm20"
+#define MAXIM_CAMERA6 "imi,rdacm20"
+#define MAXIM_CAMERA7 "imi,rdacm20"
+
+/ {
+/*
+ * Powered MCU IMI cameras need delay between power-on and R-Car access
+ * to avoid I2C bus conflicts since the R-Car I2C does not support I2C
+ * multi-master. The I2C bus conflict would result in R-Car I2C IP stall.
+ */
+#define IMI_MCU_V0_DELAY	8000000	/* delay for powered MCU firmware v0 */
+#define IMI_MCU_V1_DELAY	3000000	/* delay for powered MCU firmware v1 */
+#define IMI_MCU_NO_DELAY	0	/* delay for unpowered MCU  */
+#define IMI_MCU_DELAY		IMI_MCU_V0_DELAY
+
+	poc_12v: regulator-vcc-poc-12v {
+		compatible = "regulator-fixed";
+
+		regulator-name = "Camera PoC 12V";
+		regulator-min-microvolt = <12000000>;
+		regulator-max-microvolt = <12000000>;
+		startup-delay-us = <(250000 + IMI_MCU_DELAY)>;
+
+		gpio = <&gpio6 30 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+};
+
+&csi40 {
+	status = "okay";
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+
+			csi40_in: endpoint {
+				clock-lanes = <0>;
+				data-lanes = <1 2 3 4>;
+				remote-endpoint = <&max9286_out0>;
+			};
+		};
+	};
+};
+
+&csi41 {
+	status = "okay";
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+
+			csi41_in: endpoint {
+				clock-lanes = <0>;
+				data-lanes = <1 2 3 4>;
+				remote-endpoint = <&max9286_out1>;
+			};
+		};
+	};
+};
+
+&i2c4 {
+	gmsl-deserializer@0 {
+		compatible = "maxim,max9286";
+		reg = <0x4c>;
+		poc-supply = <&poc_12v>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				max9286_in0: endpoint {
+#ifdef MAXIM_CAMERA0
+					remote-endpoint = <&rdacm20_out0>;
+#endif
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+				max9286_in1: endpoint {
+#ifdef MAXIM_CAMERA1
+					remote-endpoint = <&rdacm20_out1>;
+#endif
+				};
+			};
+
+			port@2 {
+				reg = <2>;
+				max9286_in2: endpoint {
+#ifdef MAXIM_CAMERA2
+					remote-endpoint = <&rdacm20_out2>;
+#endif
+				};
+			};
+
+			port@3 {
+				reg = <3>;
+				max9286_in3: endpoint {
+#ifdef MAXIM_CAMERA3
+					remote-endpoint = <&rdacm20_out3>;
+#endif
+				};
+			};
+
+			port@4 {
+				reg = <4>;
+				max9286_out0: endpoint {
+					clock-lanes = <0>;
+					data-lanes = <1 2 3 4>;
+					remote-endpoint = <&csi40_in>;
+				};
+			};
+		};
+
+		i2c@0 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0>;
+
+#ifdef MAXIM_CAMERA0
+			camera@51 {
+				compatible = MAXIM_CAMERA0;
+				reg = <0x51 0x61>;
+
+				port {
+					rdacm20_out0: endpoint {
+						remote-endpoint = <&max9286_in0>;
+					};
+				};
+
+			};
+#endif
+		};
+
+		i2c@1 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <1>;
+
+#ifdef MAXIM_CAMERA1
+			camera@52 {
+				compatible = MAXIM_CAMERA1;
+				reg = <0x52 0x62>;
+				port {
+					rdacm20_out1: endpoint {
+						remote-endpoint = <&max9286_in1>;
+					};
+				};
+			};
+#endif
+		};
+
+		i2c@2 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <2>;
+
+#ifdef MAXIM_CAMERA2
+			camera@53 {
+				compatible = MAXIM_CAMERA2;
+				reg = <0x53 0x63>;
+				port {
+					rdacm20_out2: endpoint {
+						remote-endpoint = <&max9286_in2>;
+					};
+				};
+			};
+#endif
+		};
+
+		i2c@3 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <3>;
+
+#ifdef MAXIM_CAMERA3
+			camera@54 {
+				compatible = MAXIM_CAMERA3;
+				reg = <0x54 0x64>;
+				port {
+					rdacm20_out3: endpoint {
+						remote-endpoint = <&max9286_in3>;
+					};
+				};
+			};
+#endif
+		};
+	};
+
+	gmsl-deserializer@1 {
+		compatible = "maxim,max9286";
+		reg = <0x6c>;
+		poc-supply = <&poc_12v>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				max9286_in4: endpoint {
+#ifdef MAXIM_CAMERA4
+					remote-endpoint = <&rdacm20_out4>;
+#endif
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+				max9286_in5: endpoint {
+#ifdef MAXIM_CAMERA5
+					remote-endpoint = <&rdacm20_out5>;
+#endif
+				};
+			};
+
+			port@2 {
+				reg = <2>;
+				max9286_in6: endpoint {
+#ifdef MAXIM_CAMERA6
+					remote-endpoint = <&rdacm20_out6>;
+#endif
+				};
+			};
+
+			port@3 {
+				reg = <3>;
+				max9286_in7: endpoint {
+#ifdef MAXIM_CAMERA7
+					remote-endpoint = <&rdacm20_out7>;
+#endif
+				};
+			};
+
+			port@4 {
+				reg = <4>;
+				max9286_out1: endpoint {
+					clock-lanes = <0>;
+					data-lanes = <1 2 3 4>;
+					remote-endpoint = <&csi41_in>;
+				};
+			};
+		};
+
+		i2c@0 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0>;
+
+#ifdef MAXIM_CAMERA4
+			camera@55 {
+				compatible = MAXIM_CAMERA4;
+				reg = <0x55 0x65>;
+				port {
+					rdacm20_out4: endpoint {
+						remote-endpoint = <&max9286_in4>;
+					};
+				};
+			};
+#endif
+		};
+
+		i2c@1 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <1>;
+
+#ifdef MAXIM_CAMERA5
+			camera@56 {
+				compatible = MAXIM_CAMERA5;
+				reg = <0x56 0x66>;
+				port {
+					rdacm20_out5: endpoint {
+						remote-endpoint = <&max9286_in5>;
+					};
+				};
+			};
+#endif
+		};
+
+		i2c@2 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <2>;
+
+#ifdef MAXIM_CAMERA6
+			camera@57 {
+				compatible = MAXIM_CAMERA6;
+				reg = <0x57 0x67>;
+				port {
+					rdacm20_out6: endpoint {
+						remote-endpoint = <&max9286_in6>;
+					};
+				};
+			};
+#endif
+		};
+
+		i2c@3 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <3>;
+
+#ifdef MAXIM_CAMERA7
+			camera@59 {
+				compatible = MAXIM_CAMERA7;
+				/* The Salvator-X has a PCIe Clock gen @ 0x68 */
+				reg = <0x59 0x69>;
+				port {
+					rdacm20_out7: endpoint {
+						remote-endpoint = <&max9286_in7>;
+					};
+				};
+			};
+#endif
+		};
+	};
+};
