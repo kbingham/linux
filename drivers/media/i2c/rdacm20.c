@@ -150,21 +150,6 @@ static int rdacm20_s_stream(struct v4l2_subdev *sd, int enable)
 	struct rdacm20_device *dev = sd_to_rdacm20(sd);
 	int cam_idx = dev->client->addr - CAM;
 
-#if 0
-	max9271_write(dev, 0x0a, 0xff);
-				/* enable reverse_control/conf_link */
-#endif
-	mdelay(5);
-				/* wait 5ms for conf_link to establish */
-	dev->client->addr = maxim_map[1][cam_idx];	/* MAX9271-CAMx */
-#if 0
-	max9271_write(dev, 0x04, 0x43);
-				/* enable reverse_control/conf_link */
-#endif
-	mdelay(5);		/* wait 5ms for conf_link to establish */
-#if 0
-	ov10635_write(dev, 0x0100, enable); /* stream on/off */
-#endif
 	if (enable) {
 		/* switch to GMSL serial_link for streaming video */
 		dev->client->addr = maxim_map[1][cam_idx];	/* MAX9271-CAMx */
