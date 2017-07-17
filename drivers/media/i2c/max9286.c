@@ -273,7 +273,9 @@ static const struct v4l2_subdev_internal_ops max9286_subdev_internal_ops  = {
 static int max9286_g_mbus_config(struct v4l2_subdev *sd,
 				 struct v4l2_mbus_config *cfg)
 {
-	/* TODO */
+	cfg->flags = V4L2_MBUS_CSI2_1_LANE | V4L2_MBUS_CSI2_CHANNEL_0 |
+		     V4L2_MBUS_CSI2_CONTINUOUS_CLOCK;
+	cfg->type = V4L2_MBUS_CSI2;
 
 	return 0;
 }
@@ -289,7 +291,10 @@ static int max9286_enum_mbus_code(struct v4l2_subdev *sd,
 				  struct v4l2_subdev_pad_config *cfg,
 				  struct v4l2_subdev_mbus_code_enum *code)
 {
-	/* TODO */
+	if (code->pad || code->index > 0)
+		return -EINVAL;
+
+	code->code = MEDIA_BUS_FMT_UYVY8_2X8;
 
 	return 0;
 }
