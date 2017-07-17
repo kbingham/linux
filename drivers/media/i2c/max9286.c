@@ -18,8 +18,7 @@
 #include <linux/regulator/consumer.h>
 #include <linux/slab.h>
 
-#define MAX9286_NUM_PORTS	1	/* Number of ports (usually 4, can be lower for debugging) */
-
+#define MAX9286_MAX_PORTS	4
 #define MAXIM_I2C_I2C_SPEED_400KHZ	(0x5 << 2) /* 339 kbps */
 #define MAXIM_I2C_I2C_SPEED_100KHZ	(0x3 << 2) /* 105 kbps */
 #define MAXIM_I2C_SPEED			MAXIM_I2C_I2C_SPEED_100KHZ
@@ -60,6 +59,7 @@ struct max9286_device {
 	struct regulator *regulator;
 	struct i2c_mux_core *mux;
 	unsigned int mux_channel;
+	unsigned int nports;
 };
 
 static inline int max9286_write(struct max9286_device *dev, u8 reg, u8 val)
@@ -104,7 +104,7 @@ static int max9286_i2c_mux_init(struct max9286_device *dev)
 		return -ENODEV;
 
 	dev->mux = i2c_mux_alloc(dev->client->adapter, &dev->client->dev,
-				 MAX9286_NUM_PORTS, 0, I2C_MUX_LOCKED,
+				 dev->nports, 0, I2C_MUX_LOCKED,
 				 max9286_i2c_mux_select, NULL);
 	dev_info(&dev->client->dev, "%s: mux %p\n", __func__, dev->mux);
 	if (!dev->mux)
@@ -112,7 +112,7 @@ static int max9286_i2c_mux_init(struct max9286_device *dev)
 
 	dev->mux->priv = dev;
 
-	for (i = 0; i < MAX9286_NUM_PORTS; ++i) {
+	for (i = 0; i < dev->nports; ++i) {
 		ret = i2c_mux_add_adapter(dev->mux, 0, i, 0);
 		if (ret < 0)
 			goto error;
@@ -145,7 +145,7 @@ static int max9286_setup(struct max9286_device *dev)
 		return -EINVAL;
 	}
 
-	for (cam_idx = cam_offset; cam_idx < MAX9286_NUM_PORTS + cam_offset; cam_idx++) {
+	for (cam_idx = cam_offset; cam_idx < dev->nports + cam_offset; cam_idx++) {
 		/*
 		 * SETUP CAMx (MAX9286/MAX9271/OV10635) I2C
 		 */
@@ -240,7 +240,7 @@ static int max9286_setup(struct max9286_device *dev)
 		max9286_write(dev, 0x06, FSYNC_PERIOD & 0xff);
 		max9286_write(dev, 0x07, (FSYNC_PERIOD >> 8) & 0xff);
 		max9286_write(dev, 0x08, FSYNC_PERIOD >> 16);
-		if (MAX9286_NUM_PORTS == 1) {
+		if (dev->nports == 1) {
 			max9286_write(dev, 0x01, 0xc0);
 				/* ECU (aka MCU) based FrameSync using
 				*  GPI-to-GPO
@@ -337,6 +337,11 @@ static int max9286_init(struct device *dev, void *data)
 
 	client = to_i2c_client(dev);
 	max9286_dev = i2c_get_clientdata(client);
+
+	max9286_dev->nports = of_get_available_child_count(dev->of_node);
+	if (!max9286_dev->nports)
+		return 0;
+
 	ret = max9286_setup(max9286_dev);
 	if (ret) {
 		dev_err(dev, "Unable to setup max9286 0x%x\n",
@@ -423,7 +428,7 @@ static int max9286_probe(struct i2c_client *client,
 	 * if all other MAX9286 on the parent bus have been probed, proceed
 	 * to initialize them all, including the current one.
 	 */
-	dev->mux_channel = MAX9286_NUM_PORTS + 1;
+	dev->mux_channel = MAX9286_MAX_PORTS;
 	max9286_write(dev, 0x0a, 0x00);
 	ret = device_for_each_child(client->dev.parent, &client->dev,
 				    max9286_is_bound);
