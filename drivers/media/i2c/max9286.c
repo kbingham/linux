@@ -534,7 +534,8 @@ static int max9286_init(struct device *dev, void *data)
 	client = to_i2c_client(dev);
 	max9286_dev = i2c_get_clientdata(client);
 
-	max9286_dev->nports = of_get_available_child_count(dev->of_node);
+	/* -1 as one of the available children is "ports" node */
+	max9286_dev->nports = of_get_available_child_count(dev->of_node) - 1;
 	if (!max9286_dev->nports)
 		return 0;
 
