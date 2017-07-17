@@ -133,6 +133,7 @@ static int max9286_setup(struct max9286_device *dev)
 {
 	unsigned short des_addr = dev->client->addr;
 	unsigned int cam_idx, cam_offset;
+	unsigned int linken_mask = 0xf & ((1 << dev->nports) - 1);
 
 	switch (des_addr) {
 	case DES0:
@@ -240,27 +241,17 @@ static int max9286_setup(struct max9286_device *dev)
 		max9286_write(dev, 0x06, FSYNC_PERIOD & 0xff);
 		max9286_write(dev, 0x07, (FSYNC_PERIOD >> 8) & 0xff);
 		max9286_write(dev, 0x08, FSYNC_PERIOD >> 16);
-		if (dev->nports == 1) {
+		if (dev->nports == 1)
 			max9286_write(dev, 0x01, 0xc0);
 				/* ECU (aka MCU) based FrameSync using
 				*  GPI-to-GPO
 				*/
-			max9286_write(dev, 0x00, 0xe1);
-				/* enable GMSL link 0, auto detect link
-				*  used for CSI clock source
-				*/
-			max9286_write(dev, 0x69, 0x0e);
-				/* Mask Links 1 2 3, unmask link 0 */
-		} else {
+		else
 			max9286_write(dev, 0x01, 0x02);
 				/* automatic: FRAMESYNC taken
 				*  from the slowest Link
 				*/
-			max9286_write(dev, 0x00, 0xef);
-				/* enable GMSL links [0:3], auto detect link
-				* used for CSI clock source
-				*/
-		}
+
 		max9286_write(dev, 0x0c, 0x89);
 			/* enable HS/VS encoding, use D14/15 for HS/VS,
 			* invert VS
@@ -314,6 +305,14 @@ static int max9286_setup(struct max9286_device *dev)
 	dev->client->addr = des_addr;			/* MAX9286-CAMx I2C */
 	max9286_write(dev, 0x1b, 0x0f);
 				/* enable equalizer for all links */
+
+	/*
+	 * Enable GMSL links, mask unused ones and autodetect link
+	 * used as CSI clock source. Enable automask and autocomeback
+	 * to protect against malfunctioning links
+	 */
+	max9286_write(dev, 0x00, 0xe0 | linken_mask);
+	max9286_write(dev, 0x69, 0x30 | (0xf & ~linken_mask));
 
 	return 0;
 }
