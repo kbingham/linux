@@ -18,7 +18,13 @@
 #include <linux/regulator/consumer.h>
 #include <linux/slab.h>
 
+#include <media/v4l2-async.h>
+#include <media/v4l2-ctrls.h>
+#include <media/v4l2-subdev.h>
+
 #define MAX9286_MAX_PORTS	4
+#define MAX9286_N_PADS		5
+#define MAX9286_SRC_PAD		4
 #define MAXIM_I2C_I2C_SPEED_400KHZ	(0x5 << 2) /* 339 kbps */
 #define MAXIM_I2C_I2C_SPEED_100KHZ	(0x3 << 2) /* 105 kbps */
 #define MAXIM_I2C_SPEED			MAXIM_I2C_I2C_SPEED_100KHZ
@@ -56,11 +62,18 @@ static const u8 maxim_map[][8] = {
 
 struct max9286_device {
 	struct i2c_client *client;
+	struct v4l2_subdev sd;
+	struct media_pad pads[MAX9286_N_PADS];
 	struct regulator *regulator;
 	struct i2c_mux_core *mux;
 	unsigned int mux_channel;
 	unsigned int nports;
 };
+
+static inline struct max9286_device *sd_to_max9286(struct v4l2_subdev *sd)
+{
+	return container_of(sd, struct max9286_device, sd);
+}
 
 static inline int max9286_write(struct max9286_device *dev, u8 reg, u8 val)
 {
@@ -124,6 +137,82 @@ error:
 	i2c_mux_del_adapters(dev->mux);
 	return ret;
 }
+
+/* -----------------------------------------------------------------------------
+ * v4l2 subdev
+ */
+static int max9286_registered(struct v4l2_subdev *sd)
+{
+	return 0;
+}
+
+static void max9286_unregistered(struct v4l2_subdev *sd)
+{
+
+}
+
+static const struct v4l2_subdev_internal_ops max9286_subdev_internal_ops  = {
+	.registered	= max9286_registered,
+	.unregistered	= max9286_unregistered,
+};
+
+static int max9286_g_mbus_config(struct v4l2_subdev *sd,
+				 struct v4l2_mbus_config *cfg)
+{
+	/* TODO */
+
+	return 0;
+}
+
+static int max9286_s_stream(struct v4l2_subdev *sd, int enable)
+{
+	/* TODO */
+
+	return 0;
+}
+
+static int max9286_enum_mbus_code(struct v4l2_subdev *sd,
+				  struct v4l2_subdev_pad_config *cfg,
+				  struct v4l2_subdev_mbus_code_enum *code)
+{
+	/* TODO */
+
+	return 0;
+}
+
+static int max9286_get_fmt(struct v4l2_subdev *sd,
+			   struct v4l2_subdev_pad_config *cfg,
+			   struct v4l2_subdev_format *format)
+{
+	/* TODO */
+
+	return 0;
+}
+
+static int max9286_set_fmt(struct v4l2_subdev *sd,
+			   struct v4l2_subdev_pad_config *cfg,
+			   struct v4l2_subdev_format *format)
+{
+	/* TODO */
+
+	return 0;
+}
+
+static const struct v4l2_subdev_video_ops max9286_video_ops = {
+	.s_stream	= max9286_s_stream,
+	.g_mbus_config	= max9286_g_mbus_config,
+};
+
+static const struct v4l2_subdev_pad_ops max9286_pad_ops = {
+	.enum_mbus_code = max9286_enum_mbus_code,
+	.get_fmt	= max9286_get_fmt,
+	.set_fmt	= max9286_set_fmt,
+};
+
+static struct v4l2_subdev_ops max9286_subdev_ops = {
+	.video		= &max9286_video_ops,
+	.pad		= &max9286_pad_ops,
+};
 
 /* -----------------------------------------------------------------------------
  * Probe/Remove
@@ -320,6 +409,7 @@ static int max9286_init(struct device *dev, void *data)
 {
 	struct max9286_device *max9286_dev;
 	struct i2c_client *client;
+	unsigned int i;
 	int ret;
 
 	if (!dev->of_node ||
@@ -341,14 +431,39 @@ static int max9286_init(struct device *dev, void *data)
 		return ret;
 	}
 
-	ret = max9286_i2c_mux_init(max9286_dev);
-	if (ret) {
-		dev_err(dev, "Unable to initialize mux channels max9286 0x%x\n",
+	v4l2_i2c_subdev_init(&max9286_dev->sd, client, &max9286_subdev_ops);
+	max9286_dev->sd.flags = V4L2_SUBDEV_FL_HAS_DEVNODE;
+	max9286_dev->sd.internal_ops = &max9286_subdev_internal_ops;
+	max9286_dev->sd.entity.function = MEDIA_ENT_F_PROC_VIDEO_PIXEL_FORMATTER;
+
+	max9286_dev->pads[MAX9286_SRC_PAD].flags = MEDIA_PAD_FL_SOURCE;
+	for (i = 0; i < MAX9286_SRC_PAD; i++)
+		max9286_dev->pads[i].flags = MEDIA_PAD_FL_SINK;
+	ret = media_entity_pads_init(&max9286_dev->sd.entity, MAX9286_N_PADS,
+				     max9286_dev->pads);
+	if (ret)
+		return ret;
+
+	ret = v4l2_async_register_subdev(&max9286_dev->sd);
+	if (ret < 0) {
+		dev_err(dev, "Unable to register subdevice max9286 0x%02x\n",
 			client->addr);
 		return ret;
 	}
 
+	ret = max9286_i2c_mux_init(max9286_dev);
+	if (ret) {
+		dev_err(dev, "Unable to initialize mux channels max9286 0x%x\n",
+			client->addr);
+		goto err_subdev_unregister;
+	}
+
 	return 0;
+
+err_subdev_unregister:
+	v4l2_async_unregister_subdev(&max9286_dev->sd);
+
+	return ret;
 }
 
 static int max9286_is_bound(struct device *dev, void *data)
@@ -444,6 +559,8 @@ static int max9286_remove(struct i2c_client *client)
 	struct max9286_device *dev = i2c_get_clientdata(client);
 
 	i2c_mux_del_adapters(dev->mux);
+
+	v4l2_async_unregister_subdev(&dev->sd);
 
 	regulator_disable(dev->regulator);
 	regulator_put(dev->regulator);
