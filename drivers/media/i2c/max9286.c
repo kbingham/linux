@@ -221,12 +221,15 @@ static int max9286_setup(struct max9286_device *dev)
 			/* disable CSI output, VC is set accordingly
 			*  to Link number
 			*/
-		if (MAX9286_NUM_PORTS == 1)
-			max9286_write(dev, 0x12, 0x33);
-			/* enable CSI-2 Lane D0 only, DBL mode, YUV422 8-bit*/
-		else
-			max9286_write(dev, 0x12, 0xf3);
-			/* enable CSI-2 Lanes D[0:3], DBL mode, YUV422  8-bit*/
+		/*
+		 * FIXME: once this driver will have an endpoint, retrieve
+		 * CSI lanes number from there, and set image format properly.
+		 * For now, it stays hardcoded to 1 lane only to comply with
+		 * current VIN settings.
+		 */
+		/* Enable CSI-2 Lane D0 only, DBL mode, YUV422 8-bit*/
+		max9286_write(dev, 0x12, 0x33);
+
 #define FSYNC_PERIOD	(1280*800*2)
 #if 0
 		max9286_write(dev, 0x01, 0x00);
