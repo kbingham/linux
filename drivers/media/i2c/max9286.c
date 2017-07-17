@@ -298,16 +298,13 @@ static int max9286_get_fmt(struct v4l2_subdev *sd,
 			   struct v4l2_subdev_pad_config *cfg,
 			   struct v4l2_subdev_format *format)
 {
-	/* TODO */
+	struct v4l2_mbus_framefmt *mf = &format->format;
 
-	return 0;
-}
-
-static int max9286_set_fmt(struct v4l2_subdev *sd,
-			   struct v4l2_subdev_pad_config *cfg,
-			   struct v4l2_subdev_format *format)
-{
-	/* TODO */
+	mf->width	= 1280;
+	mf->height	= 800;
+	mf->code	= MEDIA_BUS_FMT_UYVY8_2X8;
+	mf->colorspace	= V4L2_COLORSPACE_SMPTE170M;
+	mf->field	= V4L2_FIELD_NONE;
 
 	return 0;
 }
@@ -320,7 +317,7 @@ static const struct v4l2_subdev_video_ops max9286_video_ops = {
 static const struct v4l2_subdev_pad_ops max9286_pad_ops = {
 	.enum_mbus_code = max9286_enum_mbus_code,
 	.get_fmt	= max9286_get_fmt,
-	.set_fmt	= max9286_set_fmt,
+	.set_fmt	= max9286_get_fmt,
 };
 
 static struct v4l2_subdev_ops max9286_subdev_ops = {
