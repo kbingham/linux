@@ -322,9 +322,6 @@ static int max9286_setup(struct max9286_device *dev)
 			* channel settings
 			*/
 
-	/* NOTE: release des_addr to be used in sensor subdevice */
-	dev->client->addr = des_addr - 0x40;
-
 	return 0;
 }
 
