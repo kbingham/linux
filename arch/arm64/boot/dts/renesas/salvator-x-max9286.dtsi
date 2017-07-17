@@ -37,24 +37,72 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0>;
+
+			camera@60 {
+				compatible = "imi,rdacm20";
+				reg = <0x60>;
+				port {
+					rdacm20_out0: endpoint {
+						clock-lanes = <0>;
+						data-lanes = <1>;
+						remote-endpoint = <&csi40_in>;
+					};
+				};
+			};
 		};
 
 		i2c@1 {
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <1>;
+
+			camera@61 {
+				compatible = "imi,rdacm20";
+				reg = <0x61>;
+				port {
+					rdacm20_out1: endpoint {
+						clock-lanes = <0>;
+						data-lanes = <1 2 3 4>;
+						remote-endpoint = <&csi40_in>;
+					};
+				};
+			};
 		};
 
 		i2c@2 {
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <2>;
+
+			camera@62 {
+				compatible = "imi,rdacm20";
+				reg = <0x62>;
+				port {
+					rdacm20_out2: endpoint {
+						clock-lanes = <0>;
+						data-lanes = <1 2 3 4>;
+						remote-endpoint = <&csi40_in>;
+					};
+				};
+			};
 		};
 
 		i2c@3 {
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <3>;
+
+			camera@63 {
+				compatible = "imi,rdacm20";
+				reg = <0x63>;
+				port {
+					rdacm20_out3: endpoint {
+						clock-lanes = <0>;
+						data-lanes = <1 2 3 4>;
+						remote-endpoint = <&csi40_in>;
+					};
+				};
+			};
 		};
 	};
 
@@ -72,24 +120,72 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0>;
+
+			camera@64 {
+				compatible = "imi,rdacm20";
+				reg = <0x64>;
+				port {
+					rdacm20_out4: endpoint {
+						clock-lanes = <0>;
+						data-lanes = <1>;
+						remote-endpoint = <&csi41_in>;
+					};
+				};
+			};
 		};
 
 		i2c@1 {
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <1>;
+
+			camera@65 {
+				compatible = "imi,rdacm20";
+				reg = <0x65>;
+				port {
+					rdacm20_out5: endpoint {
+						clock-lanes = <0>;
+						data-lanes = <1 2 3 4>;
+						remote-endpoint = <&csi41_in>;
+					};
+				};
+			};
 		};
 
 		i2c@2 {
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <2>;
+
+			camera@66 {
+				compatible = "imi,rdacm20";
+				reg = <0x66>;
+				port {
+					rdacm20_out6: endpoint {
+						clock-lanes = <0>;
+						data-lanes = <1 2 3 4>;
+						remote-endpoint = <&csi41_in>;
+					};
+				};
+			};
 		};
 
 		i2c@3 {
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <3>;
+
+			camera@67 {
+				compatible = "imi,rdacm20";
+				reg = <0x67>;
+				port {
+					rdacm20_out7: endpoint {
+						clock-lanes = <0>;
+						data-lanes = <1 2 3 4>;
+						remote-endpoint = <&csi41_in>;
+					};
+				};
+			};
 		};
 	};
 };
