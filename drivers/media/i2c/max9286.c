@@ -284,9 +284,42 @@ static int max9286_g_mbus_config(struct v4l2_subdev *sd,
 
 static int max9286_s_stream(struct v4l2_subdev *sd, int enable)
 {
-	/* TODO */
+	struct max9286_device *dev = sd_to_max9286(sd);
+	struct serializer *serializer;
+	unsigned int i;
+	int ret;
+
+	if (enable) {
+		/*
+		 * Enable CSI output, VC set according to link number.
+		 * Bit 7 must be set (chip manual says it's 0 and reserved)
+		 */
+		max9286_write(dev, 0x15, 0x9b);
+
+		for (i = 0; i < dev->nports; i++) {
+			serializer = &dev->serializers[i];
+			ret = v4l2_subdev_call(serializer->sd, video,
+					       s_stream, 1);
+			if (ret)
+				goto err_stop_stream;
+		}
+	} else {
+		max9286_write(dev, 0x15, 0x13);
+		for (i = 0; i < dev->nports; i++) {
+			serializer = &dev->serializers[i];
+			v4l2_subdev_call(serializer->sd, video, s_stream, 0);
+		}
+	}
 
 	return 0;
+
+err_stop_stream:
+	for (; i > 0; i--) {
+		serializer = &dev->serializers[i - 1];
+		v4l2_subdev_call(serializer->sd, video, s_stream, 0);
+	}
+
+	return ret;
 }
 
 static int max9286_enum_mbus_code(struct v4l2_subdev *sd,
