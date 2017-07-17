@@ -126,7 +126,7 @@
 			csi40_in: endpoint {
 				clock-lanes = <0>;
 				data-lanes = <1>;
-				remote-endpoint = <&rdacm20_out0>;
+				remote-endpoint = <&max9286_out0>;
 			};
 		};
 	};
@@ -144,8 +144,8 @@
 
 			csi41_in: endpoint {
 				clock-lanes = <0>;
-				data-lanes = <1 2 3 4>;
-				remote-endpoint = <&rdacm20_out4>;
+				data-lanes = <1>;
+				remote-endpoint = <&max9286_out1>;
 			};
 		};
 	};

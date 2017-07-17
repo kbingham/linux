@@ -33,6 +33,48 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				max9286_in0: endpoint {
+					remote-endpoint = <&rdacm20_out0>;
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+				max9286_in1: endpoint {
+					remote-endpoint = <&rdacm20_out1>;
+				};
+			};
+
+			port@2 {
+				reg = <2>;
+				max9286_in2: endpoint {
+					remote-endpoint = <&rdacm20_out2>;
+				};
+			};
+
+			port@3 {
+				reg = <3>;
+				max9286_in3: endpoint {
+					remote-endpoint = <&rdacm20_out3>;
+				};
+			};
+
+			port@4 {
+				reg = <4>;
+				max9286_out0: endpoint {
+					clock-lanes = <0>;
+					data-lanes = <1>;
+					remote-endpoint = <&csi40_in>;
+				};
+			};
+		};
+
 		i2c@0 {
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -41,13 +83,13 @@
 			camera@60 {
 				compatible = "imi,rdacm20";
 				reg = <0x60>;
+
 				port {
 					rdacm20_out0: endpoint {
-						clock-lanes = <0>;
-						data-lanes = <1>;
-						remote-endpoint = <&csi40_in>;
+						remote-endpoint = <&max9286_in0>;
 					};
 				};
+
 			};
 		};
 
@@ -61,9 +103,7 @@
 				reg = <0x61>;
 				port {
 					rdacm20_out1: endpoint {
-						clock-lanes = <0>;
-						data-lanes = <1 2 3 4>;
-						remote-endpoint = <&csi40_in>;
+						remote-endpoint = <&max9286_in1>;
 					};
 				};
 			};
@@ -79,9 +119,7 @@
 				reg = <0x62>;
 				port {
 					rdacm20_out2: endpoint {
-						clock-lanes = <0>;
-						data-lanes = <1 2 3 4>;
-						remote-endpoint = <&csi40_in>;
+						remote-endpoint = <&max9286_in2>;
 					};
 				};
 			};
@@ -97,9 +135,7 @@
 				reg = <0x63>;
 				port {
 					rdacm20_out3: endpoint {
-						clock-lanes = <0>;
-						data-lanes = <1 2 3 4>;
-						remote-endpoint = <&csi40_in>;
+						remote-endpoint = <&max9286_in3>;
 					};
 				};
 			};
@@ -114,6 +150,48 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				max9286_in4: endpoint {
+					remote-endpoint = <&rdacm20_out4>;
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+				max9286_in5: endpoint {
+					remote-endpoint = <&rdacm20_out5>;
+				};
+			};
+
+			port@2 {
+				reg = <2>;
+				max9286_in6: endpoint {
+					remote-endpoint = <&rdacm20_out6>;
+				};
+			};
+
+			port@3 {
+				reg = <3>;
+				max9286_in7: endpoint {
+					remote-endpoint = <&rdacm20_out7>;
+				};
+			};
+
+			port@4 {
+				reg = <4>;
+				max9286_out1: endpoint {
+					clock-lanes = <0>;
+					data-lanes = <1>;
+					remote-endpoint = <&csi41_in>;
+				};
+			};
+		};
+
 		i2c@0 {
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -124,9 +202,7 @@
 				reg = <0x64>;
 				port {
 					rdacm20_out4: endpoint {
-						clock-lanes = <0>;
-						data-lanes = <1>;
-						remote-endpoint = <&csi41_in>;
+						remote-endpoint = <&max9286_in4>;
 					};
 				};
 			};
@@ -142,9 +218,7 @@
 				reg = <0x65>;
 				port {
 					rdacm20_out5: endpoint {
-						clock-lanes = <0>;
-						data-lanes = <1 2 3 4>;
-						remote-endpoint = <&csi41_in>;
+						remote-endpoint = <&max9286_in5>;
 					};
 				};
 			};
@@ -160,9 +234,7 @@
 				reg = <0x66>;
 				port {
 					rdacm20_out6: endpoint {
-						clock-lanes = <0>;
-						data-lanes = <1 2 3 4>;
-						remote-endpoint = <&csi41_in>;
+						remote-endpoint = <&max9286_in6>;
 					};
 				};
 			};
@@ -178,9 +250,7 @@
 				reg = <0x67>;
 				port {
 					rdacm20_out7: endpoint {
-						clock-lanes = <0>;
-						data-lanes = <1 2 3 4>;
-						remote-endpoint = <&csi41_in>;
+						remote-endpoint = <&max9286_in7>;
 					};
 				};
 			};
