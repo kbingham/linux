@@ -216,47 +216,6 @@ static int max9286_setup(struct max9286_device *dev)
 				*  channel settings
 				*/
 
-		/* Initial setup */
-		dev->client->addr = des_addr;		/* MAX9286-CAMx I2C */
-		max9286_write(dev, 0x15, 0x13);
-			/* disable CSI output, VC is set accordingly
-			*  to Link number
-			*/
-		/*
-		 * FIXME: once this driver will have an endpoint, retrieve
-		 * CSI lanes number from there, and set image format properly.
-		 * For now, it stays hardcoded to 1 lane only to comply with
-		 * current VIN settings.
-		 */
-		/* Enable CSI-2 Lane D0 only, DBL mode, YUV422 8-bit*/
-		max9286_write(dev, 0x12, 0x33);
-
-#define FSYNC_PERIOD	(1280*800*2)
-#if 0
-		max9286_write(dev, 0x01, 0x00);
-			/* manual: FRAMESYNC set manually
-			*  via [0x06:0x08] regs
-			*/
-#endif
-		max9286_write(dev, 0x06, FSYNC_PERIOD & 0xff);
-		max9286_write(dev, 0x07, (FSYNC_PERIOD >> 8) & 0xff);
-		max9286_write(dev, 0x08, FSYNC_PERIOD >> 16);
-		if (dev->nports == 1)
-			max9286_write(dev, 0x01, 0xc0);
-				/* ECU (aka MCU) based FrameSync using
-				*  GPI-to-GPO
-				*/
-		else
-			max9286_write(dev, 0x01, 0x02);
-				/* automatic: FRAMESYNC taken
-				*  from the slowest Link
-				*/
-
-		max9286_write(dev, 0x0c, 0x89);
-			/* enable HS/VS encoding, use D14/15 for HS/VS,
-			* invert VS
-			*/
-
 		/* GMSL setup */
 		dev->client->addr = 0x40;		/* MAX9271-CAMx I2C */
 		max9286_write(dev, 0x0d, 0x22 | MAXIM_I2C_SPEED);
@@ -313,6 +272,40 @@ static int max9286_setup(struct max9286_device *dev)
 	 */
 	max9286_write(dev, 0x00, 0xe0 | linken_mask);
 	max9286_write(dev, 0x69, 0x30 | (0xf & ~linken_mask));
+
+	/* Video format setup */
+	/* Disable CSI output, VC is set accordingly to Link number */
+	max9286_write(dev, 0x15, 0x13);
+
+	/*
+	 * FIXME: once this driver will have an endpoint, retrieve
+	 * CSI lanes number from there, and set image format properly.
+	 * For now, it stays hardcoded to 1 lane only to comply with
+	 * current VIN settings.
+	 */
+	/* Enable CSI-2 Lane D0 only, DBL mode, YUV422 8-bit*/
+	max9286_write(dev, 0x12, 0x33);
+
+#define FSYNC_PERIOD	(1280*800*2)
+#if 0
+	max9286_write(dev, 0x01, 0x00);
+		/* manual: FRAMESYNC set manually
+		*  via [0x06:0x08] regs
+		*/
+#endif
+	max9286_write(dev, 0x06, FSYNC_PERIOD & 0xff);
+	max9286_write(dev, 0x07, (FSYNC_PERIOD >> 8) & 0xff);
+	max9286_write(dev, 0x08, FSYNC_PERIOD >> 16);
+
+	if (dev->nports == 1)
+		/* ECU (aka MCU) based FrameSync using GPI-to-GPO */
+		max9286_write(dev, 0x01, 0xc0);
+	else
+		/* Automatic: FRAMESYNC taken from the slowest Link */
+		max9286_write(dev, 0x01, 0x02);
+
+	/* Enable HS/VS encoding, use D14/15 for HS/VS, invert VS */
+	max9286_write(dev, 0x0c, 0x89);
 
 	return 0;
 }
