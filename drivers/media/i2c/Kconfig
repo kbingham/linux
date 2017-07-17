@@ -818,6 +818,12 @@ config VIDEO_S5C73M3
 	  This is a V4L2 sensor-level driver for Samsung S5C73M3
 	  8 Mpixel camera.
 
+config VIDEO_RDACM20
+	tristate "IMI RDACM20 camera support"
+	depends on I2C
+	help
+	  This driver supports the IMI RDACM20 GMSL camera.
+
 comment "Flash devices"
 
 config VIDEO_ADP1653
