@@ -11,6 +11,7 @@
  */
 
 #include <linux/delay.h>
+#include <linux/device.h>
 #include <linux/i2c.h>
 #include <linux/i2c-mux.h>
 #include <linux/module.h>
@@ -137,10 +138,6 @@ static int max9286_setup(struct max9286_device *dev)
 	switch (des_addr) {
 	case DES0:
 		cam_offset = 0;
-		dev->client->addr = DES1;		/* MAX9286-CAMx I2C */
-		max9286_write(dev, 0x0a, 0x00);
-				/* disable reverse control for all cams */
-		dev->client->addr = des_addr;
 		break;
 	case DES1:
 		cam_offset = 4;
@@ -331,6 +328,62 @@ static int max9286_setup(struct max9286_device *dev)
 	return 0;
 }
 
+static const struct of_device_id max9286_dt_ids[] = {
+	{ .compatible = "maxim,max9286" },
+	{},
+};
+MODULE_DEVICE_TABLE(of, max9286_dt_ids);
+
+static int max9286_init(struct device *dev, void *data)
+{
+	struct max9286_device *max9286_dev;
+	struct i2c_client *client;
+	int ret;
+
+	if (!dev->of_node ||
+	    !of_match_node(max9286_dt_ids, dev->of_node))
+		/* skip non-max9286 devices */
+		return 0;
+
+	client = to_i2c_client(dev);
+	max9286_dev = i2c_get_clientdata(client);
+	ret = max9286_setup(max9286_dev);
+	if (ret) {
+		dev_err(dev, "Unable to setup max9286 0x%x\n",
+			client->addr);
+		return ret;
+	}
+
+	ret = max9286_i2c_mux_init(max9286_dev);
+	if (ret) {
+		dev_err(dev, "Unable to initialize mux channels max9286 0x%x\n",
+			client->addr);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int max9286_is_bound(struct device *dev, void *data)
+{
+	struct device *this = data;
+	int ret;
+
+	if (dev == this)
+		return 0;
+
+	if (!dev->of_node ||
+	    !of_match_node(max9286_dt_ids, dev->of_node))
+		/* skip non-max9286 devices */
+		return 0;
+
+	ret = device_is_bound(dev);
+	if (!ret)
+		return -EPROBE_DEFER;
+
+	return 0;
+}
+
 static int max9286_probe(struct i2c_client *client,
 			 const struct i2c_device_id *did)
 {
@@ -368,15 +421,29 @@ static int max9286_probe(struct i2c_client *client,
 	 */
 	msleep(MAXIM_IMI_MCU_DELAY);
 
-	ret = max9286_setup(dev);
-	if (ret < 0)
-		goto err_regulator;
+	/*
+	 * We can have multiple MAX9286 instances on the same physical I2C
+	 * bus, and I2C children behind ports of separate MAX9286 instances
+	 * having the same I2C address. As the MAX9286 starts by default with
+	 * all ports enabled, we need to disable all ports on all MAX9286
+	 * instances before proceeding to further initialize the devices and
+	 * instantiate children.
+	 *
+	 * Start by just disabling all channels on the current device. Then,
+	 * if all other MAX9286 on the parent bus have been probed, proceed
+	 * to initialize them all, including the current one.
+	 */
 
-	ret = max9286_i2c_mux_init(dev);
-	if (ret < 0)
-		goto err_regulator;
+	max9286_write(dev, 0x0a, 0x00);
+	ret = device_for_each_child(client->dev.parent, &client->dev,
+				    max9286_is_bound);
+	if (ret)
+		return 0;
 
-	return 0;
+	dev_dbg(&client->dev,
+		"All max9286 probed: start initialization sequence\n");
+	return device_for_each_child(client->dev.parent, client,
+				     max9286_init);
 
 err_regulator:
 	regulator_put(dev->regulator);
@@ -398,12 +465,6 @@ static int max9286_remove(struct i2c_client *client)
 
 	return 0;
 }
-
-static const struct of_device_id max9286_dt_ids[] = {
-	{ .compatible = "maxim,max9286" },
-	{},
-};
-MODULE_DEVICE_TABLE(of, max9286_dt_ids);
 
 static const struct i2c_device_id max9286_id[] = {
 	{ "max9286", 0 },
