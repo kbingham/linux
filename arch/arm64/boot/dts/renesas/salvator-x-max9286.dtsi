@@ -1,0 +1,95 @@
+/*
+ * Device Tree Source for the Salvator-X MAX9286 expansion board
+ *
+ * Copyright (C) 2017 Ideas on Board <laurent.pinchart@ideasonboard.com>
+ *
+ * This file is licensed under the terms of the GNU General Public License
+ * version 2.  This program is licensed "as is" without any warranty of any
+ * kind, whether express or implied.
+ */
+
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	poc_12v: regulator-vcc-poc-12v {
+		compatible = "regulator-fixed";
+
+		regulator-name = "Camera PoC 12V";
+		regulator-min-microvolt = <12000000>;
+		regulator-max-microvolt = <12000000>;
+		startup-delay-us = <250000>;
+
+		gpio = <&gpio6 30 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+};
+
+&i2c4 {
+	gmsl-deserializer@0 {
+		compatible = "maxim,max9286";
+		reg = <0x4c>;
+		poc-supply = <&poc_12v>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		i2c@0 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0>;
+		};
+
+		i2c@1 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <1>;
+		};
+
+		i2c@2 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <2>;
+		};
+
+		i2c@3 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <3>;
+		};
+	};
+
+	gmsl-deserializer@1 {
+		compatible = "maxim,max9286";
+		reg = <0x6c>;
+		poc-supply = <&poc_12v>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		status = "disabled";
+
+		i2c@0 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0>;
+		};
+
+		i2c@1 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <1>;
+		};
+
+		i2c@2 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <2>;
+		};
+
+		i2c@3 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <3>;
+		};
+	};
+};
