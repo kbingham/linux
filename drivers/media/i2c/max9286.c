@@ -70,6 +70,8 @@ struct max9286_device {
 	unsigned int mux_channel;
 	unsigned int nports;
 
+	struct v4l2_ctrl_handler	ctrls;
+
 	struct v4l2_async_notifier notifier;
 
 	unsigned int nserializers;
@@ -550,6 +552,19 @@ static int max9286_init(struct device *dev, void *data)
 
 	v4l2_i2c_subdev_init(&max9286_dev->sd, client, &max9286_subdev_ops);
 	max9286_dev->sd.flags = V4L2_SUBDEV_FL_HAS_DEVNODE;
+
+	v4l2_ctrl_handler_init(&max9286_dev->ctrls, 1);
+	/*
+	 * FIXME: Compute the real pixel rate. The 50 MP/s value comes from the
+	 * hardcoded frequency in the BSP CSI-2 receiver driver.
+	 */
+	v4l2_ctrl_new_std(&max9286_dev->ctrls, NULL, V4L2_CID_PIXEL_RATE,
+			  50000000, 50000000, 1, 50000000);
+	max9286_dev->sd.ctrl_handler = &max9286_dev->ctrls;
+	ret = max9286_dev->ctrls.error;
+	if (ret)
+		return ret;
+
 	max9286_dev->sd.internal_ops = &max9286_subdev_internal_ops;
 	max9286_dev->sd.entity.function = MEDIA_ENT_F_PROC_VIDEO_PIXEL_FORMATTER;
 
