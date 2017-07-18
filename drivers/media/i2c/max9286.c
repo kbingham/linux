@@ -158,8 +158,9 @@ error:
 }
 
 /* -----------------------------------------------------------------------------
- * v4l2 subdev
+ * V4L2 Subdev
  */
+
 static int max9286_notify_bound(struct v4l2_async_notifier *notifier,
 				struct v4l2_subdev *subdev,
 				struct v4l2_async_subdev *asd)
@@ -360,7 +361,7 @@ static const struct v4l2_subdev_pad_ops max9286_pad_ops = {
 	.set_fmt	= max9286_get_fmt,
 };
 
-static struct v4l2_subdev_ops max9286_subdev_ops = {
+static const struct v4l2_subdev_ops max9286_subdev_ops = {
 	.video		= &max9286_video_ops,
 	.pad		= &max9286_pad_ops,
 };
