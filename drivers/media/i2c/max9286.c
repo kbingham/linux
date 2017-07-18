@@ -710,7 +710,7 @@ static int max9286_probe(struct i2c_client *client,
 
 	dev_dbg(&client->dev,
 		"All max9286 probed: start initialization sequence\n");
-	return device_for_each_child(client->dev.parent, client,
+	return device_for_each_child(client->dev.parent, NULL,
 				     max9286_init);
 
 err_regulator:
