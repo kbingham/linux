@@ -68,6 +68,8 @@ struct max9286_source {
 		unsigned int src_pad;
 };
 
+#define asd_to_max9286_source(asd) container_of(asd, struct max9286_source, asd)
+
 struct max9286_device {
 	struct i2c_client *client;
 	struct v4l2_subdev sd;
@@ -81,7 +83,6 @@ struct max9286_device {
 
 	struct v4l2_async_notifier notifier;
 
-	unsigned int nsources;
 	struct max9286_source sources[MAX9286_MAX_PORTS];
 	struct v4l2_async_subdev *subdevs[MAX9286_MAX_PORTS];
 };
@@ -169,7 +170,7 @@ static int max9286_notify_bound(struct v4l2_async_notifier *notifier,
 				struct v4l2_async_subdev *asd)
 {
 	struct max9286_device *dev = notifier_to_max9286(notifier);
-	struct max9286_source *source = &dev->sources[dev->nsources++];
+	struct max9286_source *source = asd_to_max9286_source(asd);
 	int ret;
 
 	v4l2_set_subdev_hostdata(subdev, dev);
@@ -709,7 +710,6 @@ static int max9286_probe(struct i2c_client *client,
 	 * to initialize them all, including the current one.
 	 */
 	dev->mux_channel = -1;
-	dev->nsources = 0;
 	max9286_write(dev, 0x0a, 0x00);
 	ret = device_for_each_child(client->dev.parent, &client->dev,
 				    max9286_is_bound);
