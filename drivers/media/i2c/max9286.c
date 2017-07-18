@@ -508,7 +508,10 @@ static int max9286_setup(struct max9286_device *dev)
 	/*
 	 * Enable GMSL links, mask unused ones and autodetect link
 	 * used as CSI clock source. Enable automask and autocomeback
-	 * to protect against malfunctioning links
+	 * to protect against malfunctioning links.
+	 *
+	 * FIXME/TODO: Double check to see if we want to enable autocomeback and
+	 * automask
 	 */
 	max9286_write(dev, 0x00, 0xe0 | linken_mask);
 	max9286_write(dev, 0x69, 0x30 | (0xf & ~linken_mask));
