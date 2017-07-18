@@ -15,6 +15,7 @@
 #include <linux/i2c.h>
 #include <linux/i2c-mux.h>
 #include <linux/module.h>
+#include <linux/of_graph.h>
 #include <linux/regulator/consumer.h>
 #include <linux/slab.h>
 
@@ -23,7 +24,7 @@
 #include <media/v4l2-device.h>
 #include <media/v4l2-subdev.h>
 
-#define MAX9286_MAX_PORTS	4
+#define MAX9286_NUM_GMSL	4
 #define MAX9286_N_PADS		5
 #define MAX9286_SRC_PAD		4
 #define MAXIM_I2C_I2C_SPEED_400KHZ	(0x5 << 2) /* 339 kbps */
@@ -83,8 +84,8 @@ struct max9286_device {
 
 	struct v4l2_async_notifier notifier;
 
-	struct max9286_source sources[MAX9286_MAX_PORTS];
-	struct v4l2_async_subdev *subdevs[MAX9286_MAX_PORTS];
+	struct max9286_source sources[MAX9286_NUM_GMSL];
+	struct v4l2_async_subdev *subdevs[MAX9286_NUM_GMSL];
 };
 
 static struct max9286_source *next_source(struct max9286_device *max9286,
@@ -95,7 +96,7 @@ static struct max9286_source *next_source(struct max9286_device *max9286,
 	else
 		source++;
 
-	for (; source < &max9286->sources[MAX9286_MAX_PORTS]; source++) {
+	for (; source < &max9286->sources[MAX9286_NUM_GMSL]; source++) {
 		if (source->fwnode)
 			return source;
 	}
@@ -193,8 +194,6 @@ static int max9286_notify_bound(struct v4l2_async_notifier *notifier,
 	unsigned int index = source - &dev->sources[0];
 	int ret;
 
-	v4l2_set_subdev_hostdata(subdev, dev);
-
 	ret = media_entity_get_fwnode_pad(&subdev->entity,
 					  source->fwnode,
 					  MEDIA_PAD_FL_SOURCE);
@@ -251,31 +250,14 @@ static int max9286_notify_complete(struct v4l2_async_notifier *notifier)
 
 static int max9286_registered(struct v4l2_subdev *sd)
 {
-	struct max9286_device *dev = sd_to_max9286(sd);
-	struct v4l2_async_subdev **subdevs;
-	unsigned int i;
+	struct max9286_device *max9286 = sd_to_max9286(sd);
 	int ret;
 
-	subdevs = devm_kcalloc(&dev->client->dev,
-			       dev->nports, sizeof(*subdevs), GFP_KERNEL);
-	if (!subdevs)
-		return -ENOMEM;
+	dev_dbg(&max9286->client->dev,
+		"%s: Claiming %u source subdevices for subnotifier\n",
+		__func__, max9286->nports);
 
-	dev_dbg(&dev->client->dev,
-		"%s: Claim %d source subdevices for 0x%02x subnotifier\n",
-		__func__, dev->nports, dev->client->addr);
-
-	memset(&dev->sources[0], 0, sizeof(dev->sources));
-	for (i = 0; i < dev->nports; i++)
-		subdevs[i] = &dev->sources[i].asd;
-
-	dev->notifier.num_subdevs = dev->nports;
-	dev->notifier.subdevs = subdevs;
-	dev->notifier.bound = max9286_notify_bound;
-	dev->notifier.unbind = max9286_notify_unbind;
-	dev->notifier.complete = max9286_notify_complete;
-
-	ret = v4l2_async_subnotifier_register(&dev->sd, &dev->notifier);
+	ret = v4l2_async_subnotifier_register(&max9286->sd, &max9286->notifier);
 	if (ret)
 		return ret;
 
@@ -599,11 +581,6 @@ static int max9286_init(struct device *dev, void *data)
 	client = to_i2c_client(dev);
 	max9286_dev = i2c_get_clientdata(client);
 
-	/* -1 as one of the available children is "ports" node */
-	max9286_dev->nports = of_get_available_child_count(dev->of_node) - 1;
-	if (!max9286_dev->nports)
-		return 0;
-
 	ret = max9286_setup(max9286_dev);
 	if (ret) {
 		dev_err(dev, "Unable to setup max9286 0x%x\n",
@@ -679,6 +656,112 @@ static int max9286_is_bound(struct device *dev, void *data)
 	return 0;
 }
 
+static struct device_node *max9286_get_i2c_by_id(struct device_node *parent,
+						 u32 id)
+{
+	struct device_node *child;
+
+	for_each_child_of_node(parent, child) {
+		u32 i2c_id = 0;
+
+		if (of_node_cmp(child->name, "i2c") != 0)
+			continue;
+		of_property_read_u32(child, "reg", &i2c_id);
+		if (id == i2c_id)
+			return child;
+	}
+
+	return NULL;
+}
+
+static int max9286_check_i2c_bus_by_id(struct device *dev, int id)
+{
+	struct device_node *i2c_np;
+
+	i2c_np = max9286_get_i2c_by_id(dev->of_node, id);
+	if (!i2c_np) {
+		dev_err(dev, "Failed to find corresponding i2c@%u\n", id);
+		return -ENODEV;
+	}
+
+	if (!of_device_is_available(i2c_np)) {
+		dev_dbg(dev, "Skipping port %u with disabled I2C bus\n", id);
+		of_node_put(i2c_np);
+		return -ENODEV;
+	}
+
+	of_node_put(i2c_np);
+
+	return 0;
+}
+
+static void max9286_cleanup_dt(struct max9286_device *max9286)
+{
+	struct max9286_source *source;
+
+	/* Release our FWNode references */
+	for_each_source(max9286, source) {
+		fwnode_handle_put(source->fwnode);
+		source->fwnode = NULL;
+	}
+}
+
+static int max9286_parse_dt(struct max9286_device *max9286)
+{
+	struct device *dev = &max9286->client->dev;
+	struct device_node *ep_np = NULL;
+
+	for_each_endpoint_of_node(dev->of_node, ep_np) {
+		struct max9286_source *source;
+		struct of_endpoint ep;
+
+		of_graph_parse_endpoint(ep_np, &ep);
+		dev_dbg(dev, "Endpoint %s on port %d",
+			of_node_full_name(ep.local_node), ep.port);
+
+		/* Skip the source port */
+		if (ep.port == MAX9286_NUM_GMSL)
+			continue;
+
+		if (ep.port > MAX9286_NUM_GMSL) {
+			dev_err(dev, "Invalid endpoint %s on port %d",
+				of_node_full_name(ep.local_node),
+				ep.port);
+
+			continue;
+		}
+
+		/* Skip if the corresponding GMSL link is unavailable */
+		if (max9286_check_i2c_bus_by_id(dev, ep.port))
+			continue;
+
+		if (max9286->sources[ep.port].fwnode) {
+			dev_err(dev,
+				"Multiple port endpoints are not supported: %d",
+				ep.port);
+
+			continue;
+		}
+
+		source = &max9286->sources[ep.port];
+		source->fwnode = fwnode_graph_get_remote_endpoint(
+						of_fwnode_handle(ep_np));
+		source->asd.match_type = V4L2_ASYNC_MATCH_FWNODE;
+		source->asd.match.fwnode.fwnode = source->fwnode;
+		max9286->subdevs[max9286->nports] = &source->asd;
+		max9286->nports++;
+	}
+
+	/* Configure our subdevice notifiers */
+	max9286->notifier.num_subdevs = max9286->nports;
+	max9286->notifier.subdevs = max9286->subdevs;
+	max9286->notifier.bound = max9286_notify_bound;
+	max9286->notifier.unbind = max9286_notify_unbind;
+	max9286->notifier.complete = max9286_notify_complete;
+
+	return max9286->nports ? 0 : -ENODEV;
+}
+
 static int max9286_probe(struct i2c_client *client,
 			 const struct i2c_device_id *did)
 {
@@ -691,6 +774,10 @@ static int max9286_probe(struct i2c_client *client,
 
 	dev->client = client;
 	i2c_set_clientdata(client, dev);
+
+	ret = max9286_parse_dt(dev);
+	if (ret)
+		return ret;
 
 	dev->regulator = regulator_get(&client->dev, "poc");
 	if (IS_ERR(dev->regulator)) {
@@ -743,6 +830,7 @@ static int max9286_probe(struct i2c_client *client,
 err_regulator:
 	regulator_put(dev->regulator);
 err_free:
+	max9286_cleanup_dt(dev);
 	kfree(dev);
 	return ret;
 }
@@ -758,6 +846,7 @@ static int max9286_remove(struct i2c_client *client)
 	regulator_disable(dev->regulator);
 	regulator_put(dev->regulator);
 
+	max9286_cleanup_dt(dev);
 	kfree(dev);
 
 	return 0;
