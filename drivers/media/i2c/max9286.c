@@ -61,6 +61,13 @@ static const u8 maxim_map[][8] = {
 	  CAM  + 4, CAM  + 5, CAM  + 6, CAM  + 7 },
 };
 
+struct max9286_source {
+		struct v4l2_async_subdev asd;
+		struct v4l2_subdev *sd;
+		struct fwnode_handle *fwnode;
+		unsigned int src_pad;
+};
+
 struct max9286_device {
 	struct i2c_client *client;
 	struct v4l2_subdev sd;
@@ -74,13 +81,9 @@ struct max9286_device {
 
 	struct v4l2_async_notifier notifier;
 
-	unsigned int nserializers;
-	struct serializer {
-		struct v4l2_async_subdev asd;
-		struct v4l2_subdev *sd;
-		struct fwnode_handle *fwnode;
-		unsigned int src_pad;
-	} serializers[MAX9286_MAX_PORTS];
+	unsigned int nsources;
+	struct max9286_source sources[MAX9286_MAX_PORTS];
+	struct v4l2_async_subdev *subdevs[MAX9286_MAX_PORTS];
 };
 
 static inline struct max9286_device *sd_to_max9286(struct v4l2_subdev *sd)
@@ -166,13 +169,13 @@ static int max9286_notify_bound(struct v4l2_async_notifier *notifier,
 				struct v4l2_async_subdev *asd)
 {
 	struct max9286_device *dev = notifier_to_max9286(notifier);
-	struct serializer *serializer = &dev->serializers[dev->nserializers++];
+	struct max9286_source *source = &dev->sources[dev->nsources++];
 	int ret;
 
 	v4l2_set_subdev_hostdata(subdev, dev);
 
 	ret = media_entity_get_fwnode_pad(&subdev->entity,
-					  serializer->fwnode,
+					  source->fwnode,
 					  MEDIA_PAD_FL_SOURCE);
 	if (ret < 0) {
 		dev_err(&dev->client->dev,
@@ -180,8 +183,9 @@ static int max9286_notify_bound(struct v4l2_async_notifier *notifier,
 		return ret;
 	}
 
-	serializer->sd = subdev;
-	serializer->src_pad = ret;
+	source->sd = subdev;
+	source->src_pad = ret;
+
 	dev_dbg(&dev->client->dev, "Bound %s pad: %d\n", subdev->name, ret);
 
 	return 0;
@@ -195,8 +199,8 @@ static void max9286_notify_unbind(struct v4l2_async_notifier *notifier,
 	unsigned int i;
 
 	for (i = 0; i < dev->nports; i++)
-		if (dev->serializers[i].sd == subdev) {
-			dev->serializers[i].sd = NULL;
+		if (dev->sources[i].sd == subdev) {
+			dev->sources[i].sd = NULL;
 			return;
 		}
 }
@@ -208,16 +212,16 @@ static int max9286_notify_complete(struct v4l2_async_notifier *notifier)
 	int ret;
 
 	for (i = 0; i < dev->nports; i++) {
-		ret = media_create_pad_link(&dev->serializers[i].sd->entity,
-					    dev->serializers[i].src_pad,
+		ret = media_create_pad_link(&dev->sources[i].sd->entity,
+					    dev->sources[i].src_pad,
 					    &dev->sd.entity, i,
 					    MEDIA_LNK_FL_ENABLED |
 					    MEDIA_LNK_FL_IMMUTABLE);
 		if (ret) {
 			dev_err(&dev->client->dev,
 				"Unable to link %s:%u -> %s:%u\n",
-				dev->serializers[i].sd->name,
-				dev->serializers[i].src_pad,
+				dev->sources[i].sd->name,
+				dev->sources[i].src_pad,
 				dev->sd.name, i);
 			return ret;
 		}
@@ -241,12 +245,12 @@ static int max9286_registered(struct v4l2_subdev *sd)
 		return -ENOMEM;
 
 	dev_dbg(&dev->client->dev,
-		"%s: Claim %d serializer subdevices for 0x%02x subnotifier\n",
+		"%s: Claim %d source subdevices for 0x%02x subnotifier\n",
 		__func__, dev->nports, dev->client->addr);
 
-	memset(&dev->serializers[0], 0, sizeof(dev->serializers));
+	memset(&dev->sources[0], 0, sizeof(dev->sources));
 	for (i = 0; i < dev->nports; i++)
-		subdevs[i] = &dev->serializers[i].asd;
+		subdevs[i] = &dev->sources[i].asd;
 
 	dev->notifier.num_subdevs = dev->nports;
 	dev->notifier.subdevs = subdevs;
@@ -286,7 +290,7 @@ static int max9286_g_mbus_config(struct v4l2_subdev *sd,
 static int max9286_s_stream(struct v4l2_subdev *sd, int enable)
 {
 	struct max9286_device *dev = sd_to_max9286(sd);
-	struct serializer *serializer;
+	struct max9286_source *source;
 	unsigned int i;
 	int ret;
 
@@ -298,8 +302,8 @@ static int max9286_s_stream(struct v4l2_subdev *sd, int enable)
 		max9286_write(dev, 0x15, 0x9b);
 
 		for (i = 0; i < dev->nports; i++) {
-			serializer = &dev->serializers[i];
-			ret = v4l2_subdev_call(serializer->sd, video,
+			source = &dev->sources[i];
+			ret = v4l2_subdev_call(source->sd, video,
 					       s_stream, 1);
 			if (ret)
 				goto err_stop_stream;
@@ -307,8 +311,8 @@ static int max9286_s_stream(struct v4l2_subdev *sd, int enable)
 	} else {
 		max9286_write(dev, 0x15, 0x13);
 		for (i = 0; i < dev->nports; i++) {
-			serializer = &dev->serializers[i];
-			v4l2_subdev_call(serializer->sd, video, s_stream, 0);
+			source = &dev->sources[i];
+			v4l2_subdev_call(source->sd, video, s_stream, 0);
 		}
 	}
 
@@ -316,8 +320,8 @@ static int max9286_s_stream(struct v4l2_subdev *sd, int enable)
 
 err_stop_stream:
 	for (; i > 0; i--) {
-		serializer = &dev->serializers[i - 1];
-		v4l2_subdev_call(serializer->sd, video, s_stream, 0);
+		source = &dev->sources[i - 1];
+		v4l2_subdev_call(source->sd, video, s_stream, 0);
 	}
 
 	return ret;
@@ -704,8 +708,8 @@ static int max9286_probe(struct i2c_client *client,
 	 * if all other MAX9286 on the parent bus have been probed, proceed
 	 * to initialize them all, including the current one.
 	 */
-	dev->mux_channel = MAX9286_MAX_PORTS;
-	dev->nserializers = 0;
+	dev->mux_channel = -1;
+	dev->nsources = 0;
 	max9286_write(dev, 0x0a, 0x00);
 	ret = device_for_each_child(client->dev.parent, &client->dev,
 				    max9286_is_bound);
