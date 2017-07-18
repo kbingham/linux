@@ -107,6 +107,8 @@ static struct max9286_source *next_source(struct max9286_device *max9286,
 #define for_each_source(max9286, source) \
 	for (source = NULL; (source = next_source(max9286, source)); )
 
+#define to_index(max9286, source) (source - &max9286->sources[0])
+
 static inline struct max9286_device *sd_to_max9286(struct v4l2_subdev *sd)
 {
 	return container_of(sd, struct max9286_device, sd);
@@ -191,7 +193,7 @@ static int max9286_notify_bound(struct v4l2_async_notifier *notifier,
 {
 	struct max9286_device *dev = notifier_to_max9286(notifier);
 	struct max9286_source *source = asd_to_max9286_source(asd);
-	unsigned int index = source - &dev->sources[0];
+	unsigned int index = to_index(dev, source);
 	int ret;
 
 	ret = media_entity_get_fwnode_pad(&subdev->entity,
@@ -228,7 +230,7 @@ static int max9286_notify_complete(struct v4l2_async_notifier *notifier)
 	int ret;
 
 	for_each_source(dev, source) {
-		unsigned int index = source - &dev->sources[0];
+		unsigned int index = to_index(dev, source);
 
 		ret = media_create_pad_link(&source->sd->entity,
 					    source->src_pad,
@@ -381,6 +383,7 @@ static int max9286_setup(struct max9286_device *dev)
 	unsigned short des_addr = dev->client->addr;
 	unsigned int cam_idx, cam_offset;
 	unsigned int linken_mask = 0xf & ((1 << dev->nports) - 1);
+	struct max9286_source *source;
 
 	switch (des_addr) {
 	case DES0:
@@ -393,7 +396,9 @@ static int max9286_setup(struct max9286_device *dev)
 		return -EINVAL;
 	}
 
-	for (cam_idx = cam_offset; cam_idx < dev->nports + cam_offset; cam_idx++) {
+	for_each_source(dev, source) {
+		cam_idx = to_index(dev, source) + cam_offset;
+
 		/*
 		 * SETUP CAMx (MAX9286/MAX9271/OV10635) I2C
 		 */
