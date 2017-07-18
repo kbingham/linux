@@ -199,11 +199,12 @@ static void max9286_notify_unbind(struct v4l2_async_notifier *notifier,
 	struct max9286_device *dev = notifier_to_max9286(notifier);
 	unsigned int i;
 
-	for (i = 0; i < dev->nports; i++)
+	for (i = 0; i < dev->nports; i++) {
 		if (dev->sources[i].sd == subdev) {
 			dev->sources[i].sd = NULL;
 			return;
 		}
+	}
 }
 
 static int max9286_notify_complete(struct v4l2_async_notifier *notifier)
@@ -227,8 +228,6 @@ static int max9286_notify_complete(struct v4l2_async_notifier *notifier)
 			return ret;
 		}
 	}
-
-	return v4l2_device_register_subdev_nodes(dev->sd.v4l2_dev);
 
 	return 0;
 }
