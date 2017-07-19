@@ -29,6 +29,23 @@
 #include "rdacm20-ov10635.h"
 
 #define MAX9271_ID			0x09
+/* Register 0x04 */
+#define MAX9271_SEREN			BIT(7)
+#define MAX9271_CLINKEN			BIT(6)
+#define MAX9271_PRBSEN			BIT(5)
+#define MAX9271_SLEEP			BIT(4)
+#define MAX9271_INTTYPE_I2C		(0 << 2)
+#define MAX9271_INTTYPE_UART		(1 << 2)
+#define MAX9271_INTTYPE_NONE		(2 << 2)
+#define MAX9271_REVCCEN			BIT(1)
+#define MAX9271_FWDCCEN			BIT(0)
+/* Register 0x0f */
+#define MAX9271_GPIO5OUT		BIT(5)
+#define MAX9271_GPIO4OUT		BIT(4)
+#define MAX9271_GPIO3OUT		BIT(3)
+#define MAX9271_GPIO2OUT		BIT(2)
+#define MAX9271_GPIO1OUT		BIT(1)
+#define MAX9271_SETGPO			BIT(0)
 
 #define OV10635_I2C_ADDRESS		0x30
 
@@ -148,11 +165,15 @@ static int rdacm20_s_stream(struct v4l2_subdev *sd, int enable)
 	struct rdacm20_device *dev = sd_to_rdacm20(sd);
 
 	if (enable) {
-		/* switch to GMSL serial_link for streaming video */
-		max9271_write(dev, 0x04, 0x83);
-				/* enable reverse_control/serial_link */
+		/* Enable the serial link. */
+		max9271_write(dev, 0x04, MAX9271_SEREN | MAX9271_REVCCEN |
+			      MAX9271_FWDCCEN);
+		/*
+		 * The serializer temporarily disables the reverse control
+		 * channel for 350µs after starting/stopping the forward serial
+		 * link.
+		 */
 		mdelay(2);
-				/* wait 2ms after changing reverse_control */
 	}
 
 	return 0;
@@ -234,13 +255,12 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 
 	/* Reset and verify communication with the OV10635. */
 #ifdef RDACM20_SENSOR_HARD_RESET
-	/* IMI camera has GPIO1 routed to OV10635 reset pin */
-	max9271_write(dev, 0x0f, 0xfc);
-					/* GPIO1 low, ov10635 in reset */
+	/* Cycle the OV10635 reset signal connected to the MAX9271 GPIO1. */
+	max9271_write(dev, 0x0f, 0xff & ~(MAX9271_GPIO1OUT | MAX9271_SETGPO));
 	mdelay(10);
-	max9271_write(dev, 0x0f, 0xfe);
-				/* GPIO1 high, ov10635 out from reset */
+	max9271_write(dev, 0x0f, 0xff & ~MAX9271_SETGPO);
 #else
+	/* Perform a software reset. */
 	ret = ov10635_write(dev, OV10635_SOFTWARE_RESET, 1);
 	if (ret < 0) {
 		dev_err(&dev->client->dev, "OV10635 reset failed (%d)\n", ret);
@@ -271,10 +291,14 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 	if (ret)
 		return ret;
 
-	/* switch to GMSL serial_link for streaming video */
-	max9271_write(dev, 0x04, 0x83);
-			/* enable reverse_control/serial_link */
-	mdelay(2);	/* wait 2ms after changing reverse_control */
+	/* Enable the serial link. */
+	max9271_write(dev, 0x04, MAX9271_SEREN | MAX9271_REVCCEN |
+		      MAX9271_FWDCCEN);
+	/*
+	 * The reverse control-channel communication remains unavailable for
+	 * 350µs after the serializer starts/stops the serial link.
+	 */
+	mdelay(2);
 
 	return 0;
 }
