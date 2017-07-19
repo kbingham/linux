@@ -32,6 +32,7 @@
 
 #define OV10635_I2C_ADDRESS		0x30
 
+#define OV10635_SOFTWARE_RESET		0x0103
 #define OV10635_PID			0x300a
 #define OV10635_VER			0x300b
 #define OV10635_VERSION_REG		0xa635
@@ -250,8 +251,7 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 
 	dev_info(&dev->client->dev, "Identified MAX9271 + OV10635 device\n");
 
-#if !defined(MAXIM_IMI_MCU_POWERED)
-#if 0
+#ifdef RDACM20_SENSOR_HARD_RESET
 	/* IMI camera has GPIO1 routed to OV10635 reset pin */
 	max9271_write(dev, 0x0f, 0xfc);
 					/* GPIO1 low, ov10635 in reset */
@@ -259,8 +259,12 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 	max9271_write(dev, 0x0f, 0xfe);
 				/* GPIO1 high, ov10635 out from reset */
 #else
-	/* s/w reset sensor */
-	ov10635_write(dev, 0x103, 0x1);
+	ret = ov10635_write(dev, OV10635_SOFTWARE_RESET, 1);
+	if (ret < 0) {
+		dev_err(&dev->client->dev, "OV10635 reset failed (%d)\n", ret);
+		return -ENXIO;
+	}
+
 	udelay(100);
 #endif
 
@@ -269,7 +273,6 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 			       ARRAY_SIZE(ov10635_regs_wizard));
 	if (ret)
 		return ret;
-#endif
 
 	/* switch to GMSL serial_link for streaming video */
 	max9271_write(dev, 0x04, 0x83);
