@@ -105,7 +105,7 @@ static int max9271_write(struct rdacm20_device *dev, u8 reg, u8 val)
 
 	ret = i2c_smbus_write_byte_data(dev->client, reg, val);
 	if (ret < 0)
-		dev_dbg(&dev->client->dev,
+		dev_err(&dev->client->dev,
 			"%s: register 0x%02x write failed (%d)\n",
 			__func__, reg, ret);
 
@@ -131,7 +131,7 @@ static int ov10635_read16(struct rdacm20_device *dev, u16 reg)
 	return (buf[0] << 8) | buf[1];
 }
 
-static int ov10635_write(struct rdacm20_device *dev, u16 reg, u8 val)
+static int __ov10635_write(struct rdacm20_device *dev, u16 reg, u8 val)
 {
 	u8 buf[3] = { reg >> 8, reg & 0xff, val };
 	int ret;
@@ -139,12 +139,20 @@ static int ov10635_write(struct rdacm20_device *dev, u16 reg, u8 val)
 	dev_dbg(&dev->client->dev, "%s(0x%04x, 0x%02x)\n", __func__, reg, val);
 
 	ret = i2c_master_send(dev->sensor, buf, 3);
+	return ret < 0 ? ret : 0;
+}
+
+static int ov10635_write(struct rdacm20_device *dev, u16 reg, u8 val)
+{
+	int ret;
+
+	ret = __ov10635_write(dev, reg, val);
 	if (ret < 0)
-		dev_dbg(&dev->client->dev,
+		dev_err(&dev->client->dev,
 			"%s: register 0x%04x write failed (%d)\n",
 			__func__, reg, ret);
 
-	return ret < 0 ? ret : 0;
+	return ret;
 }
 
 static int ov10635_set_regs(struct rdacm20_device *dev,
@@ -155,11 +163,13 @@ static int ov10635_set_regs(struct rdacm20_device *dev,
 	int ret;
 
 	for (i = 0; i < nr_regs; i++) {
-		ret = ov10635_write(dev, regs[i].reg, regs[i].val);
-#if 0 /* Do not stop on write fail .... */
-		if (ret)
+		ret = __ov10635_write(dev, regs[i].reg, regs[i].val);
+		if (ret) {
+			dev_err(&dev->client->dev,
+				"%s: register %u (0x%04x) write failed (%d)\n",
+				__func__, i, regs[i].reg, ret);
 			return ret;
-#endif
+		}
 	}
 
 	return 0;
