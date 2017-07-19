@@ -11,7 +11,6 @@
 /dts-v1/;
 #include "r8a7795-es1.dtsi"
 #include "salvator-x.dtsi"
-#include "salvator-x-max9286.dtsi"
 
 / {
 	model = "Renesas Salvator-X board based on r8a7795 ES1.x";
@@ -112,3 +111,6 @@
 
 	status = "okay";
 };
+
+/* Include the max9286 expansion board "overlay" */
+#include "salvator-x-max9286.dtsi"
