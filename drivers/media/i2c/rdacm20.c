@@ -168,13 +168,17 @@ static int rdacm20_s_stream(struct v4l2_subdev *sd, int enable)
 		/* Enable the serial link. */
 		max9271_write(dev, 0x04, MAX9271_SEREN | MAX9271_REVCCEN |
 			      MAX9271_FWDCCEN);
-		/*
-		 * The serializer temporarily disables the reverse control
-		 * channel for 350µs after starting/stopping the forward serial
-		 * link.
-		 */
-		mdelay(2);
+	} else {
+		/* Disable the serial link. */
+		max9271_write(dev, 0x04, MAX9271_CLINKEN | MAX9271_REVCCEN |
+			      MAX9271_FWDCCEN);
 	}
+
+	/*
+	 * Wait for the link to be established to have access to the control
+	 * channel.
+	 */
+	usleep_range(2000, 5000);
 
 	return 0;
 }
@@ -253,6 +257,23 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 		return -ENXIO;
 	}
 
+	/*
+	 * Disable the serial link and enable the configuration link to allow
+	 * the control channel to operate in a low-speed mode in the absence of
+	 * the serial link clock.
+	 *
+	 * The serializer temporarily disables the reverse control channel for
+	 * 350µs after starting/stopping the forward serial link, but the
+	 * deserializer synchronization time isn't clearly documented.
+	 *
+	 * According to the serializer datasheet we should wait 3ms, while
+	 * according to the deserializer datasheet we should wait 5ms. In
+	 * practice a 2ms delay seems to be enough.
+	 */
+	max9271_write(dev, 0x04, MAX9271_CLINKEN | MAX9271_REVCCEN |
+		      MAX9271_FWDCCEN);
+	usleep_range(2000, 5000);
+
 	/* Reset and verify communication with the OV10635. */
 #ifdef RDACM20_SENSOR_HARD_RESET
 	/* Cycle the OV10635 reset signal connected to the MAX9271 GPIO1. */
@@ -290,15 +311,6 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 			       ARRAY_SIZE(ov10635_regs_wizard));
 	if (ret)
 		return ret;
-
-	/* Enable the serial link. */
-	max9271_write(dev, 0x04, MAX9271_SEREN | MAX9271_REVCCEN |
-		      MAX9271_FWDCCEN);
-	/*
-	 * The reverse control-channel communication remains unavailable for
-	 * 350µs after the serializer starts/stops the serial link.
-	 */
-	mdelay(2);
 
 	return 0;
 }
