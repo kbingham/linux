@@ -80,7 +80,7 @@ struct max9286_device {
 	unsigned int mux_channel;
 	unsigned int nports;
 
-	struct v4l2_ctrl_handler	ctrls;
+	struct v4l2_ctrl_handler ctrls;
 
 	struct v4l2_async_notifier notifier;
 
