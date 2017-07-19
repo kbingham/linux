@@ -35,8 +35,7 @@
 #define OV10635_SOFTWARE_RESET		0x0103
 #define OV10635_PID			0x300a
 #define OV10635_VER			0x300b
-#define OV10635_VERSION_REG		0xa635
-#define OV10635_VERSION(pid, ver)	(((pid) << 8) | ((ver) & 0xff))
+#define OV10635_VERSION			0xa635
 
 #define OV10635_WIDTH			1280
 #define OV10635_HEIGHT			800
@@ -91,14 +90,14 @@ static int max9271_write(struct rdacm20_device *dev, u8 reg, u8 val)
 	return ret;
 }
 
-static int ov10635_read(struct rdacm20_device *dev, u16 reg, u8 *val)
+static int ov10635_read16(struct rdacm20_device *dev, u16 reg)
 {
 	u8 buf[2] = { reg >> 8, reg & 0xff };
 	int ret;
 
 	ret = i2c_master_send(dev->sensor, buf, 2);
 	if (ret == 2)
-		ret = i2c_master_recv(dev->sensor, buf, 1);
+		ret = i2c_master_recv(dev->sensor, buf, 2);
 
 	if (ret < 0) {
 		dev_dbg(&dev->client->dev,
@@ -107,8 +106,7 @@ static int ov10635_read(struct rdacm20_device *dev, u16 reg, u8 *val)
 		return ret;
 	}
 
-	*val = buf[0];
-	return 0;
+	return (buf[0] << 8) | buf[1];
 }
 
 static int ov10635_write(struct rdacm20_device *dev, u16 reg, u8 val)
@@ -218,7 +216,6 @@ static struct v4l2_subdev_ops rdacm20_subdev_ops = {
 
 static int rdacm20_initialize(struct rdacm20_device *dev)
 {
-	u8 pid, ver;
 	int ret;
 
 	/* Verify communication with the MAX9271. */
@@ -235,22 +232,7 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 		return -ENXIO;
 	}
 
-	/* check and show product ID and manufacturer ID */
-	ret = ov10635_read(dev, OV10635_PID, &pid);
-	if (ret)
-		return ret;
-	ret = ov10635_read(dev, OV10635_VER, &ver);
-	if (ret)
-		return ret;
-
-	if (OV10635_VERSION(pid, ver) != OV10635_VERSION_REG) {
-		dev_err(&dev->client->dev, "OV10635 ID mismatch (0x%04x)\n",
-			OV10635_VERSION(pid, ver));
-		return -ENXIO;
-	}
-
-	dev_info(&dev->client->dev, "Identified MAX9271 + OV10635 device\n");
-
+	/* Reset and verify communication with the OV10635. */
 #ifdef RDACM20_SENSOR_HARD_RESET
 	/* IMI camera has GPIO1 routed to OV10635 reset pin */
 	max9271_write(dev, 0x0f, 0xfc);
@@ -268,7 +250,22 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 	udelay(100);
 #endif
 
-	/* Program wizard registers */
+	ret = ov10635_read16(dev, OV10635_PID);
+	if (ret < 0) {
+		dev_err(&dev->client->dev, "OV10635 ID read failed (%d)\n",
+			ret);
+		return -ENXIO;
+	}
+
+	if (ret != OV10635_VERSION) {
+		dev_err(&dev->client->dev, "OV10635 ID mismatch (0x%04x)\n",
+			ret);
+		return -ENXIO;
+	}
+
+	dev_info(&dev->client->dev, "Identified MAX9271 + OV10635 device\n");
+
+	/* Program the 0V10635 initial configuration. */
 	ret = ov10635_set_regs(dev, ov10635_regs_wizard,
 			       ARRAY_SIZE(ov10635_regs_wizard));
 	if (ret)
