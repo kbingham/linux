@@ -10,6 +10,8 @@
  * option) any later version.
  */
 
+#define DEBUG
+
 #include <linux/delay.h>
 #include <linux/device.h>
 #include <linux/i2c.h>
