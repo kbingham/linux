@@ -286,6 +286,12 @@ static int rdacm20_probe(struct i2c_client *client,
 
 	dev->client = client;
 
+	/* Initialize the hardware. */
+	ret = rdacm20_initialize(dev);
+	if (ret < 0)
+		goto error;
+
+	/* Initialize and register the subdevice. */
 	v4l2_i2c_subdev_init(&dev->sd, client, &rdacm20_subdev_ops);
 	dev->sd.flags = V4L2_SUBDEV_FL_HAS_DEVNODE;
 
@@ -300,25 +306,21 @@ static int rdacm20_probe(struct i2c_client *client,
 
 	ret = dev->ctrls.error;
 	if (ret)
-		goto cleanup;
+		goto error;
 
 	dev->pad.flags = MEDIA_PAD_FL_SOURCE;
 	dev->sd.entity.flags |= MEDIA_ENT_F_CAM_SENSOR;
 	ret = media_entity_pads_init(&dev->sd.entity, 1, &dev->pad);
 	if (ret < 0)
-		goto cleanup;
-
-	ret = rdacm20_initialize(dev);
-	if (ret < 0)
-		goto cleanup;
+		goto error;
 
 	ret = v4l2_async_register_subdev(&dev->sd);
 	if (ret)
-		goto cleanup;
+		goto error;
 
 	return 0;
 
-cleanup:
+error:
 	media_entity_cleanup(&dev->sd.entity);
 	kfree(dev);
 
