@@ -87,6 +87,25 @@ struct max9286_device {
 	struct v4l2_async_subdev *subdevs[MAX9286_MAX_PORTS];
 };
 
+static struct max9286_source *next_source(struct max9286_device *max9286,
+					  struct max9286_source *source)
+{
+	if (!source)
+		source = &max9286->sources[0];
+	else
+		source++;
+
+	for (; source < &max9286->sources[MAX9286_MAX_PORTS]; source++) {
+		if (source->fwnode)
+			return source;
+	}
+
+	return NULL;
+}
+
+#define for_each_source(max9286, source) \
+	for (source = NULL; (source = next_source(max9286, source)); )
+
 static inline struct max9286_device *sd_to_max9286(struct v4l2_subdev *sd)
 {
 	return container_of(sd, struct max9286_device, sd);
@@ -171,6 +190,7 @@ static int max9286_notify_bound(struct v4l2_async_notifier *notifier,
 {
 	struct max9286_device *dev = notifier_to_max9286(notifier);
 	struct max9286_source *source = asd_to_max9286_source(asd);
+	unsigned int index = source - &dev->sources[0];
 	int ret;
 
 	v4l2_set_subdev_hostdata(subdev, dev);
@@ -187,7 +207,8 @@ static int max9286_notify_bound(struct v4l2_async_notifier *notifier,
 	source->sd = subdev;
 	source->src_pad = ret;
 
-	dev_dbg(&dev->client->dev, "Bound %s pad: %d\n", subdev->name, ret);
+	dev_dbg(&dev->client->dev, "Bound %s pad: %u on index %u\n",
+		subdev->name, source->src_pad, index);
 
 	return 0;
 }
@@ -196,35 +217,31 @@ static void max9286_notify_unbind(struct v4l2_async_notifier *notifier,
 				  struct v4l2_subdev *subdev,
 				  struct v4l2_async_subdev *asd)
 {
-	struct max9286_device *dev = notifier_to_max9286(notifier);
-	unsigned int i;
+	struct max9286_source *source = asd_to_max9286_source(asd);
 
-	for (i = 0; i < dev->nports; i++) {
-		if (dev->sources[i].sd == subdev) {
-			dev->sources[i].sd = NULL;
-			return;
-		}
-	}
+	source->sd = NULL;
 }
 
 static int max9286_notify_complete(struct v4l2_async_notifier *notifier)
 {
 	struct max9286_device *dev = notifier_to_max9286(notifier);
-	unsigned int i;
+	struct max9286_source *source;
 	int ret;
 
-	for (i = 0; i < dev->nports; i++) {
-		ret = media_create_pad_link(&dev->sources[i].sd->entity,
-					    dev->sources[i].src_pad,
-					    &dev->sd.entity, i,
+	for_each_source(dev, source) {
+		unsigned int index = source - &dev->sources[0];
+
+		ret = media_create_pad_link(&source->sd->entity,
+					    source->src_pad,
+					    &dev->sd.entity, index,
 					    MEDIA_LNK_FL_ENABLED |
 					    MEDIA_LNK_FL_IMMUTABLE);
 		if (ret) {
 			dev_err(&dev->client->dev,
 				"Unable to link %s:%u -> %s:%u\n",
-				dev->sources[i].sd->name,
-				dev->sources[i].src_pad,
-				dev->sd.name, i);
+				source->sd->name,
+				source->src_pad,
+				dev->sd.name, index);
 			return ret;
 		}
 	}
@@ -291,7 +308,6 @@ static int max9286_s_stream(struct v4l2_subdev *sd, int enable)
 {
 	struct max9286_device *dev = sd_to_max9286(sd);
 	struct max9286_source *source;
-	unsigned int i;
 	int ret;
 
 	if (enable) {
@@ -301,8 +317,7 @@ static int max9286_s_stream(struct v4l2_subdev *sd, int enable)
 		 */
 		max9286_write(dev, 0x15, 0x9b);
 
-		for (i = 0; i < dev->nports; i++) {
-			source = &dev->sources[i];
+		for_each_source(dev, source) {
 			ret = v4l2_subdev_call(source->sd, video,
 					       s_stream, 1);
 			if (ret)
@@ -310,19 +325,24 @@ static int max9286_s_stream(struct v4l2_subdev *sd, int enable)
 		}
 	} else {
 		max9286_write(dev, 0x15, 0x13);
-		for (i = 0; i < dev->nports; i++) {
-			source = &dev->sources[i];
+
+		for_each_source(dev, source)
 			v4l2_subdev_call(source->sd, video, s_stream, 0);
-		}
 	}
 
 	return 0;
 
 err_stop_stream:
-	for (; i > 0; i--) {
-		source = &dev->sources[i - 1];
+	/*
+	 * FIXME: This isn't 'correct' as it should reverse back to undo the
+	 * streams that were started before the error condition.
+	 * However - this is only in place as s_stream does not yet support
+	 * multiple virtual channels, and thus when a full implementation of
+	 * s_stream_vc() (or similar) is created, this erroneous clean up will
+	 * be removed anyway
+	 */
+	for_each_source(dev, source)
 		v4l2_subdev_call(source->sd, video, s_stream, 0);
-	}
 
 	return ret;
 }
