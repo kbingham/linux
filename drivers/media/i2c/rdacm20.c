@@ -28,6 +28,8 @@
 
 #include "rdacm20-ov10635.h"
 
+#define OV10635_I2C_ADDRESS		0x30
+
 #define OV10635_PID			0x300a
 #define OV10635_VER			0x300b
 #define OV10635_VERSION_REG		0xa635
@@ -40,30 +42,10 @@
 
 struct rdacm20_device {
 	struct i2c_client		*client;
+	struct i2c_client		*sensor;
 	struct v4l2_subdev		sd;
 	struct media_pad		pad;
 	struct v4l2_ctrl_handler	ctrls;
-};
-
-/*
- * I2C MAP.
- *
- *		CAM0	CAM1	CAM2	CAM3
- * MAX9286	0x48+1	0x48+2	0x48+3	0x48+4	- deserializer
- * MAX9271	0x40+1	0x40+2	0x40+3	0x40+4	- serializer
- * OV10635	0x30+1	0x30+2	0x30+3	0x30+4	- sensor
- */
-
-#define DES0		0x4c
-#define DES1		0x6c
-#define SER		0x51
-#define CAM		0x60
-
-static const u8 maxim_map[][8] = {
-	{ DES0 + 0, DES0 + 0, DES0 + 0, DES0 + 0,
-	  DES1 + 0, DES1 + 0, DES1 + 0, DES1 + 0 },
-	{ SER  + 0, SER  + 1, SER  + 2, SER  + 3,
-	  SER  + 4, SER  + 5, SER  + 6, SER  + 7 },
 };
 
 static inline struct rdacm20_device *sd_to_rdacm20(struct v4l2_subdev *sd)
@@ -96,9 +78,9 @@ static int ov10635_read(struct rdacm20_device *dev, u16 reg, u8 *val)
 	u8 buf[2] = { reg >> 8, reg & 0xff };
 	int ret;
 
-	ret = i2c_master_send(dev->client, buf, 2);
+	ret = i2c_master_send(dev->sensor, buf, 2);
 	if (ret == 2)
-		ret = i2c_master_recv(dev->client, buf, 1);
+		ret = i2c_master_recv(dev->sensor, buf, 1);
 
 	if (ret < 0) {
 		dev_dbg(&dev->client->dev,
@@ -118,7 +100,7 @@ static int ov10635_write(struct rdacm20_device *dev, u16 reg, u8 val)
 
 	dev_dbg(&dev->client->dev, "%s(0x%04x, 0x%02x)\n", __func__, reg, val);
 
-	ret = i2c_master_send(dev->client, buf, 3);
+	ret = i2c_master_send(dev->sensor, buf, 3);
 	if (ret < 0)
 		dev_dbg(&dev->client->dev,
 			"%s: register 0x%04x write failed (%d)\n",
@@ -148,11 +130,9 @@ static int ov10635_set_regs(struct rdacm20_device *dev,
 static int rdacm20_s_stream(struct v4l2_subdev *sd, int enable)
 {
 	struct rdacm20_device *dev = sd_to_rdacm20(sd);
-	int cam_idx = dev->client->addr - CAM;
 
 	if (enable) {
 		/* switch to GMSL serial_link for streaming video */
-		dev->client->addr = maxim_map[1][cam_idx];	/* MAX9271-CAMx */
 		max9271_write(dev, 0x04, 0x83);
 				/* enable reverse_control/serial_link */
 		mdelay(2);
@@ -220,7 +200,6 @@ static struct v4l2_subdev_ops rdacm20_subdev_ops = {
 
 static int rdacm20_initialize(struct rdacm20_device *dev)
 {
-	int tmp_addr, cam_idx;
 	u8 pid, ver;
 	int ret;
 
@@ -243,7 +222,6 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 #if !defined(MAXIM_IMI_MCU_POWERED)
 #if 0
 	/* IMI camera has GPIO1 routed to OV10635 reset pin */
-	dev->client->addr = maxim_map[1][cam_idx];	/* OV10635-CAMx I2C new */
 	max9271_write(dev, 0x0f, 0xfc);
 					/* GPIO1 low, ov10635 in reset */
 	mdelay(10);
@@ -262,14 +240,10 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 		return ret;
 #endif
 
-	cam_idx = dev->client->addr - CAM;
 	/* switch to GMSL serial_link for streaming video */
-	tmp_addr = dev->client->addr;
-	dev->client->addr = maxim_map[1][cam_idx];	/* MAX9271-CAMx */
 	max9271_write(dev, 0x04, 0x83);
 			/* enable reverse_control/serial_link */
 	mdelay(2);	/* wait 2ms after changing reverse_control */
-	dev->client->addr = tmp_addr;
 
 	return 0;
 }
@@ -285,6 +259,13 @@ static int rdacm20_probe(struct i2c_client *client,
 		return -ENOMEM;
 
 	dev->client = client;
+
+	/* Create the dummy I2C client for the sensor. */
+	dev->sensor = i2c_new_dummy(client->adapter, OV10635_I2C_ADDRESS);
+	if (!dev->sensor) {
+		ret = -ENXIO;
+		goto error;
+	}
 
 	/* Initialize the hardware. */
 	ret = rdacm20_initialize(dev);
@@ -322,6 +303,8 @@ static int rdacm20_probe(struct i2c_client *client,
 
 error:
 	media_entity_cleanup(&dev->sd.entity);
+	if (dev->sensor)
+		i2c_unregister_device(dev->sensor);
 	kfree(dev);
 
 	dev_err(&client->dev, "failed to probe @ 0x%02x (%s)\n",
@@ -336,6 +319,7 @@ static int rdacm20_remove(struct i2c_client *client)
 
 	v4l2_async_unregister_subdev(&dev->sd);
 	media_entity_cleanup(&dev->sd.entity);
+	i2c_unregister_device(dev->sensor);
 	kfree(dev);
 
 	return 0;
