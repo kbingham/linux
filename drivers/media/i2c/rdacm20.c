@@ -28,6 +28,8 @@
 
 #include "rdacm20-ov10635.h"
 
+#define MAX9271_ID			0x09
+
 #define OV10635_I2C_ADDRESS		0x30
 
 #define OV10635_PID			0x300a
@@ -56,6 +58,21 @@ static inline struct rdacm20_device *sd_to_rdacm20(struct v4l2_subdev *sd)
 static inline struct rdacm20_device *i2c_to_rdacm20(struct i2c_client *client)
 {
 	return sd_to_rdacm20(i2c_get_clientdata(client));
+}
+
+static int max9271_read(struct rdacm20_device *dev, u8 reg)
+{
+	int ret;
+
+	dev_dbg(&dev->client->dev, "%s(0x%02x)\n", __func__, reg);
+
+	ret = i2c_smbus_read_byte_data(dev->client, reg);
+	if (ret < 0)
+		dev_dbg(&dev->client->dev,
+			"%s: register 0x%02x read failed (%d)\n",
+			__func__, reg, ret);
+
+	return ret;
 }
 
 static int max9271_write(struct rdacm20_device *dev, u8 reg, u8 val)
@@ -203,6 +220,20 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 	u8 pid, ver;
 	int ret;
 
+	/* Verify communication with the MAX9271. */
+	ret = max9271_read(dev, 0x1e);
+	if (ret < 0) {
+		dev_err(&dev->client->dev, "MAX9271 ID read failed (%d)\n",
+			ret);
+		return ret;
+	}
+
+	if (ret != MAX9271_ID) {
+		dev_err(&dev->client->dev, "MAX9271 ID mismatch (0x%02x)\n",
+			ret);
+		return -ENXIO;
+	}
+
 	/* check and show product ID and manufacturer ID */
 	ret = ov10635_read(dev, OV10635_PID, &pid);
 	if (ret)
@@ -212,12 +243,12 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 		return ret;
 
 	if (OV10635_VERSION(pid, ver) != OV10635_VERSION_REG) {
-		dev_err(&dev->client->dev, "Product ID error %x:%x\n", pid, ver);
-		return -ENODEV;
+		dev_err(&dev->client->dev, "OV10635 ID mismatch (0x%04x)\n",
+			OV10635_VERSION(pid, ver));
+		return -ENXIO;
 	}
 
-	dev_info(&dev->client->dev, "ov10635 Product ID %x Manufacturer ID %x\n",
-		 pid, ver);
+	dev_info(&dev->client->dev, "Identified MAX9271 + OV10635 device\n");
 
 #if !defined(MAXIM_IMI_MCU_POWERED)
 #if 0
