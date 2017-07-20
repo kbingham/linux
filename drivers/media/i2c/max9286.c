@@ -143,6 +143,7 @@ struct max9286_device {
 	struct v4l2_subdev sd;
 	struct media_pad pads[MAX9286_N_PADS];
 	struct regulator *regulator;
+	bool poc_enabled;
 
 	struct i2c_mux_core *mux;
 	unsigned int mux_channel;
@@ -558,11 +559,28 @@ static int max9286_init(struct device *dev, void *data)
 	client = to_i2c_client(dev);
 	max9286_dev = i2c_get_clientdata(client);
 
+	/* Enable the bus power */
+	ret = regulator_enable(max9286_dev->regulator);
+	if (ret < 0) {
+		dev_err(&client->dev, "Unable to turn PoC on\n");
+		return ret;
+	}
+
+	max9286_dev->poc_enabled = true;
+
+	/*
+	 * Powered MCU IMI cameras need delay between power-on and R-Car access
+	 * to avoid i2c bus conflicts since linux kernel does not support i2c
+	 * multi-mastering, IMI MCU is master and R-Car is also master. The i2c
+	 * bus conflict results in R-Car i2c IP stall.
+	 */
+	msleep(MAXIM_IMI_MCU_DELAY);
+
 	ret = max9286_setup(max9286_dev);
 	if (ret) {
 		dev_err(dev, "Unable to setup max9286 0x%x\n",
 			client->addr);
-		return ret;
+		goto err_regulator;
 	}
 
 	v4l2_i2c_subdev_init(&max9286_dev->sd, client, &max9286_subdev_ops);
@@ -578,7 +596,8 @@ static int max9286_init(struct device *dev, void *data)
 	max9286_dev->sd.ctrl_handler = &max9286_dev->ctrls;
 	ret = max9286_dev->ctrls.error;
 	if (ret)
-		return ret;
+		goto err_regulator;
+;
 
 	max9286_dev->sd.internal_ops = &max9286_subdev_internal_ops;
 	max9286_dev->sd.entity.function = MEDIA_ENT_F_PROC_VIDEO_PIXEL_FORMATTER;
@@ -589,13 +608,13 @@ static int max9286_init(struct device *dev, void *data)
 	ret = media_entity_pads_init(&max9286_dev->sd.entity, MAX9286_N_PADS,
 				     max9286_dev->pads);
 	if (ret)
-		return ret;
+		goto err_regulator;
 
 	ret = v4l2_async_register_subdev(&max9286_dev->sd);
 	if (ret < 0) {
 		dev_err(dev, "Unable to register subdevice max9286 0x%02x\n",
 			client->addr);
-		return ret;
+		goto err_regulator;
 	}
 
 	ret = max9286_i2c_mux_init(max9286_dev);
@@ -609,6 +628,9 @@ static int max9286_init(struct device *dev, void *data)
 
 err_subdev_unregister:
 	v4l2_async_unregister_subdev(&max9286_dev->sd);
+err_regulator:
+	regulator_disable(max9286_dev->regulator);
+	max9286_dev->poc_enabled = false;
 
 	return ret;
 }
@@ -769,20 +791,6 @@ static int max9286_probe(struct i2c_client *client,
 		goto err_free;
 	}
 
-	ret = regulator_enable(dev->regulator);
-	if (ret < 0) {
-		dev_err(&client->dev, "Unable to turn PoC on\n");
-		goto err_regulator;
-	}
-
-	/*
-	 * Powered MCU IMI cameras need delay between power-on and R-Car access
-	 * to avoid i2c bus conflicts since linux kernel does not support i2c
-	 * multi-mastering, IMI MCU is master and R-Car is also master. The i2c
-	 * bus conflict results in R-Car i2c IP stall.
-	 */
-	msleep(MAXIM_IMI_MCU_DELAY);
-
 	/*
 	 * We can have multiple MAX9286 instances on the same physical I2C
 	 * bus, and I2C children behind ports of separate MAX9286 instances
@@ -804,8 +812,12 @@ static int max9286_probe(struct i2c_client *client,
 
 	dev_dbg(&client->dev,
 		"All max9286 probed: start initialization sequence\n");
-	return device_for_each_child(client->dev.parent, NULL,
-				     max9286_init);
+	ret = device_for_each_child(client->dev.parent, NULL,
+				    max9286_init);
+	if (ret < 0)
+		goto err_regulator;
+
+	return 0;
 
 err_regulator:
 	regulator_put(dev->regulator);
@@ -823,7 +835,8 @@ static int max9286_remove(struct i2c_client *client)
 
 	v4l2_async_unregister_subdev(&dev->sd);
 
-	regulator_disable(dev->regulator);
+	if (dev->poc_enabled)
+		regulator_disable(dev->regulator);
 	regulator_put(dev->regulator);
 
 	max9286_cleanup_dt(dev);
