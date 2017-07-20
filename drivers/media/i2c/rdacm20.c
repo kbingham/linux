@@ -28,7 +28,8 @@
 
 #include "rdacm20-ov10635.h"
 
-#define MAX9271_ID			0x09
+#define MAX9271_I2C_ADDRESS		0x40
+
 /* Register 0x04 */
 #define MAX9271_SEREN			BIT(7)
 #define MAX9271_CLINKEN			BIT(6)
@@ -39,6 +40,8 @@
 #define MAX9271_INTTYPE_NONE		(2 << 2)
 #define MAX9271_REVCCEN			BIT(1)
 #define MAX9271_FWDCCEN			BIT(0)
+/* Register 0x09 */
+#define MAX9271_ID			0x09
 /* Register 0x0f */
 #define MAX9271_GPIO5OUT		BIT(5)
 #define MAX9271_GPIO4OUT		BIT(4)
@@ -52,6 +55,8 @@
 #define OV10635_SOFTWARE_RESET		0x0103
 #define OV10635_PID			0x300a
 #define OV10635_VER			0x300b
+#define OV10635_SC_CMMN_SCCB_ID		0x300c
+#define OV10635_SC_CMMN_SCCB_ID_SELECT	BIT(0)
 #define OV10635_VERSION			0xa635
 
 #define OV10635_WIDTH			1280
@@ -241,7 +246,22 @@ static struct v4l2_subdev_ops rdacm20_subdev_ops = {
 
 static int rdacm20_initialize(struct rdacm20_device *dev)
 {
+	u32 addrs[2];
 	int ret;
+
+	ret = of_property_read_u32_array(dev->client->dev.of_node, "reg",
+					 addrs, ARRAY_SIZE(addrs));
+	if (ret < 0) {
+		dev_err(&dev->client->dev, "Invalid DT reg property\n");
+		return -EINVAL;
+	}
+
+	/*
+	 * FIXME: The MAX9271 boots at a default address that we will change to
+	 * the address specified in DT. Set the client address back to the
+	 * default for initial communication.
+	 */
+	dev->client->addr = MAX9271_I2C_ADDRESS;
 
 	/* Verify communication with the MAX9271. */
 	ret = max9271_read(dev, 0x1e);
@@ -256,6 +276,15 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 			ret);
 		return -ENXIO;
 	}
+
+	/* Change the MAX9271 I2C address. */
+	ret = max9271_write(dev, 0x00, addrs[0] << 1);
+	if (ret < 0) {
+		dev_err(&dev->client->dev,
+			"MAX9271 I2C address change failed (%d)\n", ret);
+		return ret;
+	}
+	dev->client->addr = addrs[0];
 
 	/*
 	 * Disable the serial link and enable the configuration link to allow
@@ -305,6 +334,16 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 	}
 
 	dev_info(&dev->client->dev, "Identified MAX9271 + OV10635 device\n");
+
+	/* Change the sensor I2C address. */
+	ret = ov10635_write(dev, OV10635_SC_CMMN_SCCB_ID,
+			    (addrs[1] << 1) | OV10635_SC_CMMN_SCCB_ID_SELECT);
+	if (ret < 0) {
+		dev_err(&dev->client->dev,
+			"OV10635 I2C address change failed (%d)\n", ret);
+		return ret;
+	}
+	dev->sensor->addr = addrs[1];
 
 	/* Program the 0V10635 initial configuration. */
 	ret = ov10635_set_regs(dev, ov10635_regs_wizard,
