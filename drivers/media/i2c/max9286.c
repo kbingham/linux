@@ -450,7 +450,6 @@ static const struct v4l2_subdev_ops max9286_subdev_ops = {
 
 static int max9286_setup(struct max9286_device *dev)
 {
-	unsigned short des_addr = dev->client->addr;
 	unsigned int cam_idx;
 	unsigned int linken_mask = 0xf & ((1 << dev->nports) - 1);
 	struct max9286_source *source;
@@ -458,15 +457,9 @@ static int max9286_setup(struct max9286_device *dev)
 	for_each_source(dev, source) {
 		cam_idx = to_index(dev, source);
 
-		/*
-		 * SETUP CAMx (MAX9286/MAX9271/OV10635) I2C
-		 */
-		dev_info(&dev->client->dev,
-			 "SETUP CAM%d(MAX9286/MAX9271/OV10635)I2C: 0x%x\n",
-			 cam_idx, des_addr);
+		dev_info(&dev->client->dev, "Setup channel %u\n", cam_idx);
 
 		/* Reverse channel setup */
-		dev->client->addr = des_addr;		/* MAX9286-CAMx I2C */
 		max9286_write(dev, 0x0a, MAX9286_FWDCCEN(3) |
 			      MAX9286_FWDCCEN(2) | MAX9286_FWDCCEN(1) |
 			      MAX9286_FWDCCEN(0) | MAX9286_REVCCEN(cam_idx));
@@ -476,7 +469,6 @@ static int max9286_setup(struct max9286_device *dev)
 			*  channel settings
 			*/
 
-		dev->client->addr = des_addr;		/* MAX9286-CAMx I2C */
 		max9286_write(dev, 0x3f, MAX9286_EN_REV_CFG |
 			      MAX9286_REV_FLEN(35));
 			/* enable custom reverse channel & first pulse length */
@@ -499,19 +491,6 @@ static int max9286_setup(struct max9286_device *dev)
 			*  reverse channel settings
 			*/
 
-		dev->client->addr = 0x40;		/* MAX9271-CAMx I2C */
-		i2c_smbus_read_byte(dev->client);	/* ping to wake-up */
-		max9286_write(dev, 0x04, 0x43);
-				/* wake-up, enable reverse_control/conf_link */
-		mdelay(5);	/* wait 5ms for conf_link to establish */
-		max9286_write(dev, 0x08, 0x1);
-			/* reverse channel receiver high threshold enable */
-		mdelay(2);
-			/* wait 2ms after any change of reverse
-			*  channel settings
-			*/
-
-		dev->client->addr = des_addr;		/* MAX9286-CAMx I2C */
 		max9286_write(dev, 0x3b, MAX9286_REV_TRF(1) |
 			      MAX9286_REV_AMP(70) | MAX9286_REV_AMP_X);
 			/* reverse channel increase amplitude 170mV
@@ -521,33 +500,9 @@ static int max9286_setup(struct max9286_device *dev)
 			/* wait 2ms after any change of reverse
 			*  channel settings
 			*/
-
-		/* re-setup for the case of s/w reboot */
-		dev->client->addr = 0x40;		/* MAX9271-CAMx I2C */
-		max9286_write(dev, 0x04, 0x43);
-			/* wake-up, enable reverse_control/conf_link */
-		mdelay(5);	/* wait 5ms for conf_link to establish */
-		max9286_write(dev, 0x08, 0x1);
-			/* reverse channel receiver high threshold enable */
-		mdelay(2);	/* wait 2ms after any change of reverse
-				*  channel settings
-				*/
-
-		/* GMSL setup */
-		dev->client->addr = 0x40;		/* MAX9271-CAMx I2C */
-		max9286_write(dev, 0x0d, 0x22 | MAXIM_I2C_SPEED);
-				/* disable artificial ACK, I2C speed set */
-		max9286_write(dev, 0x07, 0x94);
-			/* RAW/YUV, PCLK rising edge, HS/VS encoding enabled */
-#if 0
-		max9286_write(dev, 0x02, 0xff);
-			/* spread spectrum +-4%, pclk range automatic,
-				Gbps automatic  */
-#endif
 	}
 
 	/* Reverse channel setup */
-	dev->client->addr = des_addr;			/* MAX9286-CAMx I2C */
 	max9286_write(dev, 0x1b, MAX9286_ENEQ(3) | MAX9286_ENEQ(2) |
 		      MAX9286_ENEQ(1) | MAX9286_ENEQ(0));
 				/* enable equalizer for all links */
