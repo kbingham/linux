@@ -187,7 +187,7 @@ static inline struct max9286_device *notifier_to_max9286(
 	return container_of(notifier, struct max9286_device, notifier);
 }
 
-static inline int max9286_write(struct max9286_device *dev, u8 reg, u8 val)
+static int max9286_write(struct max9286_device *dev, u8 reg, u8 val)
 {
 	int ret;
 
