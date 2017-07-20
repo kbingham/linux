@@ -24,11 +24,100 @@
 #include <media/v4l2-device.h>
 #include <media/v4l2-subdev.h>
 
-#define MAX9286_NUM_GMSL	4
-#define MAX9286_N_PADS		5
-#define MAX9286_SRC_PAD		4
-#define MAXIM_I2C_I2C_SPEED_400KHZ	(0x5 << 2) /* 339 kbps */
-#define MAXIM_I2C_I2C_SPEED_100KHZ	(0x3 << 2) /* 105 kbps */
+/* Register 0x00 */
+#define MAX9286_MSTLINKSEL_AUTO		(7 << 5)
+#define MAX9286_MSTLINKSEL(n)		((n) << 5)
+#define MAX9286_EN_VS_GEN		BIT(4)
+#define MAX9286_LINKEN(n)		(1 << (n))
+/* Register 0x01 */
+#define MAX9286_FSYNCMODE_ECU		(3 << 6)
+#define MAX9286_FSYNCMODE_EXT		(2 << 6)
+#define MAX9286_FSYNCMODE_INT_OUT	(1 << 6)
+#define MAX9286_FSYNCMODE_INT_HIZ	(0 << 6)
+#define MAX9286_GPIEN			BIT(5)
+#define MAX9286_ENLMO_RSTFSYNC		BIT(2)
+#define MAX9286_FSYNCMETH_AUTO		(2 << 0)
+#define MAX9286_FSYNCMETH_SEMI_AUTO	(1 << 0)
+#define MAX9286_FSYNCMETH_MANUAL	(0 << 0)
+#define MAX9286_REG_FSYNC_PERIOD_L	0x06
+#define MAX9286_REG_FSYNC_PERIOD_M	0x07
+#define MAX9286_REG_FSYNC_PERIOD_H	0x08
+/* Register 0x0a */
+#define MAX9286_FWDCCEN(n)		(1 << ((n) + 4))
+#define MAX9286_REVCCEN(n)		(1 << (n))
+/* Register 0x0c */
+#define MAX9286_HVEN			BIT(7)
+#define MAX9286_EDC_6BIT_HAMMING	(2 << 5)
+#define MAX9286_EDC_6BIT_CRC		(1 << 5)
+#define MAX9286_EDC_1BIT_PARITY		(0 << 5)
+#define MAX9286_DESEL			BIT(4)
+#define MAX9286_INVVS			BIT(3)
+#define MAX9286_INVHS			BIT(2)
+#define MAX9286_HVSRC_D0		(2 << 0)
+#define MAX9286_HVSRC_D14		(1 << 0)
+#define MAX9286_HVSRC_D18		(0 << 0)
+/* Register 0x12 */
+#define MAX9286_CSILANECNT(n)		(((n) - 1) << 6)
+#define MAX9286_CSIDBL			BIT(5)
+#define MAX9286_DBL			BIT(4)
+#define MAX9286_DATATYPE_USER_8BIT	(11 << 0)
+#define MAX9286_DATATYPE_USER_YUV_12BIT	(10 << 0)
+#define MAX9286_DATATYPE_USER_24BIT	(9 << 0)
+#define MAX9286_DATATYPE_RAW14		(8 << 0)
+#define MAX9286_DATATYPE_RAW11		(7 << 0)
+#define MAX9286_DATATYPE_RAW10		(6 << 0)
+#define MAX9286_DATATYPE_RAW8		(5 << 0)
+#define MAX9286_DATATYPE_YUV422_10BIT	(4 << 0)
+#define MAX9286_DATATYPE_YUV422_8BIT	(3 << 0)
+#define MAX9286_DATATYPE_RGB555		(2 << 0)
+#define MAX9286_DATATYPE_RGB565		(1 << 0)
+#define MAX9286_DATATYPE_RGB888		(0 << 0)
+/* Register 0x15 */
+#define MAX9286_VC(n)			((n) << 5)
+#define MAX9286_VCTYPE			BIT(4)
+#define MAX9286_CSIOUTEN		BIT(3)
+#define MAX9286_0X15_RESV		(3 << 0)
+/* Register 0x1b */
+#define MAX9286_SWITCHIN(n)		(1 << ((n) + 4))
+#define MAX9286_ENEQ(n)			(1 << (n))
+/* Register 0x34 */
+#define MAX9286_I2CLOCACK		BIT(7)
+#define MAX9286_I2CSLVSH_1046NS_469NS	(3 << 5)
+#define MAX9286_I2CSLVSH_938NS_352NS	(2 << 5)
+#define MAX9286_I2CSLVSH_469NS_234NS	(1 << 5)
+#define MAX9286_I2CSLVSH_352NS_117NS	(0 << 5)
+#define MAX9286_I2CMSTBT_837KBPS	(7 << 2)
+#define MAX9286_I2CMSTBT_533KBPS	(6 << 2)
+#define MAX9286_I2CMSTBT_339KBPS	(5 << 2)
+#define MAX9286_I2CMSTBT_173KBPS	(4 << 2)
+#define MAX9286_I2CMSTBT_105KBPS	(3 << 2)
+#define MAX9286_I2CMSTBT_84KBPS		(2 << 2)
+#define MAX9286_I2CMSTBT_28KBPS		(1 << 2)
+#define MAX9286_I2CMSTBT_8KBPS		(0 << 2)
+#define MAX9286_I2CSLVTO_NONE		(3 << 0)
+#define MAX9286_I2CSLVTO_1024US		(2 << 0)
+#define MAX9286_I2CSLVTO_256US		(1 << 0)
+#define MAX9286_I2CSLVTO_64US		(0 << 0)
+/* Register 0x3b */
+#define MAX9286_REV_TRF(n)		((n) << 5)
+#define MAX9286_REV_AMP(n)		((((n) - 30) / 10) << 1) /* in mV */
+#define MAX9286_REV_AMP_X		BIT(0)
+/* Register 0x3f */
+#define MAX9286_EN_REV_CFG		BIT(6)
+#define MAX9286_REV_FLEN(n)		((n) - 20)
+/* Register 0x69 */
+#define MAX9286_LFLTBMONMASKED		BIT(7)
+#define MAX9286_LOCKMONMASKED		BIT(6)
+#define MAX9286_AUTOCOMBACKEN		BIT(5)
+#define MAX9286_AUTOMASKEN		BIT(4)
+#define MAX9286_MASKLINK(n)		((n) << 0)
+
+#define MAX9286_NUM_GMSL		4
+#define MAX9286_N_PADS			5
+#define MAX9286_SRC_PAD			4
+
+#define MAXIM_I2C_I2C_SPEED_400KHZ	MAX9286_I2CMSTBT_339KBPS
+#define MAXIM_I2C_I2C_SPEED_100KHZ	MAX9286_I2CMSTBT_105KBPS
 #define MAXIM_I2C_SPEED			MAXIM_I2C_I2C_SPEED_100KHZ
 
 /*
@@ -125,7 +214,9 @@ static int max9286_i2c_mux_select(struct i2c_mux_core *muxc, u32 chan)
 		return 0;
 
 	dev->mux_channel = chan;
-	max9286_write(dev, 0x0a, 0xf0 | (0x01 << chan));
+	max9286_write(dev, 0x0a, MAX9286_FWDCCEN(3) | MAX9286_FWDCCEN(2) |
+		      MAX9286_FWDCCEN(1) | MAX9286_FWDCCEN(0) |
+		      MAX9286_REVCCEN(chan));
 
 	return 0;
 }
@@ -277,7 +368,8 @@ static int max9286_s_stream(struct v4l2_subdev *sd, int enable)
 		 * Enable CSI output, VC set according to link number.
 		 * Bit 7 must be set (chip manual says it's 0 and reserved)
 		 */
-		max9286_write(dev, 0x15, 0x9b);
+		max9286_write(dev, 0x15, 0x80 | MAX9286_VCTYPE |
+			      MAX9286_CSIOUTEN | MAX9286_0X15_RESV);
 
 		for_each_source(dev, source) {
 			ret = v4l2_subdev_call(source->sd, video,
@@ -286,7 +378,7 @@ static int max9286_s_stream(struct v4l2_subdev *sd, int enable)
 				goto err_stop_stream;
 		}
 	} else {
-		max9286_write(dev, 0x15, 0x13);
+		max9286_write(dev, 0x15, MAX9286_VCTYPE | MAX9286_0X15_RESV);
 
 		for_each_source(dev, source)
 			v4l2_subdev_call(source->sd, video, s_stream, 0);
@@ -375,7 +467,9 @@ static int max9286_setup(struct max9286_device *dev)
 
 		/* Reverse channel setup */
 		dev->client->addr = des_addr;		/* MAX9286-CAMx I2C */
-		max9286_write(dev, 0x0a, 0xf0 | (1 << cam_idx));
+		max9286_write(dev, 0x0a, MAX9286_FWDCCEN(3) |
+			      MAX9286_FWDCCEN(2) | MAX9286_FWDCCEN(1) |
+			      MAX9286_FWDCCEN(0) | MAX9286_REVCCEN(cam_idx));
 				/* enable reverse control only for cam_idx */
 		mdelay(2);
 			/* wait 2ms after any change of reverse
@@ -383,15 +477,20 @@ static int max9286_setup(struct max9286_device *dev)
 			*/
 
 		dev->client->addr = des_addr;		/* MAX9286-CAMx I2C */
-		max9286_write(dev, 0x3f, 0x4f);
+		max9286_write(dev, 0x3f, MAX9286_EN_REV_CFG |
+			      MAX9286_REV_FLEN(35));
 			/* enable custom reverse channel & first pulse length */
-		max9286_write(dev, 0x34, 0xa2 | MAXIM_I2C_SPEED);
+		max9286_write(dev, 0x34, MAX9286_I2CLOCACK |
+			      MAX9286_I2CSLVSH_469NS_234NS |
+			      MAX9286_I2CSLVTO_1024US |
+			      MAXIM_I2C_SPEED);
 			/* enable artificial ACKs, I2C speed set */
 		mdelay(2);
 			/* wait 2ms after any change of reverse
 			*  channel settings
 			*/
-		max9286_write(dev, 0x3b, 0x1e);
+		max9286_write(dev, 0x3b, MAX9286_REV_TRF(1) |
+			      MAX9286_REV_AMP(100));
 			/* first pulse length rise time changed
 			*  from 300ns to 200ns
 			*/
@@ -413,7 +512,8 @@ static int max9286_setup(struct max9286_device *dev)
 			*/
 
 		dev->client->addr = des_addr;		/* MAX9286-CAMx I2C */
-		max9286_write(dev, 0x3b, 0x19);
+		max9286_write(dev, 0x3b, MAX9286_REV_TRF(1) |
+			      MAX9286_REV_AMP(70) | MAX9286_REV_AMP_X);
 			/* reverse channel increase amplitude 170mV
 			*  to compensate high threshold enabled
 			*/
@@ -445,14 +545,17 @@ static int max9286_setup(struct max9286_device *dev)
 				Gbps automatic  */
 #endif
 		dev->client->addr = des_addr;		/* MAX9286-CAMx I2C */
-		max9286_write(dev, 0x34, 0x22 | MAXIM_I2C_SPEED);
+		max9286_write(dev, 0x34, MAX9286_I2CSLVSH_469NS_234NS |
+			      MAX9286_I2CSLVTO_1024US |
+			      MAXIM_I2C_SPEED);
 				/* disable artificial ACK, I2C speed set */
 		mdelay(2);			/* wait 2ms */
 	}
 
 	/* Reverse channel setup */
 	dev->client->addr = des_addr;			/* MAX9286-CAMx I2C */
-	max9286_write(dev, 0x1b, 0x0f);
+	max9286_write(dev, 0x1b, MAX9286_ENEQ(3) | MAX9286_ENEQ(2) |
+		      MAX9286_ENEQ(1) | MAX9286_ENEQ(0));
 				/* enable equalizer for all links */
 
 	/*
@@ -463,12 +566,13 @@ static int max9286_setup(struct max9286_device *dev)
 	 * FIXME/TODO: Double check to see if we want to enable autocomeback and
 	 * automask
 	 */
-	max9286_write(dev, 0x00, 0xe0 | linken_mask);
-	max9286_write(dev, 0x69, 0x30 | (0xf & ~linken_mask));
+	max9286_write(dev, 0x00, MAX9286_MSTLINKSEL_AUTO | linken_mask);
+	max9286_write(dev, 0x69, MAX9286_AUTOCOMBACKEN | MAX9286_AUTOMASKEN |
+		      (0xf & ~linken_mask));
 
 	/* Video format setup */
 	/* Disable CSI output, VC is set accordingly to Link number */
-	max9286_write(dev, 0x15, 0x13);
+	max9286_write(dev, 0x15, MAX9286_VCTYPE | MAX9286_0X15_RESV);
 
 	/*
 	 * FIXME: once this driver will have an endpoint, retrieve
@@ -477,7 +581,8 @@ static int max9286_setup(struct max9286_device *dev)
 	 * current VIN settings.
 	 */
 	/* Enable CSI-2 Lane D0 only, DBL mode, YUV422 8-bit*/
-	max9286_write(dev, 0x12, 0x33);
+	max9286_write(dev, 0x12, MAX9286_CSIDBL | MAX9286_DBL |
+		      MAX9286_DATATYPE_YUV422_8BIT);
 
 #define FSYNC_PERIOD	(1280*800*2)
 #if 0
@@ -486,19 +591,23 @@ static int max9286_setup(struct max9286_device *dev)
 		*  via [0x06:0x08] regs
 		*/
 #endif
-	max9286_write(dev, 0x06, FSYNC_PERIOD & 0xff);
-	max9286_write(dev, 0x07, (FSYNC_PERIOD >> 8) & 0xff);
-	max9286_write(dev, 0x08, FSYNC_PERIOD >> 16);
+	max9286_write(dev, MAX9286_REG_FSYNC_PERIOD_L,
+		      (FSYNC_PERIOD >>  0) & 0xff);
+	max9286_write(dev, MAX9286_REG_FSYNC_PERIOD_M,
+		      (FSYNC_PERIOD >>  8) & 0xff);
+	max9286_write(dev, MAX9286_REG_FSYNC_PERIOD_H,
+		      (FSYNC_PERIOD >> 16) & 0xff);
 
 	if (dev->nports == 1)
 		/* ECU (aka MCU) based FrameSync using GPI-to-GPO */
-		max9286_write(dev, 0x01, 0xc0);
+		max9286_write(dev, 0x01, MAX9286_FSYNCMODE_ECU);
 	else
 		/* Automatic: FRAMESYNC taken from the slowest Link */
-		max9286_write(dev, 0x01, 0x02);
+		max9286_write(dev, 0x01, MAX9286_FSYNCMETH_AUTO);
 
 	/* Enable HS/VS encoding, use D14/15 for HS/VS, invert VS */
-	max9286_write(dev, 0x0c, 0x89);
+	max9286_write(dev, 0x0c, MAX9286_HVEN | MAX9286_INVVS |
+		      MAX9286_HVSRC_D14);
 
 	return 0;
 }
