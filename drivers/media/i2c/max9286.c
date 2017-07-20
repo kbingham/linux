@@ -450,62 +450,30 @@ static const struct v4l2_subdev_ops max9286_subdev_ops = {
 
 static int max9286_setup(struct max9286_device *dev)
 {
-	unsigned int cam_idx;
 	unsigned int linken_mask = 0xf & ((1 << dev->nports) - 1);
-	struct max9286_source *source;
 
-	for_each_source(dev, source) {
-		cam_idx = to_index(dev, source);
+	/* Set the I2C bus speed. */
+	max9286_write(dev, 0x34, MAX9286_I2CSLVSH_469NS_234NS |
+		      MAX9286_I2CSLVTO_1024US | MAXIM_I2C_SPEED);
 
-		dev_info(&dev->client->dev, "Setup channel %u\n", cam_idx);
+	/*
+	 * Reverse channel setup
+	 *
+	 * - Enable custom reverse channel configuration (through register 0x3f)
+	 *   and set the first pulse length to 35 clock cycles.
+	 * - Increase the reverse channel amplitude to 170mV to accommodate the
+	 *   high threshold enabled by the serializer driver.
+	 */
+	max9286_write(dev, 0x3f, MAX9286_EN_REV_CFG | MAX9286_REV_FLEN(35));
+	max9286_write(dev, 0x3b, MAX9286_REV_TRF(1) | MAX9286_REV_AMP(70) |
+		      MAX9286_REV_AMP_X);
 
-		/* Reverse channel setup */
-		max9286_write(dev, 0x0a, MAX9286_FWDCCEN(3) |
-			      MAX9286_FWDCCEN(2) | MAX9286_FWDCCEN(1) |
-			      MAX9286_FWDCCEN(0) | MAX9286_REVCCEN(cam_idx));
-				/* enable reverse control only for cam_idx */
-		mdelay(2);
-			/* wait 2ms after any change of reverse
-			*  channel settings
-			*/
-
-		max9286_write(dev, 0x3f, MAX9286_EN_REV_CFG |
-			      MAX9286_REV_FLEN(35));
-			/* enable custom reverse channel & first pulse length */
-		max9286_write(dev, 0x34,
-			      MAX9286_I2CSLVSH_469NS_234NS |
-			      MAX9286_I2CSLVTO_1024US |
-			      MAXIM_I2C_SPEED);
-			/* enable artificial ACKs, I2C speed set */
-		mdelay(2);
-			/* wait 2ms after any change of reverse
-			*  channel settings
-			*/
-		max9286_write(dev, 0x3b, MAX9286_REV_TRF(1) |
-			      MAX9286_REV_AMP(100));
-			/* first pulse length rise time changed
-			*  from 300ns to 200ns
-			*/
-		mdelay(2);
-			/* wait 2ms after any change of
-			*  reverse channel settings
-			*/
-
-		max9286_write(dev, 0x3b, MAX9286_REV_TRF(1) |
-			      MAX9286_REV_AMP(70) | MAX9286_REV_AMP_X);
-			/* reverse channel increase amplitude 170mV
-			*  to compensate high threshold enabled
-			*/
-		mdelay(2);
-			/* wait 2ms after any change of reverse
-			*  channel settings
-			*/
-	}
-
-	/* Reverse channel setup */
+	/*
+	 * Enable equalizer for all links to compensate for long cable
+	 * attenuation.
+	 */
 	max9286_write(dev, 0x1b, MAX9286_ENEQ(3) | MAX9286_ENEQ(2) |
 		      MAX9286_ENEQ(1) | MAX9286_ENEQ(0));
-				/* enable equalizer for all links */
 
 	/*
 	 * Enable GMSL links, mask unused ones and autodetect link
@@ -557,6 +525,12 @@ static int max9286_setup(struct max9286_device *dev)
 	/* Enable HS/VS encoding, use D14/15 for HS/VS, invert VS */
 	max9286_write(dev, 0x0c, MAX9286_HVEN | MAX9286_INVVS |
 		      MAX9286_HVSRC_D14);
+
+	/*
+	 * Wait for 2ms to allow the link to resynchronize after the
+	 * configuration change.
+	 */
+	usleep_range(2000, 5000);
 
 	return 0;
 }
