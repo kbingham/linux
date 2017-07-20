@@ -40,28 +40,6 @@
 #define MAXIM_IMI_MCU_NO_DELAY	0	/* delay for unpowered MCU  */
 #define MAXIM_IMI_MCU_DELAY	MAXIM_IMI_MCU_V0_DELAY
 
-/*
- * I2C MAP.
- *
- *		CAM0	CAM1	CAM2	CAM3
- * MAX9286	0x48+1	0x48+2	0x48+3	0x48+4	- deserializer
- * MAX9271	0x40+1	0x40+2	0x40+3	0x40+4	- serializer
- * OV10635	0x30+1	0x30+2	0x30+3	0x30+4	- sensor
- */
-
-#define DES0			0x4c
-#define DES1			0x6c
-#define SER			0x51
-#define CAM			0x60
-#define BROADCAST		0x6f
-
-static const u8 maxim_map[][8] = {
-	{ SER  + 0, SER  + 1, SER  + 2, SER  + 3,
-	  SER  + 4, SER  + 5, SER  + 6, SER  + 7 },
-	{ CAM  + 0, CAM  + 1, CAM  + 2, CAM  + 3,
-	  CAM  + 4, CAM  + 5, CAM  + 6, CAM  + 7 },
-};
-
 struct max9286_source {
 		struct v4l2_async_subdev asd;
 		struct v4l2_subdev *sd;
@@ -381,36 +359,23 @@ static const struct v4l2_subdev_ops max9286_subdev_ops = {
 static int max9286_setup(struct max9286_device *dev)
 {
 	unsigned short des_addr = dev->client->addr;
-	unsigned int cam_idx, cam_offset;
+	unsigned int cam_idx;
 	unsigned int linken_mask = 0xf & ((1 << dev->nports) - 1);
 	struct max9286_source *source;
 
-	switch (des_addr) {
-	case DES0:
-		cam_offset = 0;
-		break;
-	case DES1:
-		cam_offset = 4;
-		break;
-	default:
-		return -EINVAL;
-	}
-
 	for_each_source(dev, source) {
-		cam_idx = to_index(dev, source) + cam_offset;
+		cam_idx = to_index(dev, source);
 
 		/*
 		 * SETUP CAMx (MAX9286/MAX9271/OV10635) I2C
 		 */
 		dev_info(&dev->client->dev,
-			 "SETUP CAM%d(MAX9286/MAX9271/OV10635)I2C: 0x%x<->0x%x<->0x%x\n",
-			 cam_idx, des_addr,
-			 maxim_map[0][cam_idx], maxim_map[1][cam_idx]);
+			 "SETUP CAM%d(MAX9286/MAX9271/OV10635)I2C: 0x%x\n",
+			 cam_idx, des_addr);
 
 		/* Reverse channel setup */
 		dev->client->addr = des_addr;		/* MAX9286-CAMx I2C */
-		max9286_write(dev, 0x0a,
-			0xf0 | (1 << (cam_idx - cam_offset)));
+		max9286_write(dev, 0x0a, 0xf0 | (1 << cam_idx));
 				/* enable reverse control only for cam_idx */
 		mdelay(2);
 			/* wait 2ms after any change of reverse
@@ -483,33 +448,6 @@ static int max9286_setup(struct max9286_device *dev)
 		max9286_write(dev, 0x34, 0x22 | MAXIM_I2C_SPEED);
 				/* disable artificial ACK, I2C speed set */
 		mdelay(2);			/* wait 2ms */
-
-		/* I2C translator setup */
-		dev->client->addr = 0x40;		/* MAX9271-CAMx I2C */
-		max9286_write(dev, 0x09, maxim_map[1][cam_idx] << 1);
-							/* OV10635 I2C new */
-		max9286_write(dev, 0x0A, 0x30 << 1);
-							/* OV10635 I2C */
-		max9286_write(dev, 0x0B, BROADCAST << 1);
-							/* broadcast I2C */
-		max9286_write(dev, 0x0C, maxim_map[0][cam_idx] << 1);
-						/* MAX9271-CAMx I2C new */
-
-		/* I2C addresses change */
-		dev->client->addr = 0x40;		/* MAX9271-CAMx I2C */
-		max9286_write(dev, 0x01, des_addr << 1);
-						/* MAX9286-CAM0 I2C new */
-		max9286_write(dev, 0x00, maxim_map[0][cam_idx] << 1);
-						/* MAX9271-CAM0 I2C new */
-
-		/* make sure that the conf_link enabled -
-		*  needed for reset/reboot, due to I2C runtime changeing
-		*/
-		dev->client->addr = maxim_map[0][cam_idx];
-							/* MAX9271-CAMx I2C new */
-		max9286_write(dev, 0x04, 0x43);
-				/* wake-up, enable reverse_control/conf_link */
-		mdelay(5);	/* wait 5ms for conf_link to establish */
 	}
 
 	/* Reverse channel setup */
