@@ -40,8 +40,40 @@
 #define MAX9271_INTTYPE_NONE		(2 << 2)
 #define MAX9271_REVCCEN			BIT(1)
 #define MAX9271_FWDCCEN			BIT(0)
+/* Register 0x07 */
+#define MAX9271_DBL			BIT(7)
+#define MAX9271_DRS			BIT(6)
+#define MAX9271_BWS			BIT(5)
+#define MAX9271_ES			BIT(4)
+#define MAX9271_HVEN			BIT(2)
+#define MAX9271_EDC_1BIT_PARITY		(0 << 0)
+#define MAX9271_EDC_6BIT_CRC		(1 << 0)
+#define MAX9271_EDC_6BIT_HAMMING	(2 << 0)
+/* Register 0x08 */
+#define MAX9271_INVVS			BIT(7)
+#define MAX9271_INVHS			BIT(6)
+#define MAX9271_REV_LOGAIN		BIT(3)
+#define MAX9271_REV_HIVTH		BIT(0)
 /* Register 0x09 */
 #define MAX9271_ID			0x09
+/* Register 0x0d */
+#define MAX9271_I2CLOCACK		BIT(7)
+#define MAX9271_I2CSLVSH_1046NS_469NS	(3 << 5)
+#define MAX9271_I2CSLVSH_938NS_352NS	(2 << 5)
+#define MAX9271_I2CSLVSH_469NS_234NS	(1 << 5)
+#define MAX9271_I2CSLVSH_352NS_117NS	(0 << 5)
+#define MAX9271_I2CMSTBT_837KBPS	(7 << 2)
+#define MAX9271_I2CMSTBT_533KBPS	(6 << 2)
+#define MAX9271_I2CMSTBT_339KBPS	(5 << 2)
+#define MAX9271_I2CMSTBT_173KBPS	(4 << 2)
+#define MAX9271_I2CMSTBT_105KBPS	(3 << 2)
+#define MAX9271_I2CMSTBT_84KBPS		(2 << 2)
+#define MAX9271_I2CMSTBT_28KBPS		(1 << 2)
+#define MAX9271_I2CMSTBT_8KBPS		(0 << 2)
+#define MAX9271_I2CSLVTO_NONE		(3 << 0)
+#define MAX9271_I2CSLVTO_1024US		(2 << 0)
+#define MAX9271_I2CSLVTO_256US		(1 << 0)
+#define MAX9271_I2CSLVTO_64US		(0 << 0)
 /* Register 0x0f */
 #define MAX9271_GPIO5OUT		BIT(5)
 #define MAX9271_GPIO4OUT		BIT(4)
@@ -49,6 +81,10 @@
 #define MAX9271_GPIO2OUT		BIT(2)
 #define MAX9271_GPIO1OUT		BIT(1)
 #define MAX9271_SETGPO			BIT(0)
+
+#define MAXIM_I2C_I2C_SPEED_400KHZ	MAX9271_I2CMSTBT_339KBPS
+#define MAXIM_I2C_I2C_SPEED_100KHZ	MAX9271_I2CMSTBT_105KBPS
+#define MAXIM_I2C_SPEED			MAXIM_I2C_I2C_SPEED_100KHZ
 
 #define OV10635_I2C_ADDRESS		0x30
 
@@ -274,6 +310,8 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 	dev->client->addr = MAX9271_I2C_ADDRESS;
 
 	/* Verify communication with the MAX9271. */
+	i2c_smbus_read_byte(dev->client);	/* ping to wake-up */
+
 	ret = max9271_read(dev, 0x1e);
 	if (ret < 0) {
 		dev_err(&dev->client->dev, "MAX9271 ID read failed (%d)\n",
@@ -286,15 +324,6 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 			ret);
 		return -ENXIO;
 	}
-
-	/* Change the MAX9271 I2C address. */
-	ret = max9271_write(dev, 0x00, addrs[0] << 1);
-	if (ret < 0) {
-		dev_err(&dev->client->dev,
-			"MAX9271 I2C address change failed (%d)\n", ret);
-		return ret;
-	}
-	dev->client->addr = addrs[0];
 
 	/*
 	 * Disable the serial link and enable the configuration link to allow
@@ -312,6 +341,37 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 	max9271_write(dev, 0x04, MAX9271_CLINKEN | MAX9271_REVCCEN |
 		      MAX9271_FWDCCEN);
 	usleep_range(2000, 5000);
+
+	/*
+	 * Configure the I2C bus:
+	 *
+	 * - Enable high thresholds on the reverse channel
+	 * - Disable artificial ACK and set I2C speed
+	 */
+	max9271_write(dev, 0x08, MAX9271_REV_HIVTH);
+	usleep_range(2000, 5000);
+	max9271_write(dev, 0x0d, MAX9271_I2CSLVSH_469NS_234NS |
+		      MAX9271_I2CSLVTO_1024US | MAXIM_I2C_SPEED);
+
+	/*
+	 * Configure the GMSL link:
+	 *
+	 * - Double input mode, high data rate, 24-bit mode
+	 * - Latch input data on PCLKIN falling edge
+	 * - Enable HS/VS encoding
+	 * - 1-bit parity error detection
+	 */
+	max9271_write(dev, 0x07, MAX9271_DBL | MAX9271_ES | MAX9271_HVEN |
+		      MAX9271_EDC_1BIT_PARITY);
+
+	/* Change the MAX9271 I2C address. */
+	ret = max9271_write(dev, 0x00, addrs[0] << 1);
+	if (ret < 0) {
+		dev_err(&dev->client->dev,
+			"MAX9271 I2C address change failed (%d)\n", ret);
+		return ret;
+	}
+	dev->client->addr = addrs[0];
 
 	/* Reset and verify communication with the OV10635. */
 #ifdef RDACM20_SENSOR_HARD_RESET
