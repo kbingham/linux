@@ -120,7 +120,7 @@
 
 			camera@51 {
 				compatible = "imi,rdacm20";
-				reg = <0x51>;
+				reg = <0x51 0x61>;
 
 				port {
 					rdacm20_out0: endpoint {
@@ -140,7 +140,7 @@
 
 			camera@52 {
 				compatible = "imi,rdacm20";
-				reg = <0x52>;
+				reg = <0x52 0x62>;
 				port {
 					rdacm20_out1: endpoint {
 						remote-endpoint = <&max9286_in1>;
@@ -158,7 +158,7 @@
 
 			camera@53 {
 				compatible = "imi,rdacm20";
-				reg = <0x53>;
+				reg = <0x53 0x63>;
 				port {
 					rdacm20_out2: endpoint {
 						remote-endpoint = <&max9286_in2>;
@@ -176,7 +176,7 @@
 
 			camera@54 {
 				compatible = "imi,rdacm20";
-				reg = <0x54>;
+				reg = <0x54 0x64>;
 				port {
 					rdacm20_out3: endpoint {
 						remote-endpoint = <&max9286_in3>;
@@ -243,7 +243,7 @@
 
 			camera@55 {
 				compatible = "imi,rdacm20";
-				reg = <0x55>;
+				reg = <0x55 0x65>;
 				port {
 					rdacm20_out4: endpoint {
 						remote-endpoint = <&max9286_in4>;
@@ -261,7 +261,7 @@
 
 			camera@56 {
 				compatible = "imi,rdacm20";
-				reg = <0x56>;
+				reg = <0x56 0x66>;
 				port {
 					rdacm20_out5: endpoint {
 						remote-endpoint = <&max9286_in5>;
@@ -279,7 +279,7 @@
 
 			camera@57 {
 				compatible = "imi,rdacm20";
-				reg = <0x57>;
+				reg = <0x57 0x67>;
 				port {
 					rdacm20_out6: endpoint {
 						remote-endpoint = <&max9286_in6>;
@@ -297,7 +297,7 @@
 
 			camera@58 {
 				compatible = "imi,rdacm20";
-				reg = <0x58>;
+				reg = <0x58 0x68>;
 				port {
 					rdacm20_out7: endpoint {
 						remote-endpoint = <&max9286_in7>;
