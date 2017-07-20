@@ -253,24 +253,24 @@ static int max9286_notify_complete(struct v4l2_async_notifier *notifier)
 static int max9286_registered(struct v4l2_subdev *sd)
 {
 	struct max9286_device *max9286 = sd_to_max9286(sd);
-	int ret;
 
 	dev_dbg(&max9286->client->dev,
 		"%s: Claiming %u source subdevices for subnotifier\n",
 		__func__, max9286->nports);
 
-	ret = v4l2_async_subnotifier_register(&max9286->sd, &max9286->notifier);
-	if (ret)
-		return ret;
+	if (max9286->nports)
+		return v4l2_async_subnotifier_register(&max9286->sd,
+						       &max9286->notifier);
 
 	return 0;
 }
 
 static void max9286_unregistered(struct v4l2_subdev *sd)
 {
-	struct max9286_device *dev = sd_to_max9286(sd);
+	struct max9286_device *max9286 = sd_to_max9286(sd);
 
-	v4l2_async_subnotifier_unregister(&dev->notifier);
+	if (max9286->nports)
+		v4l2_async_subnotifier_unregister(&max9286->notifier);
 }
 
 static const struct v4l2_subdev_internal_ops max9286_subdev_internal_ops  = {
@@ -764,7 +764,7 @@ static int max9286_parse_dt(struct max9286_device *max9286)
 	max9286->notifier.unbind = max9286_notify_unbind;
 	max9286->notifier.complete = max9286_notify_complete;
 
-	return max9286->nports ? 0 : -ENODEV;
+	return 0;
 }
 
 static int max9286_probe(struct i2c_client *client,
