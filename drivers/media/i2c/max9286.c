@@ -143,14 +143,17 @@ struct max9286_device {
 	struct v4l2_subdev sd;
 	struct media_pad pads[MAX9286_N_PADS];
 	struct regulator *regulator;
+
 	struct i2c_mux_core *mux;
 	unsigned int mux_channel;
-	unsigned int nports;
+	unsigned int mux_map[MAX9286_NUM_GMSL];
 
 	struct v4l2_ctrl_handler ctrls;
 
 	struct v4l2_async_notifier notifier;
 
+	unsigned int nsources;
+	unsigned int source_mask;
 	struct max9286_source sources[MAX9286_NUM_GMSL];
 	struct v4l2_async_subdev *subdevs[MAX9286_NUM_GMSL];
 };
@@ -214,9 +217,10 @@ static int max9286_i2c_mux_select(struct i2c_mux_core *muxc, u32 chan)
 		return 0;
 
 	dev->mux_channel = chan;
+
 	max9286_write(dev, 0x0a, MAX9286_FWDCCEN(3) | MAX9286_FWDCCEN(2) |
 		      MAX9286_FWDCCEN(1) | MAX9286_FWDCCEN(0) |
-		      MAX9286_REVCCEN(chan));
+		      MAX9286_REVCCEN(dev->mux_map[chan]));
 
 	return 0;
 }
@@ -231,7 +235,7 @@ static int max9286_i2c_mux_init(struct max9286_device *dev)
 		return -ENODEV;
 
 	dev->mux = i2c_mux_alloc(dev->client->adapter, &dev->client->dev,
-				 dev->nports, 0, I2C_MUX_LOCKED,
+				 dev->nsources, 0, I2C_MUX_LOCKED,
 				 max9286_i2c_mux_select, NULL);
 	dev_info(&dev->client->dev, "%s: mux %p\n", __func__, dev->mux);
 	if (!dev->mux)
@@ -239,7 +243,7 @@ static int max9286_i2c_mux_init(struct max9286_device *dev)
 
 	dev->mux->priv = dev;
 
-	for (i = 0; i < dev->nports; ++i) {
+	for (i = 0; i < dev->nsources; ++i) {
 		ret = i2c_mux_add_adapter(dev->mux, 0, i, 0);
 		if (ret < 0)
 			goto error;
@@ -325,9 +329,9 @@ static int max9286_registered(struct v4l2_subdev *sd)
 
 	dev_dbg(&max9286->client->dev,
 		"%s: Claiming %u source subdevices for subnotifier\n",
-		__func__, max9286->nports);
+		__func__, max9286->nsources);
 
-	if (max9286->nports)
+	if (max9286->nsources)
 		return v4l2_async_subnotifier_register(&max9286->sd,
 						       &max9286->notifier);
 
@@ -338,7 +342,7 @@ static void max9286_unregistered(struct v4l2_subdev *sd)
 {
 	struct max9286_device *max9286 = sd_to_max9286(sd);
 
-	if (max9286->nports)
+	if (max9286->nsources)
 		v4l2_async_subnotifier_unregister(&max9286->notifier);
 }
 
@@ -450,8 +454,6 @@ static const struct v4l2_subdev_ops max9286_subdev_ops = {
 
 static int max9286_setup(struct max9286_device *dev)
 {
-	unsigned int linken_mask = 0xf & ((1 << dev->nports) - 1);
-
 	/* Set the I2C bus speed. */
 	max9286_write(dev, 0x34, MAX9286_I2CSLVSH_469NS_234NS |
 		      MAX9286_I2CSLVTO_1024US | MAXIM_I2C_SPEED);
@@ -483,9 +485,9 @@ static int max9286_setup(struct max9286_device *dev)
 	 * FIXME/TODO: Double check to see if we want to enable autocomeback and
 	 * automask
 	 */
-	max9286_write(dev, 0x00, MAX9286_MSTLINKSEL_AUTO | linken_mask);
+	max9286_write(dev, 0x00, MAX9286_MSTLINKSEL_AUTO | dev->source_mask);
 	max9286_write(dev, 0x69, MAX9286_AUTOCOMBACKEN | MAX9286_AUTOMASKEN |
-		      (0xf & ~linken_mask));
+		      (0xf & ~dev->source_mask));
 
 	/* Video format setup */
 	/* Disable CSI output, VC is set accordingly to Link number */
@@ -515,7 +517,7 @@ static int max9286_setup(struct max9286_device *dev)
 	max9286_write(dev, MAX9286_REG_FSYNC_PERIOD_H,
 		      (FSYNC_PERIOD >> 16) & 0xff);
 
-	if (dev->nports == 1)
+	if (dev->nsources == 1)
 		/* ECU (aka MCU) based FrameSync using GPI-to-GPO */
 		max9286_write(dev, 0x01, MAX9286_FSYNCMODE_ECU);
 	else
@@ -723,12 +725,15 @@ static int max9286_parse_dt(struct max9286_device *max9286)
 						of_fwnode_handle(ep_np));
 		source->asd.match_type = V4L2_ASYNC_MATCH_FWNODE;
 		source->asd.match.fwnode.fwnode = source->fwnode;
-		max9286->subdevs[max9286->nports] = &source->asd;
-		max9286->nports++;
+
+		max9286->mux_map[max9286->nsources] = ep.port;
+		max9286->subdevs[max9286->nsources] = &source->asd;
+		max9286->source_mask |= 1 << ep.port;
+		max9286->nsources++;
 	}
 
 	/* Configure our subdevice notifiers */
-	max9286->notifier.num_subdevs = max9286->nports;
+	max9286->notifier.num_subdevs = max9286->nsources;
 	max9286->notifier.subdevs = max9286->subdevs;
 	max9286->notifier.bound = max9286_notify_bound;
 	max9286->notifier.unbind = max9286_notify_unbind;
