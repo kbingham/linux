@@ -480,7 +480,7 @@ static int max9286_setup(struct max9286_device *dev)
 		max9286_write(dev, 0x3f, MAX9286_EN_REV_CFG |
 			      MAX9286_REV_FLEN(35));
 			/* enable custom reverse channel & first pulse length */
-		max9286_write(dev, 0x34, MAX9286_I2CLOCACK |
+		max9286_write(dev, 0x34,
 			      MAX9286_I2CSLVSH_469NS_234NS |
 			      MAX9286_I2CSLVTO_1024US |
 			      MAXIM_I2C_SPEED);
@@ -544,12 +544,6 @@ static int max9286_setup(struct max9286_device *dev)
 			/* spread spectrum +-4%, pclk range automatic,
 				Gbps automatic  */
 #endif
-		dev->client->addr = des_addr;		/* MAX9286-CAMx I2C */
-		max9286_write(dev, 0x34, MAX9286_I2CSLVSH_469NS_234NS |
-			      MAX9286_I2CSLVTO_1024US |
-			      MAXIM_I2C_SPEED);
-				/* disable artificial ACK, I2C speed set */
-		mdelay(2);			/* wait 2ms */
 	}
 
 	/* Reverse channel setup */
