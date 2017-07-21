@@ -11,13 +11,23 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
+/*
+ * Powered MCU IMI cameras need delay between power-on and R-Car access
+ * to avoid I2C bus conflicts since the R-Car I2C does not support I2C
+ * multi-master. The I2C bus conflict would result in R-Car I2C IP stall.
+ */
+#define IMI_MCU_V0_DELAY	8000000	/* delay for powered MCU firmware v0 */
+#define IMI_MCU_V1_DELAY	3000000	/* delay for powered MCU firmware v1 */
+#define IMI_MCU_NO_DELAY	0	/* delay for unpowered MCU  */
+#define IMI_MCU_DELAY		IMI_MCU_V0_DELAY
+
 	poc_12v: regulator-vcc-poc-12v {
 		compatible = "regulator-fixed";
 
 		regulator-name = "Camera PoC 12V";
 		regulator-min-microvolt = <12000000>;
 		regulator-max-microvolt = <12000000>;
-		startup-delay-us = <250000>;
+		startup-delay-us = <(250000 + IMI_MCU_DELAY)>;
 
 		gpio = <&gpio6 30 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
