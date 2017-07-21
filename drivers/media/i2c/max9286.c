@@ -190,7 +190,7 @@ static int max9286_write(struct max9286_device *dev, u8 reg, u8 val)
 
 	ret = i2c_smbus_write_byte_data(dev->client, reg, val);
 	if (ret < 0)
-		dev_dbg(&dev->client->dev,
+		dev_err(&dev->client->dev,
 			"%s: register 0x%02x write failed (%d)\n",
 			__func__, reg, ret);
 
