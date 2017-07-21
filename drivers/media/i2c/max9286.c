@@ -120,15 +120,6 @@
 #define MAXIM_I2C_I2C_SPEED_100KHZ	MAX9286_I2CMSTBT_105KBPS
 #define MAXIM_I2C_SPEED			MAXIM_I2C_I2C_SPEED_100KHZ
 
-/*
- * MCU powered IMI cameras require delay between power-on and RCar access to
- * avoid i2c bus conflicts.
- */
-#define MAXIM_IMI_MCU_V0_DELAY	8000	/* delay for powered MCU firmware v0 */
-#define MAXIM_IMI_MCU_V1_DELAY	3000	/* delay for powered MCU firmware v1 */
-#define MAXIM_IMI_MCU_NO_DELAY	0	/* delay for unpowered MCU  */
-#define MAXIM_IMI_MCU_DELAY	MAXIM_IMI_MCU_V0_DELAY
-
 struct max9286_source {
 		struct v4l2_async_subdev asd;
 		struct v4l2_subdev *sd;
@@ -567,14 +558,6 @@ static int max9286_init(struct device *dev, void *data)
 	}
 
 	max9286_dev->poc_enabled = true;
-
-	/*
-	 * Powered MCU IMI cameras need delay between power-on and R-Car access
-	 * to avoid i2c bus conflicts since linux kernel does not support i2c
-	 * multi-mastering, IMI MCU is master and R-Car is also master. The i2c
-	 * bus conflict results in R-Car i2c IP stall.
-	 */
-	msleep(MAXIM_IMI_MCU_DELAY);
 
 	ret = max9286_setup(max9286_dev);
 	if (ret) {
