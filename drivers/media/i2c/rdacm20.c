@@ -483,8 +483,7 @@ error:
 		i2c_unregister_device(dev->sensor);
 	kfree(dev);
 
-	dev_err(&client->dev, "failed to probe @ 0x%02x (%s)\n",
-		client->addr, client->adapter->name);
+	dev_err(&client->dev, "probe failed\n");
 
 	return ret;
 }
