@@ -561,8 +561,7 @@ static int max9286_init(struct device *dev, void *data)
 
 	ret = max9286_setup(max9286_dev);
 	if (ret) {
-		dev_err(dev, "Unable to setup max9286 0x%x\n",
-			client->addr);
+		dev_err(dev, "Unable to setup max9286\n");
 		goto err_regulator;
 	}
 
@@ -595,15 +594,13 @@ static int max9286_init(struct device *dev, void *data)
 
 	ret = v4l2_async_register_subdev(&max9286_dev->sd);
 	if (ret < 0) {
-		dev_err(dev, "Unable to register subdevice max9286 0x%02x\n",
-			client->addr);
+		dev_err(dev, "Unable to register subdevice\n");
 		goto err_regulator;
 	}
 
 	ret = max9286_i2c_mux_init(max9286_dev);
 	if (ret) {
-		dev_err(dev, "Unable to initialize mux channels max9286 0x%x\n",
-			client->addr);
+		dev_err(dev, "Unable to initialize I2C multiplexer\n");
 		goto err_subdev_unregister;
 	}
 
