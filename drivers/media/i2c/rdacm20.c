@@ -229,7 +229,7 @@ static int rdacm20_s_stream(struct v4l2_subdev *sd, int enable)
 	 * Wait for the link to be established to have access to the control
 	 * channel.
 	 */
-	usleep_range(2000, 5000);
+	usleep_range(3500, 5000);
 
 	return 0;
 }
@@ -340,7 +340,7 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 	 */
 	max9271_write(dev, 0x04, MAX9271_CLINKEN | MAX9271_REVCCEN |
 		      MAX9271_FWDCCEN);
-	usleep_range(2000, 5000);
+	usleep_range(3500, 5000);
 
 	/*
 	 * Configure the I2C bus:
