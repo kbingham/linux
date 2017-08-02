@@ -144,8 +144,6 @@ struct max9286_device {
 
 	struct v4l2_ctrl_handler ctrls;
 
-	struct v4l2_async_notifier notifier;
-
 	unsigned int nsources;
 	unsigned int source_mask;
 	struct max9286_source sources[MAX9286_NUM_GMSL];
@@ -176,12 +174,6 @@ static struct max9286_source *next_source(struct max9286_device *max9286,
 static inline struct max9286_device *sd_to_max9286(struct v4l2_subdev *sd)
 {
 	return container_of(sd, struct max9286_device, sd);
-}
-
-static inline struct max9286_device *notifier_to_max9286(
-		struct v4l2_async_notifier *notifier)
-{
-	return container_of(notifier, struct max9286_device, notifier);
 }
 
 static int max9286_write(struct max9286_device *dev, u8 reg, u8 val)
@@ -258,7 +250,9 @@ static int max9286_notify_bound(struct v4l2_async_notifier *notifier,
 				struct v4l2_subdev *subdev,
 				struct v4l2_async_subdev *asd)
 {
-	struct max9286_device *dev = notifier_to_max9286(notifier);
+	struct max9286_device *dev =
+		sd_to_max9286(subnotifier_to_v4l2_subdev(notifier));
+
 	struct max9286_source *source = asd_to_max9286_source(asd);
 	unsigned int index = to_index(dev, source);
 	int ret;
@@ -292,7 +286,8 @@ static void max9286_notify_unbind(struct v4l2_async_notifier *notifier,
 
 static int max9286_notify_complete(struct v4l2_async_notifier *notifier)
 {
-	struct max9286_device *dev = notifier_to_max9286(notifier);
+	struct max9286_device *dev =
+		sd_to_max9286(subnotifier_to_v4l2_subdev(notifier));
 	struct max9286_source *source;
 	int ret;
 
@@ -316,34 +311,6 @@ static int max9286_notify_complete(struct v4l2_async_notifier *notifier)
 
 	return 0;
 }
-
-static int max9286_registered(struct v4l2_subdev *sd)
-{
-	struct max9286_device *max9286 = sd_to_max9286(sd);
-
-	dev_dbg(&max9286->client->dev,
-		"%s: Claiming %u source subdevices for subnotifier\n",
-		__func__, max9286->nsources);
-
-	if (max9286->nsources)
-		return v4l2_async_subnotifier_register(&max9286->sd,
-						       &max9286->notifier);
-
-	return 0;
-}
-
-static void max9286_unregistered(struct v4l2_subdev *sd)
-{
-	struct max9286_device *max9286 = sd_to_max9286(sd);
-
-	if (max9286->nsources)
-		v4l2_async_subnotifier_unregister(&max9286->notifier);
-}
-
-static const struct v4l2_subdev_internal_ops max9286_subdev_internal_ops  = {
-	.registered	= max9286_registered,
-	.unregistered	= max9286_unregistered,
-};
 
 static int max9286_g_mbus_config(struct v4l2_subdev *sd,
 				 struct v4l2_mbus_config *cfg)
@@ -583,7 +550,6 @@ static int max9286_init(struct device *dev, void *data)
 		goto err_regulator;
 ;
 
-	max9286_dev->sd.internal_ops = &max9286_subdev_internal_ops;
 	max9286_dev->sd.entity.function = MEDIA_ENT_F_PROC_VIDEO_PIXEL_FORMATTER;
 
 	max9286_dev->pads[MAX9286_SRC_PAD].flags = MEDIA_PAD_FL_SOURCE;
@@ -736,14 +702,12 @@ static int max9286_parse_dt(struct max9286_device *max9286)
 		max9286->nsources++;
 	}
 
-	/* Configure our subdevice notifiers */
-	max9286->notifier.num_subdevs = max9286->nsources;
-	max9286->notifier.subdevs = max9286->subdevs;
-	max9286->notifier.bound = max9286_notify_bound;
-	max9286->notifier.unbind = max9286_notify_unbind;
-	max9286->notifier.complete = max9286_notify_complete;
-
-	return 0;
+	return v4l2_async_subdev_notifier_register(&max9286->sd,
+						   max9286->nsources,
+						   max9286->subdevs,
+						   max9286_notify_bound,
+						   max9286_notify_complete,
+						   max9286_notify_unbind);
 }
 
 static int max9286_probe(struct i2c_client *client,
