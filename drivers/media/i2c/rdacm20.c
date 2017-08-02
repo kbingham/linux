@@ -312,19 +312,6 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 	/* Verify communication with the MAX9271. */
 	i2c_smbus_read_byte(dev->client);	/* ping to wake-up */
 
-	ret = max9271_read(dev, 0x1e);
-	if (ret < 0) {
-		dev_err(&dev->client->dev, "MAX9271 ID read failed (%d)\n",
-			ret);
-		return ret;
-	}
-
-	if (ret != MAX9271_ID) {
-		dev_err(&dev->client->dev, "MAX9271 ID mismatch (0x%02x)\n",
-			ret);
-		return -ENXIO;
-	}
-
 	/*
 	 * Disable the serial link and enable the configuration link to allow
 	 * the control channel to operate in a low-speed mode in the absence of
@@ -341,6 +328,19 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 	max9271_write(dev, 0x04, MAX9271_CLINKEN | MAX9271_REVCCEN |
 		      MAX9271_FWDCCEN);
 	usleep_range(3500, 5000);
+
+	ret = max9271_read(dev, 0x1e);
+	if (ret < 0) {
+		dev_err(&dev->client->dev, "MAX9271 ID read failed (%d)\n",
+			ret);
+		return ret;
+	}
+
+	if (ret != MAX9271_ID) {
+		dev_err(&dev->client->dev, "MAX9271 ID mismatch (0x%02x)\n",
+			ret);
+		return -ENXIO;
+	}
 
 	/*
 	 * Configure the I2C bus:
