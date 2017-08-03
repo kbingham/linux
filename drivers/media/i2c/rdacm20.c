@@ -372,6 +372,7 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 		return ret;
 	}
 	dev->client->addr = addrs[0];
+	usleep_range(3500, 5000);
 
 	/* Reset and verify communication with the OV10635. */
 #ifdef RDACM20_SENSOR_HARD_RESET
@@ -414,6 +415,7 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 		return ret;
 	}
 	dev->sensor->addr = addrs[1];
+	usleep_range(3500, 5000);
 
 	/* Program the 0V10635 initial configuration. */
 	ret = ov10635_set_regs(dev, ov10635_regs_wizard,
