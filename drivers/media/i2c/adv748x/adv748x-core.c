@@ -31,6 +31,9 @@
 
 #include "adv748x.h"
 
+static unsigned int txavc;
+static unsigned int txbvc;
+
 /* -----------------------------------------------------------------------------
  * Register manipulation
  */
@@ -747,6 +750,7 @@ static int adv748x_probe(struct i2c_client *client,
 	}
 
 	/* Initialise TXA */
+	state->txa.vc = txavc;
 	ret = adv748x_csi2_init(state, &state->txa);
 	if (ret) {
 		adv_err(state, "Failed to probe TXA");
@@ -754,6 +758,7 @@ static int adv748x_probe(struct i2c_client *client,
 	}
 
 	/* Initialise TXB */
+	state->txb.vc = txbvc;
 	ret = adv748x_csi2_init(state, &state->txb);
 	if (ret) {
 		adv_err(state, "Failed to probe TXB");
@@ -823,6 +828,11 @@ static struct i2c_driver adv748x_driver = {
 };
 
 module_i2c_driver(adv748x_driver);
+
+module_param(txavc, uint, 0644);
+MODULE_PARM_DESC(txavc, "Virtual Channel for TXA");
+module_param(txbvc, uint, 0644);
+MODULE_PARM_DESC(txbvc, "Virtual Channel for TXB");
 
 MODULE_AUTHOR("Kieran Bingham <kieran.bingham@ideasonboard.com>");
 MODULE_DESCRIPTION("ADV748X video decoder");
