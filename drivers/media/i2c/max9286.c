@@ -552,7 +552,8 @@ static int max9286_init(struct device *dev, void *data)
 
 	max9286_dev->sd.entity.function = MEDIA_ENT_F_PROC_VIDEO_PIXEL_FORMATTER;
 
-	max9286_dev->pads[MAX9286_SRC_PAD].flags = MEDIA_PAD_FL_SOURCE;
+	max9286_dev->pads[MAX9286_SRC_PAD].flags =
+		MEDIA_PAD_FL_SOURCE | MEDIA_PAD_FL_MUXED;
 	for (i = 0; i < MAX9286_SRC_PAD; i++)
 		max9286_dev->pads[i].flags = MEDIA_PAD_FL_SINK;
 	ret = media_entity_pads_init(&max9286_dev->sd.entity, MAX9286_N_PADS,
