@@ -463,6 +463,32 @@ static const struct v4l2_subdev_ops max9286_subdev_ops = {
 
 static int max9286_setup(struct max9286_device *dev)
 {
+	/*
+	 * Link ordering values for all enabled links combinations. Orders must
+	 * be assigned sequentially from 0 to the number of enabled links
+	 * without leaving any hole for disabled links. We thus assign orders to
+	 * enabled links first, and use the remaining order values for disabled
+	 * links are all links must have a different order value;
+	 */
+	static const u8 link_order[] = {
+		(3 << 6) | (2 << 4) | (1 << 2) | (0 << 0), /* xxxx */
+		(3 << 6) | (2 << 4) | (1 << 2) | (0 << 0), /* xxx0 */
+		(3 << 6) | (2 << 4) | (0 << 2) | (1 << 0), /* xx0x */
+		(3 << 6) | (2 << 4) | (1 << 2) | (0 << 0), /* xx10 */
+		(3 << 6) | (0 << 4) | (2 << 2) | (1 << 0), /* x0xx */
+		(3 << 6) | (1 << 4) | (2 << 2) | (0 << 0), /* x1x0 */
+		(3 << 6) | (1 << 4) | (0 << 2) | (2 << 0), /* x10x */
+		(3 << 6) | (1 << 4) | (1 << 2) | (0 << 0), /* x210 */
+		(0 << 6) | (3 << 4) | (2 << 2) | (1 << 0), /* 0xxx */
+		(1 << 6) | (3 << 4) | (2 << 2) | (0 << 0), /* 1xx0 */
+		(1 << 6) | (3 << 4) | (0 << 2) | (2 << 0), /* 1x0x */
+		(2 << 6) | (3 << 4) | (1 << 2) | (0 << 0), /* 2x10 */
+		(1 << 6) | (0 << 4) | (3 << 2) | (2 << 0), /* 10xx */
+		(2 << 6) | (1 << 4) | (3 << 2) | (0 << 0), /* 21x0 */
+		(2 << 6) | (1 << 4) | (0 << 2) | (3 << 0), /* 210x */
+		(3 << 6) | (2 << 4) | (1 << 2) | (0 << 0), /* 3210 */
+	};
+
 	/* Set the I2C bus speed. */
 	max9286_write(dev, 0x34, MAX9286_I2CSLVSH_469NS_234NS |
 		      MAX9286_I2CSLVTO_1024US | MAXIM_I2C_SPEED);
@@ -497,6 +523,7 @@ static int max9286_setup(struct max9286_device *dev)
 	 * automask
 	 */
 	max9286_write(dev, 0x00, MAX9286_MSTLINKSEL_AUTO | dev->source_mask);
+	max9286_write(dev, 0x0b, link_order[dev->source_mask]);
 	max9286_write(dev, 0x69, MAX9286_AUTOCOMBACKEN | MAX9286_AUTOMASKEN |
 		      (0xf & ~dev->source_mask));
 
