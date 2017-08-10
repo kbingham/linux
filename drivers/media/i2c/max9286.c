@@ -516,24 +516,23 @@ static int max9286_setup(struct max9286_device *dev)
 
 #define FSYNC_PERIOD	(1280*800*2)
 #if 0
-	max9286_write(dev, 0x01, 0x00);
-		/* manual: FRAMESYNC set manually
-		*  via [0x06:0x08] regs
-		*/
-#endif
+	/*
+	 * Manual: the frame sync period is programmed in the FSYNC_PERIOD
+	 * registers.
+	 */
+	max9286_write(dev, 0x01, MAX9286_FSYNCMODE_INT_HIZ |
+		      MAX9286_FSYNCMETH_MANUAL);
 	max9286_write(dev, MAX9286_REG_FSYNC_PERIOD_L,
 		      (FSYNC_PERIOD >>  0) & 0xff);
 	max9286_write(dev, MAX9286_REG_FSYNC_PERIOD_M,
 		      (FSYNC_PERIOD >>  8) & 0xff);
 	max9286_write(dev, MAX9286_REG_FSYNC_PERIOD_H,
 		      (FSYNC_PERIOD >> 16) & 0xff);
-
-	if (dev->nsources == 1)
-		/* ECU (aka MCU) based FrameSync using GPI-to-GPO */
-		max9286_write(dev, 0x01, MAX9286_FSYNCMODE_ECU);
-	else
-		/* Automatic: FRAMESYNC taken from the slowest Link */
-		max9286_write(dev, 0x01, MAX9286_FSYNCMETH_AUTO);
+#else
+	/* Automatic: FRAMESYNC taken from the slowest Link */
+	max9286_write(dev, 0x01, MAX9286_FSYNCMODE_INT_HIZ |
+		      MAX9286_FSYNCMETH_AUTO);
+#endif
 
 	/* Enable HS/VS encoding, use D14/15 for HS/VS, invert VS */
 	max9286_write(dev, 0x0c, MAX9286_HVEN | MAX9286_INVVS |
