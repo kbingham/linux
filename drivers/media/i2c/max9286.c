@@ -393,6 +393,26 @@ static int max9286_get_fmt(struct v4l2_subdev *sd,
 	return 0;
 }
 
+static int max9286_get_frame_desc(struct v4l2_subdev *sd, unsigned int pad,
+			   struct v4l2_mbus_frame_desc *fd)
+{
+	struct max9286_device *dev = sd_to_max9286(sd);
+	unsigned int i;
+
+	for (i = 0; i < dev->nsources; i++) {
+		fd->entry[i].flags = V4L2_MBUS_FRAME_DESC_FL_CSI2;
+		fd->entry[i].pixelcode = MEDIA_BUS_FMT_UYVY8_2X8;
+		fd->entry[i].csi2.channel = i;
+		fd->entry[i].csi2.datatype = 0x1e;
+		fd->entry[i].csi2.pad = i;
+	}
+
+	fd->num_entries = dev->nsources;
+
+	return 0;
+}
+
+
 static const struct v4l2_subdev_video_ops max9286_video_ops = {
 	.s_stream	= max9286_s_stream,
 	.g_mbus_config	= max9286_g_mbus_config,
@@ -402,6 +422,7 @@ static const struct v4l2_subdev_pad_ops max9286_pad_ops = {
 	.enum_mbus_code = max9286_enum_mbus_code,
 	.get_fmt	= max9286_get_fmt,
 	.set_fmt	= max9286_get_fmt,
+	.get_frame_desc = max9286_get_frame_desc,
 };
 
 static const struct v4l2_subdev_ops max9286_subdev_ops = {
