@@ -322,7 +322,8 @@ static int max9286_g_mbus_config(struct v4l2_subdev *sd,
 	return 0;
 }
 
-static int max9286_s_stream(struct v4l2_subdev *sd, int enable)
+static int max9286_s_stream(struct v4l2_subdev *sd, unsigned int pad,
+				 unsigned int stream, int enable)
 {
 	struct max9286_device *dev = sd_to_max9286(sd);
 	struct max9286_source *source;
@@ -414,7 +415,6 @@ static int max9286_get_frame_desc(struct v4l2_subdev *sd, unsigned int pad,
 
 
 static const struct v4l2_subdev_video_ops max9286_video_ops = {
-	.s_stream	= max9286_s_stream,
 	.g_mbus_config	= max9286_g_mbus_config,
 };
 
@@ -423,6 +423,7 @@ static const struct v4l2_subdev_pad_ops max9286_pad_ops = {
 	.get_fmt	= max9286_get_fmt,
 	.set_fmt	= max9286_get_fmt,
 	.get_frame_desc = max9286_get_frame_desc,
+	.s_stream	= max9286_s_stream,
 };
 
 static const struct v4l2_subdev_ops max9286_subdev_ops = {
