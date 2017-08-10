@@ -479,12 +479,12 @@ static int max9286_setup(struct max9286_device *dev)
 	/*
 	 * FIXME: once this driver will have an endpoint, retrieve
 	 * CSI lanes number from there, and set image format properly.
-	 * For now, it stays hardcoded to 1 lane only to comply with
+	 * For now, it stays hardcoded to 4 lane only to comply with
 	 * current VIN settings.
 	 */
-	/* Enable CSI-2 Lane D0 only, DBL mode, YUV422 8-bit*/
+	/* Enable CSI-2 Lane D0-D3 only, DBL mode, YUV422 8-bit*/
 	max9286_write(dev, 0x12, MAX9286_CSIDBL | MAX9286_DBL |
-		      MAX9286_DATATYPE_YUV422_8BIT);
+		      MAX9286_CSILANECNT(4) | MAX9286_DATATYPE_YUV422_8BIT);
 
 #define FSYNC_PERIOD	(1280*800*2)
 #if 0
