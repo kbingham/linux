@@ -82,6 +82,8 @@
 /* Register 0x1b */
 #define MAX9286_SWITCHIN(n)		(1 << ((n) + 4))
 #define MAX9286_ENEQ(n)			(1 << (n))
+/* Register 0x31 */
+#define MAX9286_FSYNC_LOCKED		BIT(6)
 /* Register 0x34 */
 #define MAX9286_I2CLOCACK		BIT(7)
 #define MAX9286_I2CSLVSH_1046NS_469NS	(3 << 5)
@@ -342,44 +344,52 @@ static int max9286_s_stream(struct v4l2_subdev *sd, unsigned int pad,
 {
 	struct max9286_device *dev = sd_to_max9286(sd);
 	struct max9286_source *source;
+	unsigned int i;
+	bool sync = false;
 	int ret;
 
 	if (enable) {
+		/* FIXME: all camers could/should be started here. Starting
+		 * them in sequence do howerver not seem to work as the frame
+		 * synchronization never locks when doing so. There are
+		 * hints in the documentation that the broadcase address can
+		 * be used to start all cameras at the same time but if
+		 * possible this should be avioded.
+		 */
+		source = &dev->sources[stream];
+		ret = v4l2_subdev_call(source->sd, video, s_stream, 1);
+		if (ret)
+			return ret;
+
+		/* Wait for Frame synchronization is locked */
+		for (i = 0; i < 100; i++) {
+			if (max9286_read(dev, 0x31) & MAX9286_FSYNC_LOCKED) {
+				sync = true;
+				break;
+			}
+			usleep_range(2000, 50000);
+		}
+
+		if (!sync) {
+			dev_err(&dev->client->dev,
+				"Failed to get frame synchronization\n");
+			return -EINVAL;
+		}
+
 		/*
 		 * Enable CSI output, VC set according to link number.
 		 * Bit 7 must be set (chip manual says it's 0 and reserved)
 		 */
 		max9286_write(dev, 0x15, 0x80 | MAX9286_VCTYPE |
 			      MAX9286_CSIOUTEN | MAX9286_0X15_RESV);
-
-		for_each_source(dev, source) {
-			ret = v4l2_subdev_call(source->sd, video,
-					       s_stream, 1);
-			if (ret)
-				goto err_stop_stream;
-		}
 	} else {
 		max9286_write(dev, 0x15, MAX9286_VCTYPE | MAX9286_0X15_RESV);
 
-		for_each_source(dev, source)
-			v4l2_subdev_call(source->sd, video, s_stream, 0);
+		source = &dev->sources[stream];
+		v4l2_subdev_call(source->sd, video, s_stream, 0);
 	}
 
 	return 0;
-
-err_stop_stream:
-	/*
-	 * FIXME: This isn't 'correct' as it should reverse back to undo the
-	 * streams that were started before the error condition.
-	 * However - this is only in place as s_stream does not yet support
-	 * multiple virtual channels, and thus when a full implementation of
-	 * s_stream_vc() (or similar) is created, this erroneous clean up will
-	 * be removed anyway
-	 */
-	for_each_source(dev, source)
-		v4l2_subdev_call(source->sd, video, s_stream, 0);
-
-	return ret;
 }
 
 static int max9286_enum_mbus_code(struct v4l2_subdev *sd,
