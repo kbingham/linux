@@ -146,8 +146,6 @@
 			#size-cells = <0>;
 			reg = <1>;
 
-			status = "disabled";
-
 			camera@52 {
 				compatible = "imi,rdacm20";
 				reg = <0x52 0x62>;
@@ -164,8 +162,6 @@
 			#size-cells = <0>;
 			reg = <2>;
 
-			status = "disabled";
-
 			camera@53 {
 				compatible = "imi,rdacm20";
 				reg = <0x53 0x63>;
@@ -181,8 +177,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <3>;
-
-			status = "disabled";
 
 			camera@54 {
 				compatible = "imi,rdacm20";
@@ -267,8 +261,6 @@
 			#size-cells = <0>;
 			reg = <1>;
 
-			status = "disabled";
-
 			camera@56 {
 				compatible = "imi,rdacm20";
 				reg = <0x56 0x66>;
@@ -285,8 +277,6 @@
 			#size-cells = <0>;
 			reg = <2>;
 
-			status = "disabled";
-
 			camera@57 {
 				compatible = "imi,rdacm20";
 				reg = <0x57 0x67>;
@@ -302,8 +292,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <3>;
-
-			status = "disabled";
 
 			camera@58 {
 				compatible = "imi,rdacm20";
