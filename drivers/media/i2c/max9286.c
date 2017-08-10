@@ -125,10 +125,10 @@
 #define MAXIM_I2C_SPEED			MAXIM_I2C_I2C_SPEED_100KHZ
 
 struct max9286_source {
-		struct v4l2_async_subdev asd;
-		struct v4l2_subdev *sd;
-		struct fwnode_handle *fwnode;
-		unsigned int src_pad;
+	struct v4l2_async_subdev asd;
+	struct v4l2_subdev *sd;
+	struct fwnode_handle *fwnode;
+	unsigned int src_pad;
 };
 
 #define asd_to_max9286_source(asd) container_of(asd, struct max9286_source, asd)
