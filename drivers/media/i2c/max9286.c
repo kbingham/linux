@@ -176,6 +176,21 @@ static inline struct max9286_device *sd_to_max9286(struct v4l2_subdev *sd)
 	return container_of(sd, struct max9286_device, sd);
 }
 
+static int max9286_read(struct max9286_device *dev, u8 reg)
+{
+	int ret;
+
+	dev_dbg(&dev->client->dev, "%s(0x%02x)\n", __func__, reg);
+
+	ret = i2c_smbus_read_byte_data(dev->client, reg);
+	if (ret < 0)
+		dev_dbg(&dev->client->dev,
+			"%s: register 0x%02x read failed (%d)\n",
+			__func__, reg, ret);
+
+	return ret;
+}
+
 static int max9286_write(struct max9286_device *dev, u8 reg, u8 val)
 {
 	int ret;
