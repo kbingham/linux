@@ -142,7 +142,6 @@ struct max9286_device {
 
 	struct i2c_mux_core *mux;
 	unsigned int mux_channel;
-	unsigned int mux_map[MAX9286_NUM_GMSL];
 
 	struct v4l2_ctrl_handler ctrls;
 
@@ -223,14 +222,14 @@ static int max9286_i2c_mux_select(struct i2c_mux_core *muxc, u32 chan)
 
 	max9286_write(dev, 0x0a, MAX9286_FWDCCEN(3) | MAX9286_FWDCCEN(2) |
 		      MAX9286_FWDCCEN(1) | MAX9286_FWDCCEN(0) |
-		      MAX9286_REVCCEN(dev->mux_map[chan]));
+		      MAX9286_REVCCEN(chan));
 
 	return 0;
 }
 
 static int max9286_i2c_mux_init(struct max9286_device *dev)
 {
-	unsigned int i;
+	struct max9286_source *source;
 	int ret;
 
 	if (!i2c_check_functionality(dev->client->adapter,
@@ -246,8 +245,10 @@ static int max9286_i2c_mux_init(struct max9286_device *dev)
 
 	dev->mux->priv = dev;
 
-	for (i = 0; i < dev->nsources; ++i) {
-		ret = i2c_mux_add_adapter(dev->mux, 0, i, 0);
+	for_each_source(dev, source) {
+		unsigned int index = to_index(dev, source);
+
+		ret = i2c_mux_add_adapter(dev->mux, 0, index, 0);
 		if (ret < 0)
 			goto error;
 	}
@@ -746,7 +747,6 @@ static int max9286_parse_dt(struct max9286_device *max9286)
 		source->asd.match_type = V4L2_ASYNC_MATCH_FWNODE;
 		source->asd.match.fwnode.fwnode = source->fwnode;
 
-		max9286->mux_map[max9286->nsources] = ep.port;
 		max9286->subdevs[max9286->nsources] = &source->asd;
 		max9286->source_mask |= 1 << ep.port;
 		max9286->nsources++;
