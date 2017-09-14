@@ -383,6 +383,7 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 	max9271_write(dev, 0x0f, 0xff & ~(MAX9271_GPIO1OUT | MAX9271_SETGPO));
 	mdelay(10);
 	max9271_write(dev, 0x0f, 0xff & ~MAX9271_SETGPO);
+	mdelay(10);
 #else
 	/* Perform a software reset. */
 	ret = ov10635_write(dev, OV10635_SOFTWARE_RESET, 1);
