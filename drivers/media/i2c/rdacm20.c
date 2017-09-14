@@ -312,6 +312,16 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 	/* Verify communication with the MAX9271. */
 	i2c_smbus_read_byte(dev->client);	/* ping to wake-up */
 
+	/* Change the MAX9271 I2C address. */
+	ret = max9271_write(dev, 0x00, addrs[0] << 1);
+	if (ret < 0) {
+		dev_err(&dev->client->dev,
+			"MAX9271 I2C address change failed (%d)\n", ret);
+		return ret;
+	}
+	dev->client->addr = addrs[0];
+	usleep_range(3500, 5000);
+
 	/*
 	 * Disable the serial link and enable the configuration link to allow
 	 * the control channel to operate in a low-speed mode in the absence of
@@ -364,15 +374,6 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 	max9271_write(dev, 0x07, MAX9271_DBL | MAX9271_ES | MAX9271_HVEN |
 		      MAX9271_EDC_1BIT_PARITY);
 
-	/* Change the MAX9271 I2C address. */
-	ret = max9271_write(dev, 0x00, addrs[0] << 1);
-	if (ret < 0) {
-		dev_err(&dev->client->dev,
-			"MAX9271 I2C address change failed (%d)\n", ret);
-		return ret;
-	}
-	dev->client->addr = addrs[0];
-	usleep_range(3500, 5000);
 
 	/* Reset and verify communication with the OV10635. */
 #ifdef RDACM20_SENSOR_HARD_RESET
