@@ -28,6 +28,8 @@
 
 #include "rdacm20-ov10635.h"
 
+#define RDACM20_SENSOR_HARD_RESET
+
 #define MAX9271_I2C_ADDRESS		0x40
 
 /* Register 0x04 */
