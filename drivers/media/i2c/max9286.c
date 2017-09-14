@@ -478,12 +478,14 @@ static int max9286_setup(struct max9286_device *dev)
 	max9286_write(dev, 0x3b, MAX9286_REV_TRF(1) | MAX9286_REV_AMP(70) |
 		      MAX9286_REV_AMP_X);
 
+#ifdef MAX9286_NEED_EQUALIZER
 	/*
 	 * Enable equalizer for all links to compensate for long cable
 	 * attenuation.
 	 */
 	max9286_write(dev, 0x1b, MAX9286_ENEQ(3) | MAX9286_ENEQ(2) |
 		      MAX9286_ENEQ(1) | MAX9286_ENEQ(0));
+#endif
 
 	/*
 	 * Enable GMSL links, mask unused ones and autodetect link
