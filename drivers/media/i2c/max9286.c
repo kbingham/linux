@@ -82,6 +82,8 @@
 /* Register 0x1b */
 #define MAX9286_SWITCHIN(n)		(1 << ((n) + 4))
 #define MAX9286_ENEQ(n)			(1 << (n))
+/* Register 0x27 */
+#define MAX9286_LOCKED			BIT(7)
 /* Register 0x31 */
 #define MAX9286_FSYNC_LOCKED		BIT(6)
 /* Register 0x34 */
@@ -109,6 +111,8 @@
 /* Register 0x3f */
 #define MAX9286_EN_REV_CFG		BIT(6)
 #define MAX9286_REV_FLEN(n)		((n) - 20)
+/* Register 0x49 */
+#define MAX9286_VIDEO_DETECT_MASK	0x0f
 /* Register 0x69 */
 #define MAX9286_LFLTBMONMASKED		BIT(7)
 #define MAX9286_LOCKMONMASKED		BIT(6)
@@ -485,6 +489,61 @@ static const struct v4l2_async_notifier_operations max9286_notify_ops = {
 	.unbind = max9286_notify_unbind,
 };
 
+/*
+ * max9286_check_video_links() - Make sure video links are detected and locked
+ *
+ * Performs safety checks on video link status. Make sure they are detected
+ * and all enabled links are locked.
+ *
+ * Returns 0 for success, -EIO for errors.
+ */
+static int max9286_check_video_links(struct max9286_device *dev)
+{
+	unsigned int i;
+	int ret;
+
+	/*
+	 * Make sure valid video links are detected.
+	 * The delay is not characterized in de-serializer manual, wait up
+	 * to 5 ms.
+	 */
+	for (i = 0; i < 10; i++) {
+		ret = max9286_read(dev, 0x49);
+		if (ret < 0)
+			return -EIO;
+
+		if ((ret & MAX9286_VIDEO_DETECT_MASK) == dev->source_mask)
+			break;
+
+		usleep_range(350, 500);
+	}
+
+	if (i == 10) {
+		dev_err(&dev->client->dev,
+			"Unable to detect video links: 0x%2x\n", ret);
+		return -EIO;
+	}
+
+	/* Make sure all enabled links are locked (4ms max).*/
+	for (i = 0; i < 10; i++) {
+		ret = max9286_read(dev, 0x27);
+		if (ret < 0)
+			return -EIO;
+
+		if (ret & MAX9286_LOCKED)
+			break;
+
+		usleep_range(350, 450);
+	}
+
+	if (i == 10) {
+		dev_err(&dev->client->dev, "Not all enabled links locked\n");
+		return -EIO;
+	}
+
+	return 0;
+}
+
 static int max9286_s_stream(struct v4l2_subdev *sd, int enable)
 {
 	struct max9286_device *dev = sd_to_max9286(sd);
@@ -503,6 +562,10 @@ static int max9286_s_stream(struct v4l2_subdev *sd, int enable)
 			if (ret)
 				return ret;
 		}
+
+		ret = max9286_check_video_links(dev);
+		if (ret)
+			return ret;
 
 		/* Wait until frame synchronization is locked */
 		for (i = 0; i < 100; i++) {
