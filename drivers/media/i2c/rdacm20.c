@@ -84,6 +84,8 @@
 #define MAX9271_GPIO2OUT		BIT(2)
 #define MAX9271_GPIO1OUT		BIT(1)
 #define MAX9271_SETGPO			BIT(0)
+/* Register 0x15 */
+#define MAX9271_PCLKDET			BIT(0)
 
 #define MAXIM_I2C_I2C_SPEED_400KHZ	MAX9271_I2CMSTBT_339KBPS
 #define MAXIM_I2C_I2C_SPEED_100KHZ	MAX9271_I2CMSTBT_105KBPS
@@ -214,11 +216,43 @@ static int ov10635_set_regs(struct rdacm20_device *dev,
 	return 0;
 }
 
+/*
+ * rdacm20_pclk_detect() - Detect valid pixel clock from image sensor
+ *
+ * Wait up to 10ms for a valid pixel clock.
+ *
+ * Returns 0 for success, < 0 for pixel clock not properly detected
+ */
+static int rdacm20_pclk_detect(struct rdacm20_device *dev)
+{
+	unsigned int i;
+	int ret;
+
+	for (i = 0; i < 100; i++) {
+		ret = max9271_read(dev, 0x15);
+		if (ret < 0)
+			return ret;
+
+		if (ret & MAX9271_PCLKDET)
+			return 0;
+
+		usleep_range(50, 100);
+	}
+
+	dev_err(&dev->client->dev, "Unable to detect valid pixel clock\n");
+	return -EIO;
+}
+
 static int rdacm20_s_stream(struct v4l2_subdev *sd, int enable)
 {
 	struct rdacm20_device *dev = sd_to_rdacm20(sd);
+	int ret;
 
 	if (enable) {
+		ret = rdacm20_pclk_detect(dev);
+		if (ret)
+			return ret;
+
 		/* Enable the serial link. */
 		max9271_write(dev, 0x04, MAX9271_SEREN | MAX9271_REVCCEN |
 			      MAX9271_FWDCCEN);
