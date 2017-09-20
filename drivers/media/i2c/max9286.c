@@ -567,13 +567,20 @@ static int max9286_s_stream(struct v4l2_subdev *sd, int enable)
 		if (ret)
 			return ret;
 
-		/* Wait until frame synchronization is locked */
-		for (i = 0; i < 100; i++) {
+		/*
+		 * Wait until frame synchronization is locked.
+		 *
+		 * Manual says frame sync locking should take ~6 VTS.
+		 * From pratical experience at least 8 are required. Give
+		 * 12 complete frames time (~33ms at 30 fps) to achieve frame
+		 * locking before returning error.
+		 */
+		for (i = 0; i < 36; i++) {
 			if (max9286_read(dev, 0x31) & MAX9286_FSYNC_LOCKED) {
 				sync = true;
 				break;
 			}
-			usleep_range(2000, 50000);
+			usleep_range(9000, 11000);
 		}
 
 		if (!sync) {
