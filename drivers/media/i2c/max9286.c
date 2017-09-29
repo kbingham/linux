@@ -225,6 +225,12 @@ static int max9286_i2c_mux_select(struct i2c_mux_core *muxc, u32 chan)
 		      MAX9286_FWDCCEN(1) | MAX9286_FWDCCEN(0) |
 		      MAX9286_REVCCEN(chan));
 
+	/*
+	 * We must sleep after any change to the forward or reverse channel
+	 * configuration
+	 */
+	usleep_range(3000, 5000);
+
 	return 0;
 }
 
