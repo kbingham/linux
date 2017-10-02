@@ -212,6 +212,20 @@ static int max9286_write(struct max9286_device *dev, u8 reg, u8 val)
  * I2C Multiplexer
  */
 
+static int max9286_i2c_mux_close(struct max9286_device *dev)
+{
+	/*
+	 * Ensure that both the forward and reverse channel are disabled on the
+	 * mux, and that the channel ID is invalidated to ensure we reconfigure
+	 * on the next select call.
+	 */
+	dev->mux_channel = -1;
+	max9286_write(dev, 0x0a, 0x00);
+	usleep_range(3000, 5000);
+
+	return 0;
+}
+
 static int max9286_i2c_mux_select(struct i2c_mux_core *muxc, u32 chan)
 {
 	struct max9286_device *dev = i2c_mux_priv(muxc);
@@ -221,9 +235,7 @@ static int max9286_i2c_mux_select(struct i2c_mux_core *muxc, u32 chan)
 
 	dev->mux_channel = chan;
 
-	max9286_write(dev, 0x0a, MAX9286_FWDCCEN(3) | MAX9286_FWDCCEN(2) |
-		      MAX9286_FWDCCEN(1) | MAX9286_FWDCCEN(0) |
-		      MAX9286_REVCCEN(chan));
+	max9286_write(dev, 0x0a, MAX9286_FWDCCEN(chan) | MAX9286_REVCCEN(chan));
 
 	/*
 	 * We must sleep after any change to the forward or reverse channel
@@ -660,10 +672,14 @@ static int max9286_init(struct device *dev, void *data)
 		goto err_subdev_unregister;
 	}
 
+	/* Leave the mux channels disabled until they are selected */
+	max9286_i2c_mux_close(max9286_dev);
+
 	return 0;
 
 err_subdev_unregister:
 	v4l2_async_unregister_subdev(&max9286_dev->sd);
+	max9286_i2c_mux_close(max9286_dev);
 err_regulator:
 	regulator_disable(max9286_dev->regulator);
 	max9286_dev->poc_enabled = false;
@@ -843,8 +859,8 @@ static int max9286_probe(struct i2c_client *client,
 	 * if all other MAX9286 on the parent bus have been probed, proceed
 	 * to initialize them all, including the current one.
 	 */
-	dev->mux_channel = -1;
-	max9286_write(dev, 0x0a, 0x00);
+	max9286_i2c_mux_close(dev);
+
 	ret = device_for_each_child(client->dev.parent, &client->dev,
 				    max9286_is_bound);
 	if (ret)
@@ -857,13 +873,18 @@ static int max9286_probe(struct i2c_client *client,
 	if (ret < 0)
 		goto err_regulator;
 
+	/* Leave the mux channels disabled until they are selected */
+	max9286_i2c_mux_close(dev);
+
 	return 0;
 
 err_regulator:
 	regulator_put(dev->regulator);
+	max9286_i2c_mux_close(dev);
 err_free:
 	max9286_cleanup_dt(dev);
 	kfree(dev);
+
 	return ret;
 }
 
