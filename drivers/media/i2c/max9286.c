@@ -279,6 +279,18 @@ error:
 	return ret;
 }
 
+static void max9286_configure_i2c(struct max9286_device *dev, bool localack)
+{
+	u8 config = MAX9286_I2CSLVSH_469NS_234NS | MAX9286_I2CSLVTO_1024US |
+		    MAXIM_I2C_SPEED;
+
+	if (localack)
+		config |= MAX9286_I2CLOCACK;
+
+	max9286_write(dev, 0x34, config);
+	usleep_range(3000, 5000);
+}
+
 /* -----------------------------------------------------------------------------
  * V4L2 Subdev
  */
@@ -512,9 +524,13 @@ static int max9286_setup(struct max9286_device *dev)
 		(3 << 6) | (2 << 4) | (1 << 2) | (0 << 0), /* 3210 */
 	};
 
-	/* Set the I2C bus speed. */
-	max9286_write(dev, 0x34, MAX9286_I2CSLVSH_469NS_234NS |
-		      MAX9286_I2CSLVTO_1024US | MAXIM_I2C_SPEED);
+	/*
+	 * Set the I2C bus speed.
+	 *
+	 * Enable I2C Local Acknowledge during the probe sequences of the camera
+	 * only. This should be disabled after the mux is initialised.
+	 */
+	max9286_configure_i2c(dev, true);
 
 	/*
 	 * Reverse channel setup
@@ -671,6 +687,12 @@ static int max9286_init(struct device *dev, void *data)
 		dev_err(dev, "Unable to initialize I2C multiplexer\n");
 		goto err_subdev_unregister;
 	}
+
+	/*
+	 * Re-configure I2C with local acknowledge disabled after cameras
+	 * have probed
+	 */
+	max9286_configure_i2c(max9286_dev, false);
 
 	/* Leave the mux channels disabled until they are selected */
 	max9286_i2c_mux_close(max9286_dev);
@@ -861,6 +883,12 @@ static int max9286_probe(struct i2c_client *client,
 	 */
 	max9286_i2c_mux_close(dev);
 
+	/*
+	 * Disable the I2C Auto-Acknowledge by configuring with the default
+	 * I2C parameters (minus auto-ack)
+	 */
+	max9286_configure_i2c(dev, false);
+
 	ret = device_for_each_child(client->dev.parent, &client->dev,
 				    max9286_is_bound);
 	if (ret)
@@ -881,6 +909,7 @@ static int max9286_probe(struct i2c_client *client,
 err_regulator:
 	regulator_put(dev->regulator);
 	max9286_i2c_mux_close(dev);
+	max9286_configure_i2c(dev, false);
 err_free:
 	max9286_cleanup_dt(dev);
 	kfree(dev);
