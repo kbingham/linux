@@ -35,7 +35,7 @@
 };
 
 &csi40 {
-	status = "okay";
+	status = "disabled";
 
 	ports {
 		#address-cells = <1>;
@@ -77,6 +77,8 @@
 		compatible = "maxim,max9286";
 		reg = <0x4c>;
 		poc-supply = <&poc_12v>;
+
+		status = "disabled";
 
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -128,6 +130,8 @@
 			#size-cells = <0>;
 			reg = <0>;
 
+			status = "disabled";
+
 			camera@51 {
 				compatible = "imi,rdacm20";
 				reg = <0x51 0x61>;
@@ -146,6 +150,8 @@
 			#size-cells = <0>;
 			reg = <1>;
 
+			status = "disabled";
+
 			camera@52 {
 				compatible = "imi,rdacm20";
 				reg = <0x52 0x62>;
@@ -162,6 +168,8 @@
 			#size-cells = <0>;
 			reg = <2>;
 
+			status = "disabled";
+
 			camera@53 {
 				compatible = "imi,rdacm20";
 				reg = <0x53 0x63>;
@@ -177,6 +185,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <3>;
+
+			status = "disabled";
 
 			camera@54 {
 				compatible = "imi,rdacm20";
