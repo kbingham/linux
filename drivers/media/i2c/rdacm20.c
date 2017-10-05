@@ -376,6 +376,8 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 	max9271_write(dev, 0x07, MAX9271_DBL | MAX9271_ES | MAX9271_HVEN |
 		      MAX9271_EDC_1BIT_PARITY);
 
+	usleep_range(2000, 5000);
+
 
 	/* Reset and verify communication with the OV10635. */
 #ifdef RDACM20_SENSOR_HARD_RESET
