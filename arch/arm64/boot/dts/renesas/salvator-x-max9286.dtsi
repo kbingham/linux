@@ -293,9 +293,10 @@
 			#size-cells = <0>;
 			reg = <3>;
 
-			camera@58 {
+			camera@59 {
 				compatible = "imi,rdacm20";
-				reg = <0x58 0x68>;
+				/* The Salvator-X has a PCIe Clock gen @ 0x68 */
+				reg = <0x59 0x69>;
 				port {
 					rdacm20_out7: endpoint {
 						remote-endpoint = <&max9286_in7>;
