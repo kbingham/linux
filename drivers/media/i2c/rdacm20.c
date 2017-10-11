@@ -402,17 +402,20 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 	/* Verify communication with the MAX9271. */
 	i2c_smbus_read_byte(dev->client);	/* ping to wake-up */
 
-	ret = max9271_configure_address(dev, addrs[0]);
-	if (ret)
-		return ret;
-
+	/*
+	 *  Ensure that we have a good link configuration before attempting to
+	 *  identify the device.
+	 */
+	max9271_configure_i2c(dev);
 	max9271_configure_gmsl_link(dev);
 
 	ret = max9271_verify_id(dev);
 	if (ret < 0)
 		return ret;
 
-	max9271_configure_i2c(dev);
+	ret = max9271_configure_address(dev, addrs[0]);
+	if (ret < 0)
+		return ret;
 
 	/* Reset and verify communication with the OV10635. */
 #ifdef RDACM20_SENSOR_HARD_RESET
