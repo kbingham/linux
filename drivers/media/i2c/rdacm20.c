@@ -287,6 +287,94 @@ static struct v4l2_subdev_ops rdacm20_subdev_ops = {
 	.pad		= &rdacm20_subdev_pad_ops,
 };
 
+static int max9271_configure_i2c(struct rdacm20_device *dev)
+{
+	/*
+	 * Configure the I2C bus:
+	 *
+	 * - Enable high thresholds on the reverse channel
+	 * - Disable artificial ACK and set I2C speed
+	 */
+	max9271_write(dev, 0x08, MAX9271_REV_HIVTH);
+	usleep_range(2000, 5000);
+	max9271_write(dev, 0x0d, MAX9271_I2CSLVSH_469NS_234NS |
+		      MAX9271_I2CSLVTO_1024US | MAXIM_I2C_SPEED);
+
+	return 0;
+}
+
+static int max9271_configure_gmsl_link(struct rdacm20_device *dev)
+{
+	/*
+	 * Disable the serial link and enable the configuration link to allow
+	 * the control channel to operate in a low-speed mode in the absence of
+	 * the serial link clock.
+	 *
+	 * The serializer temporarily disables the reverse control channel for
+	 * 350µs after starting/stopping the forward serial link, but the
+	 * deserializer synchronization time isn't clearly documented.
+	 *
+	 * According to the serializer datasheet we should wait 3ms, while
+	 * according to the deserializer datasheet we should wait 5ms. In
+	 * practice a 2ms delay seems to be enough.
+	 */
+	max9271_write(dev, 0x04, MAX9271_CLINKEN | MAX9271_REVCCEN |
+		      MAX9271_FWDCCEN);
+	usleep_range(3500, 5000);
+
+	/*
+	 * Configure the GMSL link:
+	 *
+	 * - Double input mode, high data rate, 24-bit mode
+	 * - Latch input data on PCLKIN falling edge
+	 * - Enable HS/VS encoding
+	 * - 1-bit parity error detection
+	 */
+	max9271_write(dev, 0x07, MAX9271_DBL | MAX9271_ES | MAX9271_HVEN |
+		      MAX9271_EDC_1BIT_PARITY);
+
+	usleep_range(2000, 5000);
+
+	return 0;
+}
+
+static int max9271_verify_id(struct rdacm20_device *dev)
+{
+	int ret;
+
+	ret = max9271_read(dev, 0x1e);
+	if (ret < 0) {
+		dev_err(&dev->client->dev, "MAX9271 ID read failed (%d)\n",
+			ret);
+		return ret;
+	}
+
+	if (ret != MAX9271_ID) {
+		dev_err(&dev->client->dev, "MAX9271 ID mismatch (0x%02x)\n",
+			ret);
+		return -ENXIO;
+	}
+
+	return 0;
+}
+
+static int max9271_configure_address(struct rdacm20_device *dev, u8 addr)
+{
+	int ret;
+
+	/* Change the MAX9271 I2C address. */
+	ret = max9271_write(dev, 0x00, addr << 1);
+	if (ret < 0) {
+		dev_err(&dev->client->dev,
+			"MAX9271 I2C address change failed (%d)\n", ret);
+		return ret;
+	}
+	dev->client->addr = addr;
+	usleep_range(3500, 5000);
+
+	return 0;
+}
+
 static int rdacm20_initialize(struct rdacm20_device *dev)
 {
 	u32 addrs[2];
@@ -309,70 +397,17 @@ static int rdacm20_initialize(struct rdacm20_device *dev)
 	/* Verify communication with the MAX9271. */
 	i2c_smbus_read_byte(dev->client);	/* ping to wake-up */
 
-	/* Change the MAX9271 I2C address. */
-	ret = max9271_write(dev, 0x00, addrs[0] << 1);
-	if (ret < 0) {
-		dev_err(&dev->client->dev,
-			"MAX9271 I2C address change failed (%d)\n", ret);
+	ret = max9271_configure_address(dev, addrs[0]);
+	if (ret)
 		return ret;
-	}
-	dev->client->addr = addrs[0];
-	usleep_range(3500, 5000);
 
-	/*
-	 * Disable the serial link and enable the configuration link to allow
-	 * the control channel to operate in a low-speed mode in the absence of
-	 * the serial link clock.
-	 *
-	 * The serializer temporarily disables the reverse control channel for
-	 * 350µs after starting/stopping the forward serial link, but the
-	 * deserializer synchronization time isn't clearly documented.
-	 *
-	 * According to the serializer datasheet we should wait 3ms, while
-	 * according to the deserializer datasheet we should wait 5ms. In
-	 * practice a 2ms delay seems to be enough.
-	 */
-	max9271_write(dev, 0x04, MAX9271_CLINKEN | MAX9271_REVCCEN |
-		      MAX9271_FWDCCEN);
-	usleep_range(3500, 5000);
+	max9271_configure_gmsl_link(dev);
 
-	ret = max9271_read(dev, 0x1e);
-	if (ret < 0) {
-		dev_err(&dev->client->dev, "MAX9271 ID read failed (%d)\n",
-			ret);
+	ret = max9271_verify_id(dev);
+	if (ret < 0)
 		return ret;
-	}
 
-	if (ret != MAX9271_ID) {
-		dev_err(&dev->client->dev, "MAX9271 ID mismatch (0x%02x)\n",
-			ret);
-		return -ENXIO;
-	}
-
-	/*
-	 * Configure the I2C bus:
-	 *
-	 * - Enable high thresholds on the reverse channel
-	 * - Disable artificial ACK and set I2C speed
-	 */
-	max9271_write(dev, 0x08, MAX9271_REV_HIVTH);
-	usleep_range(2000, 5000);
-	max9271_write(dev, 0x0d, MAX9271_I2CSLVSH_469NS_234NS |
-		      MAX9271_I2CSLVTO_1024US | MAXIM_I2C_SPEED);
-
-	/*
-	 * Configure the GMSL link:
-	 *
-	 * - Double input mode, high data rate, 24-bit mode
-	 * - Latch input data on PCLKIN falling edge
-	 * - Enable HS/VS encoding
-	 * - 1-bit parity error detection
-	 */
-	max9271_write(dev, 0x07, MAX9271_DBL | MAX9271_ES | MAX9271_HVEN |
-		      MAX9271_EDC_1BIT_PARITY);
-
-	usleep_range(2000, 5000);
-
+	max9271_configure_i2c(dev);
 
 	/* Reset and verify communication with the OV10635. */
 #ifdef RDACM20_SENSOR_HARD_RESET
