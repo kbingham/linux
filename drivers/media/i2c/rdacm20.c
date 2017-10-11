@@ -296,9 +296,11 @@ static int max9271_configure_i2c(struct rdacm20_device *dev)
 	 * - Disable artificial ACK and set I2C speed
 	 */
 	max9271_write(dev, 0x08, MAX9271_REV_HIVTH);
-	usleep_range(2000, 5000);
+	usleep_range(5000, 8000);
+
 	max9271_write(dev, 0x0d, MAX9271_I2CSLVSH_469NS_234NS |
 		      MAX9271_I2CSLVTO_1024US | MAXIM_I2C_SPEED);
+	usleep_range(5000, 8000);
 
 	return 0;
 }
@@ -309,18 +311,22 @@ static int max9271_configure_gmsl_link(struct rdacm20_device *dev)
 	 * Disable the serial link and enable the configuration link to allow
 	 * the control channel to operate in a low-speed mode in the absence of
 	 * the serial link clock.
-	 *
+	 */
+	max9271_write(dev, 0x04, MAX9271_CLINKEN | MAX9271_REVCCEN |
+		      MAX9271_FWDCCEN);
+
+	/*
 	 * The serializer temporarily disables the reverse control channel for
 	 * 350µs after starting/stopping the forward serial link, but the
 	 * deserializer synchronization time isn't clearly documented.
 	 *
 	 * According to the serializer datasheet we should wait 3ms, while
-	 * according to the deserializer datasheet we should wait 5ms. In
-	 * practice a 2ms delay seems to be enough.
+	 * according to the deserializer datasheet we should wait 5ms.
+	 *
+	 * Short delays here appear to show bit-errors in the writes following.
+	 * Therefore a conservative delay seems best here.
 	 */
-	max9271_write(dev, 0x04, MAX9271_CLINKEN | MAX9271_REVCCEN |
-		      MAX9271_FWDCCEN);
-	usleep_range(3500, 5000);
+	usleep_range(5000, 8000);
 
 	/*
 	 * Configure the GMSL link:
@@ -332,8 +338,7 @@ static int max9271_configure_gmsl_link(struct rdacm20_device *dev)
 	 */
 	max9271_write(dev, 0x07, MAX9271_DBL | MAX9271_ES | MAX9271_HVEN |
 		      MAX9271_EDC_1BIT_PARITY);
-
-	usleep_range(2000, 5000);
+	usleep_range(5000, 8000);
 
 	return 0;
 }
