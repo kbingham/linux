@@ -122,6 +122,13 @@
 						  IRQ_TYPE_LEVEL_LOW)>;
 		};
 
+		pmu_a53 {
+			compatible = "arm,cortex-a53-pmu";
+			interrupts = <GIC_SPI 84 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 85 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-affinity = <&a53_0>, <&a53_1>;
+		};
+
 		rwdt: watchdog@e6020000 {
 			compatible = "renesas,r8a77970-wdt",
 				     "renesas,rcar-gen3-wdt";
