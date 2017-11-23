@@ -1,0 +1,137 @@
+/*
+ * Device Tree Source (overlay) for the Eagle V3M FAKRA connectors
+ *
+ * Copyright (C) 2017 Ideas on Board <kieran.bingham@ideasonboard.com>
+ *
+ * This file is licensed under the terms of the GNU General Public License
+ * version 2.  This program is licensed "as is" without any warranty of any
+ * kind, whether express or implied.
+ *
+ * This overlay allows you to define cameras connected to the FAKRA connectors
+ * on the Eagle-V3M (or compatible) board.
+ */
+
+/*
+ * Enable the cameras by specifying the camera compatible on the appropriate
+ * line. Comment out the defines to disconnect the camera from the DTB.
+ *
+ * The following cameras are currently supported:
+ *    "imi,rdacm20"
+ *    "imi,rdacm21"
+ */
+
+#include <dt-bindings/gpio/gpio.h>
+
+#define EAGLE_CAMERA0 "imi,rdacm20"
+#define EAGLE_CAMERA1 "imi,rdacm20"
+#define EAGLE_CAMERA2 "imi,rdacm20"
+#define EAGLE_CAMERA3 "imi,rdacm20"
+
+/* Define the endpoint links */
+#ifdef EAGLE_CAMERA0
+&max9286_in0 {
+	remote-endpoint = <&fakra_con0>;
+};
+#endif
+
+#ifdef EAGLE_CAMERA1
+&max9286_in1 {
+	remote-endpoint = <&fakra_con1>;
+};
+#endif
+
+#ifdef EAGLE_CAMERA2
+&max9286_in2 {
+	remote-endpoint = <&fakra_con2>;
+};
+#endif
+
+#ifdef EAGLE_CAMERA3
+&max9286_in3 {
+	remote-endpoint = <&fakra_con3>;
+};
+#endif
+
+/* Cameras are 'attached' to the GMSL I2C busses */
+&gmsl {
+
+#if defined(EAGLE_CAMERA0) || defined(EAGLE_CAMERA1) || \
+    defined(EAGLE_CAMERA2) || defined(EAGLE_CAMERA3)
+	status = "okay";
+
+	/*
+	 * Enable power to the cameras with CSI0_CAMVDD_EN.
+	 * Design note Pg12, states cameras are on when signal is low.
+	 */
+	enable-gpios = <&gpio2 3 GPIO_ACTIVE_LOW>;
+#endif
+
+#ifdef EAGLE_CAMERA0
+	i2c@0 {
+		status = "okay";
+
+		camera@51 {
+			compatible = EAGLE_CAMERA0;
+			reg = <0x51 0x61>;
+
+			port {
+				fakra_con0: endpoint {
+					remote-endpoint = <&max9286_in0>;
+				};
+			};
+		};
+	};
+#endif
+
+#ifdef EAGLE_CAMERA1
+	i2c@1 {
+		status = "okay";
+
+		camera@52 {
+			compatible = EAGLE_CAMERA1;
+			reg = <0x52 0x62>;
+
+			port {
+				fakra_con1: endpoint {
+					remote-endpoint = <&max9286_in1>;
+				};
+			};
+		};
+	};
+#endif
+
+#ifdef EAGLE_CAMERA2
+	i2c@2 {
+		status = "okay";
+
+		camera@53 {
+			compatible = EAGLE_CAMERA2;
+			reg = <0x53 0x63>;
+
+			port {
+				fakra_con2: endpoint {
+					remote-endpoint = <&max9286_in2>;
+				};
+			};
+		};
+	};
+#endif
+
+#ifdef EAGLE_CAMERA3
+	i2c@3 {
+		status = "okay";
+
+		camera@54 {
+			compatible = EAGLE_CAMERA3;
+			reg = <0x54 0x64>;
+
+			port {
+				fakra_con3: endpoint {
+					remote-endpoint = <&max9286_in3>;
+				};
+			};
+		};
+	};
+#endif
+};
+ 
