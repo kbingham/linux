@@ -366,11 +366,11 @@ static int max9271_configure_gmsl_link(struct rdacm20_device *dev)
 	 * Configure the GMSL link:
 	 *
 	 * - Double input mode, high data rate, 24-bit mode
-	 * - Latch input data on PCLKIN falling edge
+	 * - Latch input data on PCLKIN rising edge
 	 * - Enable HS/VS encoding
 	 * - 1-bit parity error detection
 	 */
-	max9271_write(dev, 0x07, MAX9271_DBL | MAX9271_ES | MAX9271_HVEN |
+	max9271_write(dev, 0x07, MAX9271_DBL | MAX9271_HVEN |
 		      MAX9271_EDC_1BIT_PARITY);
 	usleep_range(5000, 8000);
 
