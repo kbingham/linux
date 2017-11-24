@@ -149,6 +149,7 @@ struct max9286_device {
 	unsigned int source_mask;
 	struct max9286_source sources[MAX9286_NUM_GMSL];
 	struct v4l2_async_subdev *subdevs[MAX9286_NUM_GMSL];
+	struct v4l2_async_notifier notifier;
 };
 
 static struct max9286_source *next_source(struct max9286_device *max9286,
@@ -268,8 +269,7 @@ static int max9286_notify_bound(struct v4l2_async_notifier *notifier,
 				struct v4l2_subdev *subdev,
 				struct v4l2_async_subdev *asd)
 {
-	struct max9286_device *dev =
-		sd_to_max9286(subnotifier_to_v4l2_subdev(notifier));
+	struct max9286_device *dev = sd_to_max9286(notifier->sd);
 
 	struct max9286_source *source = asd_to_max9286_source(asd);
 	unsigned int index = to_index(dev, source);
@@ -304,8 +304,7 @@ static void max9286_notify_unbind(struct v4l2_async_notifier *notifier,
 
 static int max9286_notify_complete(struct v4l2_async_notifier *notifier)
 {
-	struct max9286_device *dev =
-		sd_to_max9286(subnotifier_to_v4l2_subdev(notifier));
+	struct max9286_device *dev = sd_to_max9286(notifier->sd);
 	struct max9286_source *source;
 	int ret;
 
@@ -329,6 +328,12 @@ static int max9286_notify_complete(struct v4l2_async_notifier *notifier)
 
 	return 0;
 }
+
+static const struct v4l2_async_notifier_operations max9286_notify_ops = {
+	.bound = max9286_notify_bound,
+	.unbind = max9286_notify_unbind,
+	.complete = max9286_notify_complete,
+};
 
 static int max9286_g_mbus_config(struct v4l2_subdev *sd,
 				 struct v4l2_mbus_config *cfg)
@@ -723,6 +728,13 @@ static void max9286_cleanup_dt(struct max9286_device *max9286)
 {
 	struct max9286_source *source;
 
+	/*
+	 * Not strictly part of the DT, but the notifier is registered during
+	 * max9286_parse_dt(), and the notifier holds references to the fwnodes
+	 * thus the cleanup is here to mirror the registration.
+	 */
+	v4l2_async_notifier_unregister(&max9286->notifier);
+
 	/* Release our FWNode references */
 	for_each_source(max9286, source) {
 		fwnode_handle_put(source->fwnode);
@@ -778,12 +790,12 @@ static int max9286_parse_dt(struct max9286_device *max9286)
 		max9286->nsources++;
 	}
 
+	max9286->notifier.ops = &max9286_notify_ops;
+	max9286->notifier.subdevs = max9286->subdevs;
+	max9286->notifier.num_subdevs = max9286->nsources;
+
 	return v4l2_async_subdev_notifier_register(&max9286->sd,
-						   max9286->nsources,
-						   max9286->subdevs,
-						   max9286_notify_bound,
-						   max9286_notify_complete,
-						   max9286_notify_unbind);
+						   &max9286->notifier);
 }
 
 static int max9286_probe(struct i2c_client *client,
