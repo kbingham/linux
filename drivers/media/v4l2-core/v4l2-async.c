@@ -374,6 +374,7 @@ static int __v4l2_async_notifier_register(struct v4l2_async_notifier *notifier)
 	struct device *dev =
 		notifier->v4l2_dev ? notifier->v4l2_dev->dev : NULL;
 	struct v4l2_async_subdev *asd;
+	struct v4l2_async_notifier *n;
 	int ret;
 	int i;
 
@@ -384,6 +385,19 @@ static int __v4l2_async_notifier_register(struct v4l2_async_notifier *notifier)
 	INIT_LIST_HEAD(&notifier->done);
 
 	mutex_lock(&list_lock);
+
+	/*
+	 * Registering the same notifier can occur if a driver incorrectly
+	 * handles a -EPROBE_DEFER for example, and will break in a
+	 * confusing fashion with linked-list corruption.
+	 */
+	list_for_each_entry(n, &notifier_list, list) {
+		if (n == notifier) {
+			dev_err(dev, "Notifier has already been registered\n");
+			ret = -EEXIST;
+			goto err_unlock;
+		}
+	}
 
 	for (i = 0; i < notifier->num_subdevs; i++) {
 		asd = notifier->subdevs[i];
