@@ -826,6 +826,17 @@ static int max9286_init(struct device *dev, void *data)
 		goto err_regulator;
 	}
 
+	/* This should expose the GPIO to provide a gpio-hog */
+
+	/* Enable camera power, by pulling D0 low (and D1 here) */
+	max9286_write(max9286_dev, 0x0f, 0x08);
+
+	/*
+	 * We must sleep at least 7 seconds to let the cameras power and
+	 * complete their bootstrapping process.
+	 */
+	usleep_range(7000000, 8000000);
+
 	v4l2_i2c_subdev_init(&max9286_dev->sd, client, &max9286_subdev_ops);
 	max9286_dev->sd.internal_ops = &max9286_subdev_internal_ops;
 	max9286_dev->sd.flags = V4L2_SUBDEV_FL_HAS_DEVNODE;
