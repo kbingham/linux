@@ -258,10 +258,32 @@ static int adv748x_csi2_get_frame_desc(struct v4l2_subdev *sd, unsigned int pad,
 	return 0;
 }
 
+static int adv748x_csi2_get_routing(struct v4l2_subdev *subdev,
+				    struct v4l2_subdev_routing *routing)
+{
+	struct v4l2_subdev_route *r = routing->routes;
+
+	if (routing->num_routes < 1) {
+		routing->num_routes = 1;
+		return -ENOSPC;
+	}
+
+	routing->num_routes = 1;
+
+	r->sink_pad = ADV748X_CSI2_SINK;
+	r->sink_stream = 0;
+	r->source_pad = ADV748X_CSI2_SOURCE;
+	r->source_stream = 0;
+	r->flags = V4L2_SUBDEV_ROUTE_FL_ACTIVE | V4L2_SUBDEV_ROUTE_FL_IMMUTABLE;
+
+	return 0;
+}
+
 static const struct v4l2_subdev_pad_ops adv748x_csi2_pad_ops = {
 	.get_fmt = adv748x_csi2_get_format,
 	.set_fmt = adv748x_csi2_set_format,
 	.get_frame_desc = adv748x_csi2_get_frame_desc,
+	.get_routing = adv748x_csi2_get_routing,
 };
 
 /* -----------------------------------------------------------------------------
