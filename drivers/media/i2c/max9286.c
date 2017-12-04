@@ -895,6 +895,14 @@ static int max9286_parse_dt(struct max9286_device *max9286)
 		source = &max9286->sources[ep.port];
 		source->fwnode = fwnode_graph_get_remote_endpoint(
 						of_fwnode_handle(ep_np));
+		if (!source->fwnode) {
+			dev_err(dev,
+				"Endpoint %pOF has no remote endpoint connection\n",
+				ep.local_node);
+
+			continue;
+		}
+
 		source->asd.match_type = V4L2_ASYNC_MATCH_FWNODE;
 		source->asd.match.fwnode = source->fwnode;
 
