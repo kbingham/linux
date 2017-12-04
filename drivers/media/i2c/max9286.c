@@ -865,8 +865,8 @@ static int max9286_parse_dt(struct max9286_device *max9286)
 		struct of_endpoint ep;
 
 		of_graph_parse_endpoint(ep_np, &ep);
-		dev_dbg(dev, "Endpoint %s on port %d",
-			of_node_full_name(ep.local_node), ep.port);
+		dev_dbg(dev, "Endpoint %pOF on port %d",
+			ep.local_node, ep.port);
 
 		/* Skip the source port */
 		if (ep.port == MAX9286_NUM_GMSL)
