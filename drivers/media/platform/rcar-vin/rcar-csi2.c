@@ -1051,6 +1051,7 @@ static int rcar_csi2_probe(struct platform_device *pdev)
 
 	pm_runtime_enable(&pdev->dev);
 
+	priv->subdev.fwnode = dev_fwnode(&pdev->dev);
 	ret = v4l2_async_register_subdev(&priv->subdev);
 	if (ret < 0)
 		goto error;
