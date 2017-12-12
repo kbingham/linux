@@ -568,7 +568,7 @@ int v4l2_async_register_subdev(struct v4l2_subdev *sd)
 		sd->fwnode = fwnode_graph_get_next_endpoint(
 			dev_fwnode(sd->dev), NULL);
 		if (!sd->fwnode)
-			sd->fwnode = dev_fwnode(sd->dev);
+			return -ENOENT;
 	}
 
 	mutex_lock(&list_lock);
