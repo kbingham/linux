@@ -1271,6 +1271,24 @@ static int acpi_fwnode_graph_parse_endpoint(const struct fwnode_handle *fwnode,
 	return 0;
 }
 
+static struct fwnode_handle *acpi_fwnode_graph_get_endpoint_by_id(
+		const struct fwnode_handle *fwnode,
+		unsigned int port_id, unsigned int ep_id)
+{
+	struct fwnode_endpoint fw_ep;
+	struct fwnode_handle *ep;
+
+	fwnode_graph_for_each_endpoint(fwnode, ep) {
+		acpi_fwnode_graph_parse_endpoint(ep, &fw_ep);
+
+		if ((port_id == -1 || fw_ep.port == port_id) &&
+		    (ep_id == -1 || fw_ep.id == ep_id))
+			return ep;
+	}
+
+	return NULL;
+}
+
 #define DECLARE_ACPI_FWNODE_OPS(ops) \
 	const struct fwnode_operations ops = {				\
 		.device_is_available = acpi_fwnode_device_is_available, \
@@ -1289,6 +1307,8 @@ static int acpi_fwnode_graph_parse_endpoint(const struct fwnode_handle *fwnode,
 			acpi_fwnode_graph_get_remote_endpoint,		\
 		.graph_get_port_parent = acpi_fwnode_get_parent,	\
 		.graph_parse_endpoint = acpi_fwnode_graph_parse_endpoint, \
+		.graph_get_endpoint_by_id =				\
+			acpi_fwnode_graph_get_endpoint_by_id,		\
 	};								\
 	EXPORT_SYMBOL_GPL(ops)
 
