@@ -1340,3 +1340,22 @@ int fwnode_graph_parse_endpoint(const struct fwnode_handle *fwnode,
 	return fwnode_call_int_op(fwnode, graph_parse_endpoint, endpoint);
 }
 EXPORT_SYMBOL(fwnode_graph_parse_endpoint);
+
+/**
+ * fwnode_graph_get_endpoint_by_id - return endpoint with id 'ep_ip' in port
+ *				     with id 'port_id'
+ * @fwnode: pointer to the parent fwnode_handle
+ * @port_id: id of the port where endpoint is declared, ignored if -1
+ * @ep_id: id of the endpoint, ignored if -1
+ *
+ * Return: a pointer to the fwnode_handle of endpoint with id @ep_id defined in
+ *	   port with id @port_id of @fwnode.
+ */
+struct fwnode_handle *fwnode_graph_get_endpoint_by_id(
+		const struct fwnode_handle *fwnode,
+		unsigned int port_id, unsigned int ep_id)
+{
+	return fwnode_call_ptr_op(fwnode, graph_get_endpoint_by_id,
+				  port_id, ep_id);
+}
+EXPORT_SYMBOL(fwnode_graph_get_endpoint_by_id);
