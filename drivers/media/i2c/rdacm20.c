@@ -16,6 +16,7 @@
  */
 
 #include <linux/delay.h>
+#include <linux/fwnode.h>
 #include <linux/init.h>
 #include <linux/i2c.h>
 #include <linux/module.h>
@@ -436,6 +437,7 @@ static int rdacm20_probe(struct i2c_client *client,
 			 const struct i2c_device_id *did)
 {
 	struct rdacm20_device *dev;
+	struct fwnode_handle *ep;
 	int ret;
 
 	dev = kzalloc(sizeof(*dev), GFP_KERNEL);
@@ -479,12 +481,24 @@ static int rdacm20_probe(struct i2c_client *client,
 	if (ret < 0)
 		goto error;
 
+	ep = fwnode_graph_get_next_endpoint(dev_fwnode(&client->dev), NULL);
+	if (!ep) {
+		dev_err(&client->dev,
+			"Unable to get endpoint in node %pOF: %d\n",
+			client->dev.of_node, PTR_ERR(ep));
+		ret = -ENOENT;
+		goto error;
+	}
+	dev->sd.fwnode = ep;
+
 	ret = v4l2_async_register_subdev(&dev->sd);
 	if (ret)
-		goto error;
+		goto error_put_node;
 
 	return 0;
 
+error_put_node:
+	fwnode_handle_put(ep);
 error:
 	media_entity_cleanup(&dev->sd.entity);
 	if (dev->sensor)
@@ -500,6 +514,7 @@ static int rdacm20_remove(struct i2c_client *client)
 {
 	struct rdacm20_device *dev = i2c_to_rdacm20(client);
 
+	fwnode_handle_put(dev->sd.fwnode);
 	v4l2_async_unregister_subdev(&dev->sd);
 	media_entity_cleanup(&dev->sd.entity);
 	i2c_unregister_device(dev->sensor);
