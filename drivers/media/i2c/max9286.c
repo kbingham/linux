@@ -14,6 +14,7 @@
 
 #include <linux/delay.h>
 #include <linux/device.h>
+#include <linux/fwnode.h>
 #include <linux/i2c.h>
 #include <linux/i2c-mux.h>
 #include <linux/module.h>
@@ -623,6 +624,7 @@ static int max9286_init(struct device *dev, void *data)
 {
 	struct max9286_device *max9286_dev;
 	struct i2c_client *client;
+	struct fwnode_handle *ep;
 	unsigned int i;
 	int ret;
 
@@ -676,10 +678,18 @@ static int max9286_init(struct device *dev, void *data)
 	if (ret)
 		goto err_regulator;
 
+	ep = fwnode_graph_get_endpoint_by_id(dev_fwnode(dev), 4, -1);
+	if (!ep) {
+		dev_err(dev, "Unable to retrieve endpoint on \"port@4\"\n");
+		ret = -ENOENT;
+		goto err_regulator;
+	}
+	max9286_dev->sd.fwnode = ep;
+
 	ret = v4l2_async_register_subdev(&max9286_dev->sd);
 	if (ret < 0) {
 		dev_err(dev, "Unable to register subdevice\n");
-		goto err_regulator;
+		goto err_put_node;
 	}
 
 	ret = max9286_i2c_mux_init(max9286_dev);
@@ -702,6 +712,8 @@ static int max9286_init(struct device *dev, void *data)
 err_subdev_unregister:
 	v4l2_async_unregister_subdev(&max9286_dev->sd);
 	max9286_i2c_mux_close(max9286_dev);
+err_put_node:
+	fwnode_handle_put(ep);
 err_regulator:
 	regulator_disable(max9286_dev->regulator);
 	max9286_dev->poc_enabled = false;
@@ -923,6 +935,7 @@ static int max9286_remove(struct i2c_client *client)
 
 	i2c_mux_del_adapters(dev->mux);
 
+	fwnode_handle_put(dev->sd.fwnode);
 	v4l2_async_unregister_subdev(&dev->sd);
 
 	if (dev->poc_enabled)
