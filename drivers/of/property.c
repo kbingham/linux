@@ -981,6 +981,15 @@ static int of_fwnode_graph_parse_endpoint(const struct fwnode_handle *fwnode,
 	return 0;
 }
 
+static struct fwnode_handle *of_fwnode_graph_get_endpoint_by_id(
+		const struct fwnode_handle *fwnode,
+		unsigned int port_id, unsigned int ep_id)
+{
+	return of_fwnode_handle(of_graph_get_endpoint_by_regs(
+					to_of_node(fwnode),
+					port_id, ep_id));
+}
+
 const struct fwnode_operations of_fwnode_ops = {
 	.get = of_fwnode_get,
 	.put = of_fwnode_put,
@@ -996,5 +1005,6 @@ const struct fwnode_operations of_fwnode_ops = {
 	.graph_get_remote_endpoint = of_fwnode_graph_get_remote_endpoint,
 	.graph_get_port_parent = of_fwnode_graph_get_port_parent,
 	.graph_parse_endpoint = of_fwnode_graph_parse_endpoint,
+	.graph_get_endpoint_by_id = of_fwnode_graph_get_endpoint_by_id,
 };
 EXPORT_SYMBOL_GPL(of_fwnode_ops);
