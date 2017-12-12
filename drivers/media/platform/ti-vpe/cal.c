@@ -1696,7 +1696,7 @@ static int of_cal_create_instance(struct cal_ctx *ctx, int inst)
 		goto cleanup_exit;
 	}
 
-	sensor_node = of_graph_get_remote_port_parent(ep_node);
+	sensor_node = of_graph_get_remote_endpoint(ep_node);
 	if (!sensor_node) {
 		ctx_dbg(3, ctx, "can't get remote parent\n");
 		goto cleanup_exit;

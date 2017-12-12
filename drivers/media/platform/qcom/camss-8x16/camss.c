@@ -332,7 +332,7 @@ static int camss_of_parse_ports(struct device *dev,
 			return ret;
 		}
 
-		remote = of_graph_get_remote_port_parent(node);
+		remote = of_graph_get_remote_endpoint(node);
 		of_node_put(node);
 
 		if (!remote) {
