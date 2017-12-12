@@ -66,6 +66,8 @@ struct fwnode_reference_args {
  *			       endpoint node.
  * @graph_get_port_parent: Return the parent node of a port node.
  * @graph_parse_endpoint: Parse endpoint for port and endpoint id.
+ * @graph_get_endpoint_by_id: Return endpoint at position @ep_id in port
+ *			      @port_id.
  */
 struct fwnode_operations {
 	struct fwnode_handle *(*get)(struct fwnode_handle *fwnode);
@@ -101,6 +103,9 @@ struct fwnode_operations {
 	(*graph_get_port_parent)(struct fwnode_handle *fwnode);
 	int (*graph_parse_endpoint)(const struct fwnode_handle *fwnode,
 				    struct fwnode_endpoint *endpoint);
+	struct fwnode_handle *
+	(*graph_get_endpoint_by_id)(const struct fwnode_handle *fwnode,
+				    unsigned int port_id, unsigned int ep_id);
 };
 
 #define fwnode_has_op(fwnode, op)				\
