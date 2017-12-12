@@ -1228,7 +1228,7 @@ static int rcar_drif_parse_subdevs(struct rcar_drif_sdr *sdr)
 		return 0;
 
 	notifier->subdevs[notifier->num_subdevs] = &sdr->ep.asd;
-	fwnode = fwnode_graph_get_remote_port_parent(ep);
+	fwnode = fwnode_graph_get_remote_endpoint(ep);
 	if (!fwnode) {
 		dev_warn(sdr->dev, "bad remote port parent\n");
 		fwnode_handle_put(ep);

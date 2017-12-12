@@ -360,7 +360,7 @@ static int v4l2_async_notifier_fwnode_parse_endpoint(
 
 	asd->match_type = V4L2_ASYNC_MATCH_FWNODE;
 	asd->match.fwnode =
-		fwnode_graph_get_remote_port_parent(endpoint);
+		fwnode_graph_get_remote_endpoint(endpoint);
 	if (!asd->match.fwnode) {
 		dev_warn(dev, "bad remote port parent\n");
 		ret = -EINVAL;

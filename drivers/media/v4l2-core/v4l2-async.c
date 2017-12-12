@@ -564,8 +564,12 @@ int v4l2_async_register_subdev(struct v4l2_subdev *sd)
 	 * (struct v4l2_subdev.dev), and async sub-device does not
 	 * exist independently of the device at any point of time.
 	 */
-	if (!sd->fwnode && sd->dev)
-		sd->fwnode = dev_fwnode(sd->dev);
+	if (!sd->fwnode && sd->dev) {
+		sd->fwnode = fwnode_graph_get_next_endpoint(
+			dev_fwnode(sd->dev), NULL);
+		if (!sd->fwnode)
+			sd->fwnode = dev_fwnode(sd->dev);
+	}
 
 	mutex_lock(&list_lock);
 

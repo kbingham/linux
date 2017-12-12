@@ -1119,7 +1119,7 @@ static int isi_graph_parse(struct atmel_isi *isi, struct device_node *node)
 		if (!ep)
 			return -EINVAL;
 
-		remote = of_graph_get_remote_port_parent(ep);
+		remote = of_graph_get_remote_endpoint(ep);
 		if (!remote) {
 			of_node_put(ep);
 			return -EINVAL;

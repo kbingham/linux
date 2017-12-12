@@ -411,7 +411,7 @@ static int fimc_md_parse_port_node(struct fimc_md *fmd,
 
 	pd->mux_id = (endpoint.base.port - 1) & 0x1;
 
-	rem = of_graph_get_remote_port_parent(ep);
+	rem = of_graph_get_remote_endpoint(ep);
 	of_node_put(ep);
 	if (rem == NULL) {
 		v4l2_info(&fmd->v4l2_dev, "Remote device at %pOF not found\n",
@@ -1363,10 +1363,16 @@ static int subdev_notifier_bound(struct v4l2_async_notifier *notifier,
 	int i;
 
 	/* Find platform data for this sensor subdev */
-	for (i = 0; i < ARRAY_SIZE(fmd->sensor); i++)
-		if (fmd->sensor[i].asd.match.fwnode ==
-		    of_fwnode_handle(subdev->dev->of_node))
+	for (i = 0; i < ARRAY_SIZE(fmd->sensor); i++) {
+		struct fwnode_handle *fwnode =
+			fwnode_graph_get_port_parent(
+				of_fwnode_handle(subdev->dev->of_node));
+
+		if (fmd->sensor[i].asd.match.fwnode.fwnode == fwnode)
 			si = &fmd->sensor[i];
+
+		fwnode_handle_put(fwnode);
+	}
 
 	if (si == NULL)
 		return -EINVAL;
