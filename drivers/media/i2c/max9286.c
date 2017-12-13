@@ -465,14 +465,15 @@ static int max9286_get_frame_desc(struct v4l2_subdev *sd, unsigned int pad,
 	struct max9286_device *dev = sd_to_max9286(sd);
 	unsigned int i;
 
+	memset(fd, 0, sizeof(*fd));
+
 	for (i = 0; i < dev->nsources; i++) {
-		fd->entry[i].flags = V4L2_MBUS_FRAME_DESC_FL_CSI2;
-		fd->entry[i].pixelcode = MEDIA_BUS_FMT_UYVY8_2X8;
-		fd->entry[i].csi2.channel = i;
-		fd->entry[i].csi2.datatype = 0x1e;
-		fd->entry[i].csi2.pad = i;
+		fd->entry[i].stream = i;
+		fd->entry[i].bus.csi2.channel = i;
+		fd->entry[i].bus.csi2.data_type = 0x1e;
 	}
 
+	fd->type = V4L2_MBUS_FRAME_DESC_TYPE_CSI2;
 	fd->num_entries = dev->nsources;
 
 	return 0;
