@@ -447,6 +447,9 @@ static int max9286_get_fmt(struct v4l2_subdev *sd,
 {
 	struct v4l2_mbus_framefmt *mf = &format->format;
 
+	if (format->pad >= MAX9286_SRC_PAD)
+		return -EINVAL;
+
 	mf->width	= 1280;
 	mf->height	= 800;
 	mf->code	= MEDIA_BUS_FMT_UYVY8_2X8;
