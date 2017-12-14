@@ -478,6 +478,33 @@ static int max9286_get_frame_desc(struct v4l2_subdev *sd, unsigned int pad,
 	return 0;
 }
 
+static int max9286_get_routing(struct v4l2_subdev *sd,
+				 struct v4l2_subdev_routing *routing)
+{
+	struct max9286_device *dev = sd_to_max9286(sd);
+	struct v4l2_subdev_route *r = routing->routes;
+	unsigned int i;
+
+	/* There are one possible route from each sink */
+	if (routing->num_routes < dev->nsources) {
+		routing->num_routes = dev->nsources;
+		return -ENOSPC;
+	}
+
+	routing->num_routes = dev->nsources;
+
+	for (i = 0; i < dev->nsources; i++) {
+		r->sink_pad = i;
+		r->sink_stream = 0;
+		r->source_pad = MAX9286_SRC_PAD;
+		r->source_stream = i;
+		r->flags = V4L2_SUBDEV_ROUTE_FL_ACTIVE |
+			V4L2_SUBDEV_ROUTE_FL_IMMUTABLE;
+		r++;
+	}
+
+	return 0;
+}
 
 static const struct v4l2_subdev_video_ops max9286_video_ops = {
 	.g_mbus_config	= max9286_g_mbus_config,
@@ -489,6 +516,7 @@ static const struct v4l2_subdev_pad_ops max9286_pad_ops = {
 	.set_fmt	= max9286_get_fmt,
 	.get_frame_desc = max9286_get_frame_desc,
 	.s_stream	= max9286_s_stream,
+	.get_routing	= max9286_get_routing,
 };
 
 static const struct v4l2_subdev_ops max9286_subdev_ops = {
