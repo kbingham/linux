@@ -103,7 +103,7 @@
 #define MAX9286_I2CSLVTO_256US		(1 << 0)
 #define MAX9286_I2CSLVTO_64US		(0 << 0)
 /* Register 0x3b */
-#define MAX9286_REV_TRF(n)		((n) << 5)
+#define MAX9286_REV_TRF(n)		((n) << 4)
 #define MAX9286_REV_AMP(n)		((((n) - 30) / 10) << 1) /* in mV */
 #define MAX9286_REV_AMP_X		BIT(0)
 /* Register 0x3f */
