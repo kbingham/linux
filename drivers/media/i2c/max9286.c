@@ -140,6 +140,7 @@ struct max9286_device {
 	struct media_pad pads[MAX9286_N_PADS];
 	struct regulator *regulator;
 	bool poc_enabled;
+	int streaming;
 
 	struct i2c_mux_core *mux;
 	unsigned int mux_channel;
@@ -151,6 +152,7 @@ struct max9286_device {
 	struct max9286_source sources[MAX9286_NUM_GMSL];
 	struct v4l2_async_subdev *subdevs[MAX9286_NUM_GMSL];
 	struct v4l2_async_notifier notifier;
+
 };
 
 static struct max9286_source *next_source(struct max9286_device *max9286,
@@ -215,6 +217,10 @@ static int max9286_write(struct max9286_device *dev, u8 reg, u8 val)
 
 static int max9286_i2c_mux_close(struct max9286_device *dev)
 {
+
+	/* FIXME: See note in max9286_i2c_mux_select() */
+	if (dev->streaming)
+		return 0;
 	/*
 	 * Ensure that both the forward and reverse channel are disabled on the
 	 * mux, and that the channel ID is invalidated to ensure we reconfigure
@@ -230,6 +236,23 @@ static int max9286_i2c_mux_close(struct max9286_device *dev)
 static int max9286_i2c_mux_select(struct i2c_mux_core *muxc, u32 chan)
 {
 	struct max9286_device *dev = i2c_mux_priv(muxc);
+
+	/*
+	 * FIXME: This state keeping is a hack and do the job. It should
+	 * be should be reworked. One option to consider is that once all
+	 * cameras are programmed the mux selection logic should be disabled
+	 * and all all reverse and forward channels enable all the time.
+	 *
+	 * In any case this logic with a int that have two states should be
+	 * reworked!
+	 */
+	if (dev->streaming == 1) {
+		max9286_write(dev, 0x0a, 0xff);
+		dev->streaming = 2;
+		return 0;
+	} else if (dev->streaming == 2) {
+		return 0;
+	}
 
 	if (dev->mux_channel == chan)
 		return 0;
@@ -386,6 +409,9 @@ static int max9286_s_stream(struct v4l2_subdev *sd, unsigned int pad,
 	int ret;
 
 	if (enable) {
+		/* FIXME: See note in max9286_i2c_mux_select() */
+		dev->streaming = 1;
+
 		/* Start all cameras */
 		for_each_source(dev, source) {
 			ret = v4l2_subdev_call(source->sd, video, s_stream, 1);
@@ -421,6 +447,9 @@ static int max9286_s_stream(struct v4l2_subdev *sd, unsigned int pad,
 		for_each_source(dev, source) {
 			v4l2_subdev_call(source->sd, video, s_stream, 0);
 		}
+
+		/* FIXME: See note in max9286_i2c_mux_select() */
+		dev->streaming = 0;
 	}
 
 	return 0;
