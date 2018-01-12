@@ -228,12 +228,6 @@ static int rdacm20_s_stream(struct v4l2_subdev *sd, int enable)
 			      MAX9271_FWDCCEN);
 	}
 
-	/*
-	 * Wait for the link to be established to have access to the control
-	 * channel.
-	 */
-	usleep_range(3500, 5000);
-
 	return 0;
 }
 
