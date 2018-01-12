@@ -386,17 +386,12 @@ static int max9286_s_stream(struct v4l2_subdev *sd, unsigned int pad,
 	int ret;
 
 	if (enable) {
-		/* FIXME: all camers could/should be started here. Starting
-		 * them in sequence do howerver not seem to work as the frame
-		 * synchronization never locks when doing so. There are
-		 * hints in the documentation that the broadcase address can
-		 * be used to start all cameras at the same time but if
-		 * possible this should be avioded.
-		 */
-		source = &dev->sources[stream];
-		ret = v4l2_subdev_call(source->sd, video, s_stream, 1);
-		if (ret)
-			return ret;
+		/* Start all cameras */
+		for_each_source(dev, source) {
+			ret = v4l2_subdev_call(source->sd, video, s_stream, 1);
+			if (ret)
+				return ret;
+		}
 
 		/* Wait for Frame synchronization is locked */
 		for (i = 0; i < 100; i++) {
@@ -422,8 +417,10 @@ static int max9286_s_stream(struct v4l2_subdev *sd, unsigned int pad,
 	} else {
 		max9286_write(dev, 0x15, MAX9286_VCTYPE | MAX9286_0X15_RESV);
 
-		source = &dev->sources[stream];
-		v4l2_subdev_call(source->sd, video, s_stream, 0);
+		/* Stop all cameras */
+		for_each_source(dev, source) {
+			v4l2_subdev_call(source->sd, video, s_stream, 0);
+		}
 	}
 
 	return 0;
