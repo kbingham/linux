@@ -2333,7 +2333,7 @@ static int pxa_camera_pdata_from_dt(struct device *dev,
 		pcdev->platform_flags |= PXA_CAMERA_PCLK_EN;
 
 	asd->match_type = V4L2_ASYNC_MATCH_FWNODE;
-	remote = of_graph_get_remote_endpoint(np);
+	remote = of_graph_get_remote_port(np);
 	if (remote) {
 		asd->match.fwnode = of_fwnode_handle(remote);
 		of_node_put(remote);

@@ -81,8 +81,6 @@ static int xvip_graph_build_one(struct xvip_composite_device *xdev,
 	dev_dbg(xdev->dev, "creating links for entity %s\n", local->name);
 
 	while (1) {
-		struct fwnode_handle *fwnode;
-
 		/* Get the next endpoint and parse its link. */
 		ep = of_graph_get_next_endpoint(entity->node, ep);
 		if (ep == NULL)
@@ -119,11 +117,8 @@ static int xvip_graph_build_one(struct xvip_composite_device *xdev,
 			continue;
 		}
 
-		fwnode = fwnode_graph_get_port_parent(link.remote_node);
-		fwnode_handle_put(fwnode);
-
 		/* Skip DMA engines, they will be processed separately. */
-		if (fwnode == of_fwnode_handle(xdev->dev->of_node)) {
+		if (link.remote_node == of_fwnode_handle(xdev->dev->of_node)) {
 			dev_dbg(xdev->dev, "skipping DMA port %pOF:%u\n",
 				to_of_node(link.local_node),
 				link.local_port);
@@ -364,25 +359,20 @@ static int xvip_graph_parse_one(struct xvip_composite_device *xdev,
 	dev_dbg(xdev->dev, "parsing node %pOF\n", node);
 
 	while (1) {
-		struct fwnode_handle *fwnode;
-
 		ep = of_graph_get_next_endpoint(node, ep);
 		if (ep == NULL)
 			break;
 
 		dev_dbg(xdev->dev, "handling endpoint %pOF\n", ep);
 
-		remote = of_graph_get_remote_endpoint(ep);
+		remote = of_graph_get_remote_port_parent(ep);
 		if (remote == NULL) {
 			ret = -EINVAL;
 			break;
 		}
 
-		fwnode = fwnode_graph_get_port_parent(of_fwnode_handle(remote));
-		fwnode_handle_put(fwnode);
-
 		/* Skip entities that we have already processed. */
-		if (fwnode == xdev->dev->of_node ||
+		if (remote == xdev->dev->of_node ||
 		    xvip_graph_find_entity(xdev, remote)) {
 			of_node_put(remote);
 			continue;
