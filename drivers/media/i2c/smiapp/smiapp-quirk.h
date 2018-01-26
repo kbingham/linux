@@ -43,6 +43,7 @@ struct smiapp_sensor;
  *		@return: 0 on success, -ENOIOCTLCMD if no register
  *			 access may be done by the caller (default read
  *			 value is zero), else negative error code on error
+ * @frame_desc: Obtain the frame descriptor
  */
 struct smiapp_quirk {
 	int (*limits)(struct smiapp_sensor *sensor);
@@ -53,6 +54,8 @@ struct smiapp_quirk {
 	int (*init)(struct smiapp_sensor *sensor);
 	int (*reg_access)(struct smiapp_sensor *sensor, bool write, u32 *reg,
 			  u32 *val);
+	int (*frame_desc)(struct smiapp_sensor *sensor,
+			  struct v4l2_mbus_frame_desc *desc);
 	unsigned long flags;
 };
 
@@ -72,9 +75,12 @@ void smiapp_replace_limit(struct smiapp_sensor *sensor,
 		.val = _val,		\
 	}
 
+#define smiapp_has_quirk(sensor, _quirk)	\
+	((sensor)->minfo.quirk &&		\
+	 (sensor)->minfo.quirk->_quirk)
+
 #define smiapp_call_quirk(sensor, _quirk, ...)				\
-	((sensor)->minfo.quirk &&					\
-	 (sensor)->minfo.quirk->_quirk ?				\
+	(smiapp_has_quirk(sensor, _quirk) ?				\
 	 (sensor)->minfo.quirk->_quirk(sensor, ##__VA_ARGS__) : 0)
 
 #define smiapp_needs_quirk(sensor, _quirk)		\

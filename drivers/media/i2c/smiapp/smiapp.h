@@ -41,6 +41,18 @@
 #define SMIAPP_PROFILE_1		1
 #define SMIAPP_PROFILE_2		2
 
+#define SMIAPP_MIPI_CSI2_TYPE_NULL	0x10
+#define SMIAPP_MIPI_CSI2_TYPE_BLANKING	0x11
+#define SMIAPP_MIPI_CSI2_TYPE_EMBEDDED8	0x12
+#define SMIAPP_MIPI_CSI2_TYPE_RAW6	0x28
+#define SMIAPP_MIPI_CSI2_TYPE_RAW7	0x29
+#define SMIAPP_MIPI_CSI2_TYPE_RAW8	0x2a
+#define SMIAPP_MIPI_CSI2_TYPE_RAW10	0x2b
+#define SMIAPP_MIPI_CSI2_TYPE_RAW12	0x2c
+#define SMIAPP_MIPI_CSI2_TYPE_RAW14	0x2d
+#define SMIAPP_MIPI_CSI2_TYPE_RAW16	0x2e
+#define SMIAPP_MIPI_CSI2_TYPE_USER_DEF(i) (0x30 + (i)) /* 0..7 */
+
 #define SMIAPP_NVM_PAGE_SIZE		64	/* bytes */
 
 #define SMIAPP_RESET_DELAY_CLOCKS	2400
@@ -143,12 +155,21 @@ struct smiapp_csi_data_format {
 	u8 pixel_order;
 };
 
-#define SMIAPP_SUBDEVS			3
+#define SMIAPP_SUBDEVS			5
 
 #define SMIAPP_PA_PAD_SRC		0
 #define SMIAPP_PAD_SINK			0
 #define SMIAPP_PAD_SRC			1
 #define SMIAPP_PADS			2
+#define SMIAPP_META_PAD_SRC		0
+#define SMIAPP_META_PADS		1
+#define SMIAPP_MUX_PAD_PIXEL_SINK	0
+#define SMIAPP_MUX_PAD_META_SINK	1
+#define SMIAPP_MUX_PAD_SRC		2
+#define SMIAPP_MUX_PADS			3
+
+#define SMIAPP_STREAM_PIXEL		0
+#define SMIAPP_STREAM_META		1
 
 struct smiapp_binning_subtype {
 	u8 horizontal:4;
@@ -157,7 +178,7 @@ struct smiapp_binning_subtype {
 
 struct smiapp_subdev {
 	struct v4l2_subdev sd;
-	struct media_pad pads[SMIAPP_PADS];
+	struct media_pad pads[SMIAPP_MUX_PADS];
 	struct v4l2_rect sink_fmt;
 	struct v4l2_rect crop[SMIAPP_PADS];
 	struct v4l2_rect compose; /* compose on sink */
@@ -185,6 +206,13 @@ struct smiapp_sensor {
 	struct smiapp_subdev *binner;
 	struct smiapp_subdev *scaler;
 	struct smiapp_subdev *pixel_array;
+	/*
+	 * Pixel data output sub-device before mux. This may be either
+	 * binner or scaler.
+	 */
+	struct smiapp_subdev *pixel_out;
+	struct smiapp_subdev *meta;
+	struct smiapp_subdev *mux;
 	struct smiapp_hwconfig *hwcfg;
 	struct regulator *vana;
 	struct clk *ext_clk;

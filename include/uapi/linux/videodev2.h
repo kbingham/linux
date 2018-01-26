@@ -696,6 +696,15 @@ struct v4l2_pix_format {
 #define V4L2_META_FMT_VSP1_HGT    v4l2_fourcc('V', 'S', 'P', 'T') /* R-Car VSP1 2-D Histogram */
 #define V4L2_META_FMT_UVC         v4l2_fourcc('U', 'V', 'C', 'H') /* UVC Payload Header metadata */
 
+/* Sensor metadata formats */
+#define V4L2_META_FMT_SMIAPP_EMBEDDED_8 v4l2_fourcc('S', 'M', 'M', '8') /* 8-bit SMIA++ embedded data */
+#define V4L2_META_FMT_SMIAPP_EMBEDDED_10 v4l2_fourcc('S', 'M', 'M', 'A') /* 10-bit SMIA++ embedded data */
+#define V4L2_META_FMT_SMIAPP_EMBEDDED_10P v4l2_fourcc('S', 'M', 'P', 'A') /* Packed 10-bit SMIA++ embedded data */
+#define V4L2_META_FMT_SMIAPP_EMBEDDED_12 v4l2_fourcc('S', 'M', 'M', 'C') /* 12-bit SMIA++ embedded data */
+#define V4L2_META_FMT_SMIAPP_EMBEDDED_12P v4l2_fourcc('S', 'M', 'P', 'C') /* Packed 12-bit SMIA++ embedded data */
+#define V4L2_META_FMT_SMIAPP_EMBEDDED_14 v4l2_fourcc('S', 'M', 'M', 'E') /* 14-bit SMIA++ embedded data */
+#define V4L2_META_FMT_SMIAPP_EMBEDDED_14P v4l2_fourcc('S', 'M', 'P', 'E') /* Packed 14-bit SMIA++ embedded data */
+
 /* priv field value to indicates that subsequent fields are valid. */
 #define V4L2_PIX_FMT_PRIV_MAGIC		0xfeedcafe
 
