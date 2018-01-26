@@ -910,7 +910,7 @@ static int max9286_parse_dt(struct max9286_device *max9286)
 		source->fwnode = fwnode_graph_get_remote_endpoint(
 						of_fwnode_handle(ep_np));
 		source->asd.match_type = V4L2_ASYNC_MATCH_FWNODE;
-		source->asd.match.fwnode.fwnode = source->fwnode;
+		source->asd.match.fwnode = source->fwnode;
 
 		max9286->subdevs[max9286->nsources] = &source->asd;
 		max9286->source_mask |= 1 << ep.port;
