@@ -1511,7 +1511,7 @@ static int dcmi_graph_parse(struct stm32_dcmi *dcmi, struct device_node *node)
 		if (!ep)
 			return -EINVAL;
 
-		remote = of_graph_get_remote_endpoint(ep);
+		remote = of_graph_get_remote_port_parent(ep);
 		if (!remote) {
 			of_node_put(ep);
 			return -EINVAL;

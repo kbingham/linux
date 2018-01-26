@@ -2493,7 +2493,7 @@ vpfe_get_pdata(struct platform_device *pdev)
 		if (flags & V4L2_MBUS_VSYNC_ACTIVE_HIGH)
 			sdinfo->vpfe_param.vdpol = 1;
 
-		rem = of_graph_get_remote_endpoint(endpoint);
+		rem = of_graph_get_remote_port_parent(endpoint);
 		if (!rem) {
 			dev_err(&pdev->dev, "Remote device at %pOF not found\n",
 				endpoint);
