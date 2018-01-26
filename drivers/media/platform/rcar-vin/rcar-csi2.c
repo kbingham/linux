@@ -292,24 +292,22 @@ static const struct phtw_testdin_data testdin_data_v3m_e3[] = {
 #define CSI0CLKFREQRANGE(n)		((n & 0x3f) << 16)
 
 struct rcar_csi2_format {
-	u32 code;
 	unsigned int datatype;
 	unsigned int bpp;
 };
 
 static const struct rcar_csi2_format rcar_csi2_formats[] = {
-	{ .code = MEDIA_BUS_FMT_RGB888_1X24,	.datatype = 0x24, .bpp = 24 },
-	{ .code = MEDIA_BUS_FMT_UYVY8_1X16,	.datatype = 0x1e, .bpp = 16 },
-	{ .code = MEDIA_BUS_FMT_UYVY8_2X8,	.datatype = 0x1e, .bpp = 16 },
-	{ .code = MEDIA_BUS_FMT_YUYV10_2X10,	.datatype = 0x1e, .bpp = 16 },
+	{ .datatype = 0x1e, .bpp = 16 },
+	{ .datatype = 0x24, .bpp = 24 },
 };
 
-static const struct rcar_csi2_format *rcar_csi2_code_to_fmt(unsigned int code)
+static const struct rcar_csi2_format
+*rcar_csi2_datatype_to_fmt(unsigned int datatype)
 {
 	unsigned int i;
 
 	for (i = 0; i < ARRAY_SIZE(rcar_csi2_formats); i++)
-		if (rcar_csi2_formats[i].code == code)
+		if (rcar_csi2_formats[i].datatype == datatype)
 			return rcar_csi2_formats + i;
 
 	return NULL;
@@ -323,6 +321,14 @@ enum rcar_csi2_pads {
 	RCAR_CSI2_SOURCE_VC3,
 	NR_OF_RCAR_CSI2_PAD,
 };
+
+static int rcar_csi2_pad_to_vc(unsigned int pad)
+{
+	if (pad < RCAR_CSI2_SOURCE_VC0 || pad > RCAR_CSI2_SOURCE_VC3)
+		return -EINVAL;
+
+	return pad - RCAR_CSI2_SOURCE_VC0;
+}
 
 struct rcar_csi2_info {
 	const struct phypll_hsfreqrange *hsfreqrange;
@@ -344,7 +350,7 @@ struct rcar_csi2 {
 	struct v4l2_async_subdev asd;
 	struct v4l2_subdev *remote;
 
-	struct v4l2_mbus_framefmt mf;
+	struct v4l2_mbus_framefmt mf[4];
 
 	struct mutex lock;
 	int stream_count;
@@ -380,6 +386,32 @@ static void rcar_csi2_reset(struct rcar_csi2 *priv)
 	rcar_csi2_write(priv, SRST_REG, 0);
 }
 
+static int rcar_csi2_get_remote_frame_desc(struct rcar_csi2 *priv,
+					   struct v4l2_mbus_frame_desc *fd)
+{
+	struct media_pad *pad;
+	int ret;
+
+	if (!priv->remote)
+		return -ENODEV;
+
+	pad = media_entity_remote_pad(&priv->pads[RCAR_CSI2_SINK]);
+	if (!pad)
+		return -ENODEV;
+
+	ret = v4l2_subdev_call(priv->remote, pad, get_frame_desc,
+			       pad->index, fd);
+	if (ret)
+		return -ENODEV;
+
+	if (fd->type != V4L2_MBUS_FRAME_DESC_TYPE_CSI2) {
+		dev_err(priv->dev, "Frame desc do not describe CSI-2 link");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int rcar_csi2_wait_phy_start(struct rcar_csi2 *priv)
 {
 	int timeout;
@@ -400,10 +432,12 @@ static int rcar_csi2_wait_phy_start(struct rcar_csi2 *priv)
 	return -ETIMEDOUT;
 }
 
-static int rcar_csi2_calc_mbps(struct rcar_csi2 *priv, unsigned int bpp)
+static int rcar_csi2_calc_mbps(struct rcar_csi2 *priv,
+			       struct v4l2_mbus_frame_desc *fd)
 {
 	struct v4l2_subdev *source;
 	struct v4l2_ctrl *ctrl;
+	unsigned int i, bpp = 0;
 	u64 mbps;
 
 	if (!priv->remote)
@@ -417,6 +451,21 @@ static int rcar_csi2_calc_mbps(struct rcar_csi2 *priv, unsigned int bpp)
 		dev_err(priv->dev, "no pixel rate control in subdev %s\n",
 			source->name);
 		return -EINVAL;
+	}
+
+	/* Calculate total bpp */
+	for (i = 0; i < fd->num_entries; i++) {
+		const struct rcar_csi2_format *format;
+
+		format = rcar_csi2_datatype_to_fmt(
+					fd->entry[i].bus.csi2.data_type);
+		if (!format) {
+			dev_err(priv->dev, "Unknown data type: %d\n",
+				fd->entry[i].bus.csi2.data_type);
+			return -EINVAL;
+		}
+
+		bpp += format->bpp;
 	}
 
 	/* Calculate the phypll */
@@ -472,37 +521,37 @@ static int rcar_csi2_set_phtw(struct rcar_csi2 *priv, unsigned int mbps)
 
 static int rcar_csi2_start(struct rcar_csi2 *priv)
 {
-	const struct rcar_csi2_format *format;
+	struct v4l2_mbus_frame_desc fd;
 	u32 phycnt, vcdt = 0, vcdt2 = 0;
 	unsigned int i;
 	int mbps, ret;
 
-	dev_dbg(priv->dev, "Input size (%ux%u%c)\n",
-		priv->mf.width, priv->mf.height,
-		priv->mf.field == V4L2_FIELD_NONE ? 'p' : 'i');
+	/* Get information about multiplexed link */
+	ret = rcar_csi2_get_remote_frame_desc(priv, &fd);
+	if (ret)
+		return ret;
 
-	/* Code is validated in set_fmt */
-	format = rcar_csi2_code_to_fmt(priv->mf.code);
-
-	/*
-	 * Enable all Virtual Channels
-	 *
-	 * NOTE: It's not possible to get individual datatype for each
-	 *       source virtual channel. Once this is possible in V4L2
-	 *       it should be used here.
-	 */
-	for (i = 0; i < 4; i++) {
+	for (i = 0; i < fd.num_entries; i++) {
+		struct v4l2_mbus_frame_desc_entry *entry = &fd.entry[i];
 		u32 vcdt_part;
 
-		vcdt_part = VCDT_SEL_VC(i) | VCDT_VCDTN_EN | VCDT_SEL_DTN_ON |
-			VCDT_SEL_DT(format->datatype);
+		vcdt_part = VCDT_SEL_VC(entry->bus.csi2.channel) |
+			VCDT_VCDTN_EN | VCDT_SEL_DTN_ON |
+			VCDT_SEL_DT(entry->bus.csi2.data_type);
 
 		/* Store in correct reg and offset */
-		if (i < 2)
-			vcdt |= vcdt_part << ((i % 2) * 16);
+		if (entry->bus.csi2.channel < 2)
+			vcdt |= vcdt_part <<
+				((entry->bus.csi2.channel % 2) * 16);
 		else
-			vcdt2 |= vcdt_part << ((i % 2) * 16);
+			vcdt2 |= vcdt_part <<
+				((entry->bus.csi2.channel % 2) * 16);
+
+		dev_dbg(priv->dev, "VC%d datatype: 0x%x\n",
+			entry->bus.csi2.channel, entry->bus.csi2.data_type);
 	}
+
+	dev_dbg(priv->dev, "VCDT: 0x%08x VCDT2: 0x%08x\n", vcdt, vcdt2);
 
 	switch (priv->lanes) {
 	case 1:
@@ -519,7 +568,7 @@ static int rcar_csi2_start(struct rcar_csi2 *priv)
 		return -EINVAL;
 	}
 
-	mbps = rcar_csi2_calc_mbps(priv, format->bpp);
+	mbps = rcar_csi2_calc_mbps(priv, &fd);
 	if (mbps < 0)
 		return mbps;
 
@@ -645,14 +694,16 @@ static int rcar_csi2_set_pad_format(struct v4l2_subdev *sd,
 {
 	struct rcar_csi2 *priv = sd_to_csi2(sd);
 	struct v4l2_mbus_framefmt *framefmt;
+	int vc;
 
-	if (!rcar_csi2_code_to_fmt(format->format.code))
-		return -EINVAL;
+	vc = rcar_csi2_pad_to_vc(format->pad);
+	if (vc < 0)
+		return vc;
 
 	if (format->which == V4L2_SUBDEV_FORMAT_ACTIVE) {
-		priv->mf = format->format;
+		priv->mf[vc] = format->format;
 	} else {
-		framefmt = v4l2_subdev_get_try_format(sd, cfg, 0);
+		framefmt = v4l2_subdev_get_try_format(sd, cfg, format->pad);
 		*framefmt = format->format;
 	}
 
@@ -664,11 +715,17 @@ static int rcar_csi2_get_pad_format(struct v4l2_subdev *sd,
 				    struct v4l2_subdev_format *format)
 {
 	struct rcar_csi2 *priv = sd_to_csi2(sd);
+	int vc;
+
+	vc = rcar_csi2_pad_to_vc(format->pad);
+	if (vc < 0)
+		return vc;
 
 	if (format->which == V4L2_SUBDEV_FORMAT_ACTIVE)
-		format->format = priv->mf;
+		format->format = priv->mf[vc];
 	else
-		format->format = *v4l2_subdev_get_try_format(sd, cfg, 0);
+		format->format = *v4l2_subdev_get_try_format(sd, cfg,
+							     format->pad);
 
 	return 0;
 }
