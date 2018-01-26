@@ -341,6 +341,20 @@ static int max9286_notify_bound(struct v4l2_async_notifier *notifier,
 	source->sd = subdev;
 	source->src_pad = ret;
 
+	ret = media_create_pad_link(&source->sd->entity,
+					    source->src_pad,
+					    &dev->sd.entity, index,
+					    MEDIA_LNK_FL_ENABLED |
+					    MEDIA_LNK_FL_IMMUTABLE);
+	if (ret) {
+		dev_err(&dev->client->dev,
+			"Unable to link %s:%u -> %s:%u\n",
+			source->sd->name,
+			source->src_pad,
+			dev->sd.name, index);
+		return ret;
+	}
+
 	dev_dbg(&dev->client->dev, "Bound %s pad: %u on index %u\n",
 		subdev->name, source->src_pad, index);
 
@@ -356,37 +370,9 @@ static void max9286_notify_unbind(struct v4l2_async_notifier *notifier,
 	source->sd = NULL;
 }
 
-static int max9286_notify_complete(struct v4l2_async_notifier *notifier)
-{
-	struct max9286_device *dev = sd_to_max9286(notifier->sd);
-	struct max9286_source *source;
-	int ret;
-
-	for_each_source(dev, source) {
-		unsigned int index = to_index(dev, source);
-
-		ret = media_create_pad_link(&source->sd->entity,
-					    source->src_pad,
-					    &dev->sd.entity, index,
-					    MEDIA_LNK_FL_ENABLED |
-					    MEDIA_LNK_FL_IMMUTABLE);
-		if (ret) {
-			dev_err(&dev->client->dev,
-				"Unable to link %s:%u -> %s:%u\n",
-				source->sd->name,
-				source->src_pad,
-				dev->sd.name, index);
-			return ret;
-		}
-	}
-
-	return 0;
-}
-
 static const struct v4l2_async_notifier_operations max9286_notify_ops = {
 	.bound = max9286_notify_bound,
 	.unbind = max9286_notify_unbind,
-	.complete = max9286_notify_complete,
 };
 
 static int max9286_g_mbus_config(struct v4l2_subdev *sd,
