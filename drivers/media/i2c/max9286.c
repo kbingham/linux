@@ -151,6 +151,7 @@ struct max9286_device {
 
 	unsigned int nsources;
 	unsigned int source_mask;
+	unsigned int route_mask;
 	struct max9286_source sources[MAX9286_NUM_GMSL];
 	struct v4l2_async_subdev *subdevs[MAX9286_NUM_GMSL];
 	struct v4l2_async_notifier notifier;
@@ -608,7 +609,7 @@ static int max9286_get_routing(struct v4l2_subdev *sd,
 {
 	struct max9286_device *dev = sd_to_max9286(sd);
 	struct v4l2_subdev_route *r = routing->routes;
-	unsigned int i;
+	struct max9286_source *source;
 
 	/* There are one possible route from each sink */
 	if (routing->num_routes < dev->nsources) {
@@ -618,18 +619,50 @@ static int max9286_get_routing(struct v4l2_subdev *sd,
 
 	routing->num_routes = dev->nsources;
 
-	for (i = 0; i < dev->nsources; i++) {
-		r->sink_pad = i;
+	for_each_source(dev, source) {
+		unsigned int index = to_index(dev, source);
+
+		r->sink_pad = index;
 		r->sink_stream = 0;
 		r->source_pad = MAX9286_SRC_PAD;
-		r->source_stream = i;
-		r->flags = V4L2_SUBDEV_ROUTE_FL_ACTIVE |
-			V4L2_SUBDEV_ROUTE_FL_IMMUTABLE;
+		r->source_stream = index;
+		r->flags = dev->route_mask & BIT(index) ?
+			V4L2_SUBDEV_ROUTE_FL_ACTIVE : 0;
 		r++;
 	}
 
 	return 0;
 }
+
+static int max9286_set_routing(struct v4l2_subdev *sd,
+			       struct v4l2_subdev_routing *routing)
+{
+
+	struct max9286_device *dev = sd_to_max9286(sd);
+	struct v4l2_subdev_route *r = routing->routes;
+	unsigned int i;
+
+	if (routing->num_routes > dev->nsources)
+		return -ENOSPC;
+
+	for (i = 0; i < routing->num_routes; i++) {
+		if (r->sink_pad >= MAX9286_SRC_PAD ||
+		    r->sink_stream != 0 ||
+		    r->source_pad != MAX9286_SRC_PAD ||
+		    r->source_stream != r->sink_pad)
+			return -EINVAL;
+
+		if (r->flags & V4L2_SUBDEV_ROUTE_FL_ACTIVE)
+			dev->route_mask |= BIT(r->sink_pad);
+		else
+			dev->route_mask &= ~BIT(r->sink_pad);
+
+		r++;
+	}
+
+	return 0;
+}
+
 
 static const struct v4l2_subdev_video_ops max9286_video_ops = {
 	.g_mbus_config	= max9286_g_mbus_config,
@@ -642,6 +675,7 @@ static const struct v4l2_subdev_pad_ops max9286_pad_ops = {
 	.set_fmt	= max9286_get_fmt,
 	.get_frame_desc = max9286_get_frame_desc,
 	.get_routing	= max9286_get_routing,
+	.set_routing	= max9286_set_routing,
 };
 
 static const struct v4l2_subdev_ops max9286_subdev_ops = {
@@ -718,10 +752,10 @@ static int max9286_setup(struct max9286_device *dev)
 	 * FIXME/TODO: Double check to see if we want to enable autocomeback and
 	 * automask
 	 */
-	max9286_write(dev, 0x00, MAX9286_MSTLINKSEL_AUTO | dev->source_mask);
-	max9286_write(dev, 0x0b, link_order[dev->source_mask]);
+	max9286_write(dev, 0x00, MAX9286_MSTLINKSEL_AUTO | dev->route_mask);
+	max9286_write(dev, 0x0b, link_order[dev->route_mask]);
 	max9286_write(dev, 0x69, MAX9286_AUTOCOMBACKEN | MAX9286_AUTOMASKEN |
-		      (0xf & ~dev->source_mask));
+		      (0xf & ~dev->route_mask));
 
 	/* Video format setup */
 	/* Disable CSI output, VC is set accordingly to Link number */
@@ -1034,6 +1068,8 @@ static int max9286_parse_dt(struct max9286_device *max9286)
 	/* Do not register subdevs if there are no devices */
 	if (!max9286->nsources)
 		return 0;
+
+	max9286->route_mask = max9286->source_mask;
 
 	max9286->notifier.ops = &max9286_notify_ops;
 	max9286->notifier.subdevs = max9286->subdevs;
