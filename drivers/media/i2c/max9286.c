@@ -212,16 +212,18 @@ static int max9286_write(struct max9286_device *dev, u8 reg, u8 val)
  * DebugFS
  */
 
-#define DEBUGFS_RO_ATTR(name) \
-	static int name##_open(struct inode *inode, struct file *file) \
-	{ return single_open(file, name, inode->i_private); } \
-	static const struct file_operations name##_fops = { \
-		.owner = THIS_MODULE, \
-		.open = name##_open, \
-		.llseek = seq_lseek, \
-		.read = seq_read, \
-		.release = single_release \
-	}
+#define DEBUGFS_RO_ATTR(name)						\
+static int name##_open(struct inode *inode, struct file *file)		\
+{									\
+	return single_open(file, name, inode->i_private);		\
+}									\
+static const struct file_operations name##_fops = {			\
+	.owner = THIS_MODULE,						\
+	.open = name##_open,						\
+	.llseek = seq_lseek,						\
+	.read = seq_read,						\
+	.release = single_release,					\
+}
 
 static int max9286_config_video_detect(struct max9286_device *dev,
 				       struct seq_file *s)
@@ -229,8 +231,11 @@ static int max9286_config_video_detect(struct max9286_device *dev,
 	int reg_49 = max9286_read(dev, 0x49);
 	unsigned int i;
 
-	seq_puts(s, "                         :  0   1   2   3\n");
-	seq_puts(s, "Configuration Link Detect:");
+	if (reg_49 < 0)
+		return reg_49;
+
+	seq_puts(s, "                  :  0   1   2   3\n");
+	seq_puts(s, "Configuration Link:");
 	for (i = 0; i < 4; i++) {
 		int link = (reg_49 & BIT(i + 4));
 
@@ -238,7 +243,7 @@ static int max9286_config_video_detect(struct max9286_device *dev,
 	}
 	seq_puts(s, "\n");
 
-	seq_puts(s, "Video Link Detection     :");
+	seq_puts(s, "Video Link        :");
 	for (i = 0; i < 4; i++) {
 		int link = (reg_49 & BIT(i));
 
@@ -247,7 +252,6 @@ static int max9286_config_video_detect(struct max9286_device *dev,
 	seq_puts(s, "\n");
 
 	return 0;
-
 }
 
 static int max9286_vs_period(struct max9286_device *dev, struct seq_file *s)
@@ -258,6 +262,9 @@ static int max9286_vs_period(struct max9286_device *dev, struct seq_file *s)
 	l = max9286_read(dev, 0x5B);
 	m = max9286_read(dev, 0x5C);
 	h = max9286_read(dev, 0x5D);
+
+	if (l < 0 || m < 0 || h << 0)
+		return -ENODEV;
 
 	frame_length = l + (m << 8) + (h << 16);
 
@@ -270,6 +277,9 @@ static int max9286_master_link(struct max9286_device *dev, struct seq_file *s)
 {
 	int reg_71 = max9286_read(dev, 0x71);
 	unsigned int link = (reg_71 >> 4) & 0x03;
+
+	if (reg_71 < 0)
+		return reg_71;
 
 	seq_printf(s, "Master link selected : %u\n", link);
 
