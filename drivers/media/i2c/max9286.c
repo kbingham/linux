@@ -504,7 +504,7 @@ static int max9286_s_stream(struct v4l2_subdev *sd, int enable)
 				return ret;
 		}
 
-		/* Wait for Frame synchronization is locked */
+		/* Wait until frame synchronization is locked */
 		for (i = 0; i < 100; i++) {
 			if (max9286_read(dev, 0x31) & MAX9286_FSYNC_LOCKED) {
 				sync = true;
