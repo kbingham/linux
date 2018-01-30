@@ -823,7 +823,7 @@ static int max9286_init(struct device *dev, void *data)
 	/* This should expose the GPIO to provide a gpio-hog */
 
 	/* Enable camera power */
-	max9286_write(max9286_dev, 0x0f, 0xD0);
+	max9286_write(max9286_dev, 0x0f, 0xd0);
 
 	usleep_range(7000000, 8000000);
 
