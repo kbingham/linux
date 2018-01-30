@@ -485,16 +485,6 @@ static const struct v4l2_async_notifier_operations max9286_notify_ops = {
 	.unbind = max9286_notify_unbind,
 };
 
-static int max9286_g_mbus_config(struct v4l2_subdev *sd,
-				 struct v4l2_mbus_config *cfg)
-{
-	cfg->flags = V4L2_MBUS_CSI2_1_LANE | V4L2_MBUS_CSI2_CHANNEL_0 |
-		     V4L2_MBUS_CSI2_CONTINUOUS_CLOCK;
-	cfg->type = V4L2_MBUS_CSI2;
-
-	return 0;
-}
-
 static int max9286_s_stream(struct v4l2_subdev *sd, int enable)
 {
 	struct max9286_device *dev = sd_to_max9286(sd);
@@ -659,7 +649,6 @@ static int max9286_set_routing(struct v4l2_subdev *sd,
 }
 
 static const struct v4l2_subdev_video_ops max9286_video_ops = {
-	.g_mbus_config	= max9286_g_mbus_config,
 	.s_stream	= max9286_s_stream,
 };
 
