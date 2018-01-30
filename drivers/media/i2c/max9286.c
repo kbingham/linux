@@ -660,7 +660,6 @@ static int max9286_set_routing(struct v4l2_subdev *sd,
 	return 0;
 }
 
-
 static const struct v4l2_subdev_video_ops max9286_video_ops = {
 	.g_mbus_config	= max9286_g_mbus_config,
 	.s_stream	= max9286_s_stream,
