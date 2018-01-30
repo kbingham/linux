@@ -261,7 +261,7 @@ static int max9286_config_video_detect(struct max9286_device *dev,
 static int max9286_vs_period(struct max9286_device *dev, struct seq_file *s)
 {
 	char l, m, h;
-	int frame_length;
+	unsigned int frame_length;
 
 	l = max9286_read(dev, 0x5B);
 	m = max9286_read(dev, 0x5C);
