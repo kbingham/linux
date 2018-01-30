@@ -1017,7 +1017,7 @@ static int max9286_parse_dt(struct max9286_device *max9286)
 		max9286->nsources++;
 	}
 
-	/* Do not register subdevs if there are no devices */
+	/* Do not register the subdev notifier if there are no devices. */
 	if (!max9286->nsources)
 		return 0;
 
