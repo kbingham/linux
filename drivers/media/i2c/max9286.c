@@ -854,13 +854,6 @@ static int max9286_init(struct device *dev, void *data)
 		goto err_regulator;
 	}
 
-	/* This should expose the GPIO to provide a gpio-hog */
-
-	/* Enable camera power */
-	max9286_write(max9286_dev, 0x0f, 0xD0);
-
-	usleep_range(7000000, 8000000);
-
 	v4l2_i2c_subdev_init(&max9286_dev->sd, client, &max9286_subdev_ops);
 	max9286_dev->sd.flags = V4L2_SUBDEV_FL_HAS_DEVNODE;
 
