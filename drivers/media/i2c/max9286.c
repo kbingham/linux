@@ -10,8 +10,6 @@
  * option) any later version.
  */
 
-#define DEBUG
-
 #include <linux/debugfs.h>
 #include <linux/delay.h>
 #include <linux/device.h>
