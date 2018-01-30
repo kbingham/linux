@@ -454,10 +454,10 @@ static int max9286_notify_bound(struct v4l2_async_notifier *notifier,
 	source->src_pad = ret;
 
 	ret = media_create_pad_link(&source->sd->entity,
-					    source->src_pad,
-					    &dev->sd.entity, index,
-					    MEDIA_LNK_FL_ENABLED |
-					    MEDIA_LNK_FL_IMMUTABLE);
+				    source->src_pad,
+				    &dev->sd.entity, index,
+				    MEDIA_LNK_FL_ENABLED |
+				    MEDIA_LNK_FL_IMMUTABLE);
 	if (ret) {
 		dev_err(&dev->client->dev,
 			"Unable to link %s:%u -> %s:%u\n",
