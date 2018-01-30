@@ -873,7 +873,6 @@ static int max9286_init(struct device *dev, void *data)
 	ret = max9286_dev->ctrls.error;
 	if (ret)
 		goto err_regulator;
-;
 
 	max9286_dev->sd.entity.function = MEDIA_ENT_F_PROC_VIDEO_PIXEL_FORMATTER;
 
