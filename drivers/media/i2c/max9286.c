@@ -1025,7 +1025,7 @@ static int max9286_parse_dt(struct max9286_device *max9286)
 		source->asd.match.fwnode = source->fwnode;
 
 		max9286->subdevs[max9286->nsources] = &source->asd;
-		max9286->source_mask |= 1 << ep.port;
+		max9286->source_mask |= BIT(ep.port);
 		max9286->nsources++;
 	}
 
