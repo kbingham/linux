@@ -152,7 +152,6 @@ struct max9286_device {
 	struct max9286_source sources[MAX9286_NUM_GMSL];
 	struct v4l2_async_subdev *subdevs[MAX9286_NUM_GMSL];
 	struct v4l2_async_notifier notifier;
-
 };
 
 static struct max9286_source *next_source(struct max9286_device *max9286,
