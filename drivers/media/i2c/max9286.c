@@ -10,7 +10,6 @@
  * option) any later version.
  */
 
-#include <linux/debugfs.h>
 #include <linux/delay.h>
 #include <linux/device.h>
 #include <linux/fwnode.h>
@@ -138,7 +137,6 @@ struct max9286_device {
 	struct v4l2_subdev sd;
 	struct media_pad pads[MAX9286_N_PADS];
 	struct regulator *regulator;
-	struct dentry *dbgroot;
 	bool poc_enabled;
 	int streaming;
 
@@ -214,113 +212,6 @@ static int max9286_write(struct max9286_device *dev, u8 reg, u8 val)
 			__func__, reg, ret);
 
 	return ret;
-}
-
-/* -----------------------------------------------------------------------------
- * DebugFS
- */
-
-#define DEBUGFS_RO_ATTR(name) \
-	static int name##_open(struct inode *inode, struct file *file) \
-	{ return single_open(file, name, inode->i_private); } \
-	static const struct file_operations name##_fops = { \
-		.owner = THIS_MODULE, \
-		.open = name##_open, \
-		.llseek = seq_lseek, \
-		.read = seq_read, \
-		.release = single_release \
-	}
-
-static int max9286_config_video_detect(struct max9286_device *dev,
-				       struct seq_file *s)
-{
-	int reg_49 = max9286_read(dev, 0x49);
-	unsigned int i;
-
-	seq_puts(s, "                         :  0   1   2   3\n");
-	seq_puts(s, "Configuration Link Detect:");
-	for (i = 0; i < 4; i++) {
-		int link = (reg_49 & BIT(i + 4));
-
-		seq_printf(s, " %3s", link ? " O " : "xxx");
-	}
-	seq_puts(s, "\n");
-
-	seq_puts(s, "Video Link Detection     :");
-	for (i = 0; i < 4; i++) {
-		int link = (reg_49 & BIT(i));
-
-		seq_printf(s, " %3s", link ? " O " : "xxx");
-	}
-	seq_puts(s, "\n");
-
-	return 0;
-
-}
-
-static int max9286_vs_period(struct max9286_device *dev, struct seq_file *s)
-{
-	char l, m, h;
-	int frame_length;
-
-	l = max9286_read(dev, 0x5B);
-	m = max9286_read(dev, 0x5C);
-	h = max9286_read(dev, 0x5D);
-
-	frame_length = l + (m << 8) + (h << 16);
-
-	seq_printf(s, "Calculated VS Period (pxclk) : %d\n", frame_length);
-
-	return 0;
-}
-
-static int max9286_master_link(struct max9286_device *dev, struct seq_file *s)
-{
-	int reg_71 = max9286_read(dev, 0x71);
-	int link = (reg_71 >> 4) & 0x03;
-
-	seq_printf(s, "Master link selected : %d\n", link);
-
-	return 0;
-}
-
-static int max9286_debugfs_info(struct seq_file *s, void *p)
-{
-	struct max9286_device *dev = s->private;
-
-	max9286_config_video_detect(dev, s);
-	max9286_vs_period(dev, s);
-	max9286_master_link(dev, s);
-
-	return 0;
-}
-
-DEBUGFS_RO_ATTR(max9286_debugfs_info);
-
-static int max9286_debugfs_init(struct max9286_device *dev)
-{
-	char name[32];
-
-	snprintf(name, sizeof(name), "max9286-%s", dev_name(&dev->client->dev));
-
-	dev->dbgroot = debugfs_create_dir(name, NULL);
-	if (!dev->dbgroot)
-		return -ENOMEM;
-
-	/*
-	 * dentry pointers are discarded, and remove_recursive is used to
-	 * cleanup the tree. DEBUGFS_RO_ATTR defines the file operations with
-	 * the _fops extension to the function name
-	 */
-	debugfs_create_file("info", 0444, dev->dbgroot, dev,
-			    &max9286_debugfs_info_fops);
-
-	return 0;
-}
-
-static void max9286_debugfs_remove(struct max9286_device *dev)
-{
-	debugfs_remove_recursive(dev->dbgroot);
 }
 
 /* -----------------------------------------------------------------------------
@@ -1124,9 +1015,6 @@ static int max9286_probe(struct i2c_client *client,
 	 */
 	max9286_configure_i2c(dev, false);
 
-	/* Add any userspace support before we return early */
-	max9286_debugfs_init(dev);
-
 	ret = device_for_each_child(client->dev.parent, &client->dev,
 				    max9286_is_bound);
 	if (ret)
@@ -1148,7 +1036,6 @@ err_regulator:
 	regulator_put(dev->regulator);
 	max9286_i2c_mux_close(dev);
 	max9286_configure_i2c(dev, false);
-	max9286_debugfs_remove(dev);
 err_free:
 	max9286_cleanup_dt(dev);
 	kfree(dev);
@@ -1159,9 +1046,6 @@ err_free:
 static int max9286_remove(struct i2c_client *client)
 {
 	struct max9286_device *dev = i2c_get_clientdata(client);
-
-	/* Remove all Debugfs / sysfs entries */
-	max9286_debugfs_remove(dev);
 
 	i2c_mux_del_adapters(dev->mux);
 
