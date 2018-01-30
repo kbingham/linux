@@ -266,7 +266,7 @@ static int max9286_vs_period(struct max9286_device *dev, struct seq_file *s)
 	if (l < 0 || m < 0 || h << 0)
 		return -ENODEV;
 
-	frame_length = l + (m << 8) + (h << 16);
+	frame_length = (h << 16) + (m << 8) + l;
 
 	seq_printf(s, "Calculated VS Period (pxclk) : %u\n", frame_length);
 
