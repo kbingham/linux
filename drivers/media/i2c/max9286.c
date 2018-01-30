@@ -541,9 +541,8 @@ static int max9286_s_stream(struct v4l2_subdev *sd, int enable)
 		max9286_write(dev, 0x15, MAX9286_VCTYPE | MAX9286_0X15_RESV);
 
 		/* Stop all cameras */
-		for_each_source(dev, source) {
+		for_each_source(dev, source)
 			v4l2_subdev_call(source->sd, video, s_stream, 0);
-		}
 
 		/* FIXME: See note in max9286_i2c_mux_select() */
 		dev->streaming = 0;
