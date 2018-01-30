@@ -186,11 +186,9 @@ static int max9286_read(struct max9286_device *dev, u8 reg)
 {
 	int ret;
 
-	dev_dbg(&dev->client->dev, "%s(0x%02x)\n", __func__, reg);
-
 	ret = i2c_smbus_read_byte_data(dev->client, reg);
 	if (ret < 0)
-		dev_dbg(&dev->client->dev,
+		dev_err(&dev->client->dev,
 			"%s: register 0x%02x read failed (%d)\n",
 			__func__, reg, ret);
 
@@ -200,8 +198,6 @@ static int max9286_read(struct max9286_device *dev, u8 reg)
 static int max9286_write(struct max9286_device *dev, u8 reg, u8 val)
 {
 	int ret;
-
-	dev_dbg(&dev->client->dev, "%s(0x%02x, 0x%02x)\n", __func__, reg, val);
 
 	ret = i2c_smbus_write_byte_data(dev->client, reg, val);
 	if (ret < 0)
