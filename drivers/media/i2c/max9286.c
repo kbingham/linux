@@ -767,40 +767,9 @@ static int max9286_setup(struct max9286_device *dev)
 	max9286_write(dev, 0x12, MAX9286_CSIDBL | MAX9286_DBL |
 		      MAX9286_CSILANECNT(4) | MAX9286_DATATYPE_YUV422_8BIT);
 
-#define FSYNC_PERIOD	(1280*800*2)
-#if 0
-	/*
-	 * Manual: the frame sync period is programmed in the FSYNC_PERIOD
-	 * registers.
-	 */
-	max9286_write(dev, 0x01, MAX9286_FSYNCMODE_INT_HIZ |
-		      MAX9286_FSYNCMETH_MANUAL);
-	max9286_write(dev, MAX9286_REG_FSYNC_PERIOD_L,
-		      (FSYNC_PERIOD >>  0) & 0xff);
-	max9286_write(dev, MAX9286_REG_FSYNC_PERIOD_M,
-		      (FSYNC_PERIOD >>  8) & 0xff);
-	max9286_write(dev, MAX9286_REG_FSYNC_PERIOD_H,
-		      (FSYNC_PERIOD >> 16) & 0xff);
-#else
 	/* Automatic: FRAMESYNC taken from the slowest Link */
 	max9286_write(dev, 0x01, MAX9286_FSYNCMODE_INT_HIZ |
 		      MAX9286_FSYNCMETH_AUTO);
-
-	/*
-	 * Set frame sync period to 128 VSYNC periods.
-	 *
-	 * TODO: Evaluate if this really is needed. When it was
-	 * added the feeling was that it increased stability when
-	 * trying to achieve FSYNC. With the complete multiple
-	 * simultaneously series applied not many failures are
-	 * observed even with or without this change. The driver
-	 * is a bit unstable as it is so for now keep it.
-	 *
-	 * TODO: If this is kept the magic value should be
-	 * converted to a define.
-	 */
-	max9286_write(dev, 0x02, 0xf0);
-#endif
 
 	/* Enable HS/VS encoding, use D14/15 for HS/VS, invert VS */
 	max9286_write(dev, 0x0c, MAX9286_HVEN | MAX9286_INVVS |
