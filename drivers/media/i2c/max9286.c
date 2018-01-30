@@ -130,7 +130,8 @@ struct max9286_source {
 	struct fwnode_handle *fwnode;
 };
 
-#define asd_to_max9286_source(asd) container_of(asd, struct max9286_source, asd)
+#define asd_to_max9286_source(_asd) \
+	container_of(_asd, struct max9286_source, asd)
 
 struct max9286_device {
 	struct i2c_client *client;
@@ -175,10 +176,7 @@ static struct max9286_source *next_source(struct max9286_device *max9286,
 
 #define to_index(max9286, source) (source - &max9286->sources[0])
 
-static inline struct max9286_device *sd_to_max9286(struct v4l2_subdev *sd)
-{
-	return container_of(sd, struct max9286_device, sd);
-}
+#define sd_to_max9286(_sd) container_of(_sd, struct max9286_device, sd)
 
 /* -----------------------------------------------------------------------------
  * I2C IO
@@ -434,7 +432,6 @@ static int max9286_notify_bound(struct v4l2_async_notifier *notifier,
 				struct v4l2_async_subdev *asd)
 {
 	struct max9286_device *dev = sd_to_max9286(notifier->sd);
-
 	struct max9286_source *source = asd_to_max9286_source(asd);
 	unsigned int index = to_index(dev, source);
 	unsigned int src_pad;
