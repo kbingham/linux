@@ -596,7 +596,7 @@ static int max9286_get_routing(struct v4l2_subdev *sd,
 	struct v4l2_subdev_route *r = routing->routes;
 	struct max9286_source *source;
 
-	/* There is one possible route from each sink */
+	/* There is one route per sink pad. */
 	if (routing->num_routes < dev->nsources) {
 		routing->num_routes = dev->nsources;
 		return -ENOSPC;
