@@ -259,9 +259,9 @@ static int max9286_vs_period(struct max9286_device *dev, struct seq_file *s)
 	char l, m, h;
 	unsigned int frame_length;
 
-	l = max9286_read(dev, 0x5B);
-	m = max9286_read(dev, 0x5C);
-	h = max9286_read(dev, 0x5D);
+	l = max9286_read(dev, 0x5b);
+	m = max9286_read(dev, 0x5c);
+	h = max9286_read(dev, 0x5d);
 
 	if (l < 0 || m < 0 || h << 0)
 		return -ENODEV;
