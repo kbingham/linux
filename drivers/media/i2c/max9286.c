@@ -128,7 +128,6 @@ struct max9286_source {
 	struct v4l2_async_subdev asd;
 	struct v4l2_subdev *sd;
 	struct fwnode_handle *fwnode;
-	unsigned int src_pad;
 };
 
 #define asd_to_max9286_source(asd) container_of(asd, struct max9286_source, asd)
@@ -439,6 +438,7 @@ static int max9286_notify_bound(struct v4l2_async_notifier *notifier,
 
 	struct max9286_source *source = asd_to_max9286_source(asd);
 	unsigned int index = to_index(dev, source);
+	unsigned int src_pad;
 	int ret;
 
 	ret = media_entity_get_fwnode_pad(&subdev->entity,
@@ -451,24 +451,21 @@ static int max9286_notify_bound(struct v4l2_async_notifier *notifier,
 	}
 
 	source->sd = subdev;
-	source->src_pad = ret;
+	src_pad = ret;
 
-	ret = media_create_pad_link(&source->sd->entity,
-				    source->src_pad,
+	ret = media_create_pad_link(&source->sd->entity, src_pad,
 				    &dev->sd.entity, index,
 				    MEDIA_LNK_FL_ENABLED |
 				    MEDIA_LNK_FL_IMMUTABLE);
 	if (ret) {
 		dev_err(&dev->client->dev,
 			"Unable to link %s:%u -> %s:%u\n",
-			source->sd->name,
-			source->src_pad,
-			dev->sd.name, index);
+			source->sd->name, src_pad, dev->sd.name, index);
 		return ret;
 	}
 
 	dev_dbg(&dev->client->dev, "Bound %s pad: %u on index %u\n",
-		subdev->name, source->src_pad, index);
+		subdev->name, src_pad, index);
 
 	return 0;
 }
