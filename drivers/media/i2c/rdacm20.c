@@ -1,13 +1,13 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * IMI RDACM20 GMSL Camera Driver
  *
+ * Copyright (C) 2017-2018 Jacopo Mondi
+ * Copyright (C) 2017-2018 Kieran Bingham
+ * Copyright (C) 2017-2018 Laurent Pinchart
+ * Copyright (C) 2017-2018 Niklas Söderlund
  * Copyright (C) 2016 Renesas Electronics Corporation
  * Copyright (C) 2015 Cogent Embedded, Inc.
- *
- * This program is free software; you can redistribute  it and/or modify it
- * under  the terms of  the GNU General  Public License as published by the
- * Free Software Foundation;  either version 2 of the  License, or (at your
- * option) any later version.
  */
 
 /*
