@@ -740,8 +740,10 @@ static int max9286_setup(struct max9286_device *dev)
 	max9286_write(dev, 0x69, MAX9286_AUTOCOMBACKEN | MAX9286_AUTOMASKEN |
 		      (0xf & ~dev->route_mask));
 
-	/* Video format setup */
-	/* Disable CSI output, VC is set accordingly to Link number */
+	/*
+	 * Video format setup:
+	 * Disable CSI output, VC is set accordingly to Link number.
+	 */
 	max9286_write(dev, 0x15, MAX9286_VCTYPE | MAX9286_0X15_RESV);
 
 	/*
