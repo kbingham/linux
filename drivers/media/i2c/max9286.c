@@ -396,7 +396,6 @@ static int max9286_i2c_mux_init(struct max9286_device *dev)
 	dev->mux = i2c_mux_alloc(dev->client->adapter, &dev->client->dev,
 				 dev->nsources, 0, I2C_MUX_LOCKED,
 				 max9286_i2c_mux_select, NULL);
-	dev_info(&dev->client->dev, "%s: mux %p\n", __func__, dev->mux);
 	if (!dev->mux)
 		return -ENOMEM;
 
