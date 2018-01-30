@@ -1073,8 +1073,12 @@ static int max9286_probe(struct i2c_client *client,
 	max9286_i2c_mux_close(dev);
 
 	/*
-	 * Disable the I2C Auto-Acknowledge by configuring with the default
-	 * I2C parameters (minus auto-ack)
+	 * The MAX9286 initialises with auto-acknowledge enabled by default.
+	 * This means that if multiple MAX9286 devices are connected to an I2C
+	 * bus, another MAX9286 could ack I2C transfers meant for a device on
+	 * the other side of the GMSL links for this MAX9286 (such as a
+	 * MAX9271). To prevent that disable auto-acknowledge early on; it
+	 * will be enabled later as needed.
 	 */
 	max9286_configure_i2c(dev, false);
 
