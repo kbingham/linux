@@ -893,9 +893,8 @@ static int max9286_is_bound(struct device *dev, void *data)
 	if (dev == this)
 		return 0;
 
-	if (!dev->of_node ||
-	    !of_match_node(max9286_dt_ids, dev->of_node))
-		/* skip non-max9286 devices */
+	/* skip non-max9286 devices */
+	if (!dev->of_node || !of_match_node(max9286_dt_ids, dev->of_node))
 		return 0;
 
 	ret = device_is_bound(dev);
