@@ -269,7 +269,7 @@ static int max9286_vs_period(struct max9286_device *dev, struct seq_file *s)
 
 	frame_length = l + (m << 8) + (h << 16);
 
-	seq_printf(s, "Calculated VS Period (pxclk) : %d\n", frame_length);
+	seq_printf(s, "Calculated VS Period (pxclk) : %u\n", frame_length);
 
 	return 0;
 }
@@ -277,9 +277,9 @@ static int max9286_vs_period(struct max9286_device *dev, struct seq_file *s)
 static int max9286_master_link(struct max9286_device *dev, struct seq_file *s)
 {
 	int reg_71 = max9286_read(dev, 0x71);
-	int link = (reg_71 >> 4) & 0x03;
+	unsigned int link = (reg_71 >> 4) & 0x03;
 
-	seq_printf(s, "Master link selected : %d\n", link);
+	seq_printf(s, "Master link selected : %u\n", link);
 
 	return 0;
 }
