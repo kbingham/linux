@@ -296,11 +296,14 @@ static int rdacm20_get_fmt(struct v4l2_subdev *sd,
 	if (format->pad)
 		return -EINVAL;
 
-	mf->width	= OV10635_WIDTH;
-	mf->height	= OV10635_HEIGHT;
-	mf->code	= OV10635_FORMAT;
-	mf->colorspace	= V4L2_COLORSPACE_SMPTE170M;
-	mf->field	= V4L2_FIELD_NONE;
+	mf->width		= OV10635_WIDTH;
+	mf->height		= OV10635_HEIGHT;
+	mf->code		= OV10635_FORMAT;
+	mf->colorspace		= V4L2_COLORSPACE_SRGB;
+	mf->field		= V4L2_FIELD_NONE;
+	mf->ycbcr_enc		= V4L2_YCBCR_ENC_DEFAULT;
+	mf->quantization	= V4L2_QUANTIZATION_DEFAULT;
+	mf->xfer_func		= V4L2_XFER_FUNC_DEFAULT;
 
 	return 0;
 }
