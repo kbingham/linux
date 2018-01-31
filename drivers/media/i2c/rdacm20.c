@@ -555,7 +555,7 @@ static int rdacm20_probe(struct i2c_client *client,
 	ep = fwnode_graph_get_next_endpoint(dev_fwnode(&client->dev), NULL);
 	if (!ep) {
 		dev_err(&client->dev,
-			"Unable to get endpoint in node %pOF: %d\n",
+			"Unable to get endpoint in node %pOF: %ld\n",
 			client->dev.of_node, PTR_ERR(ep));
 		ret = -ENOENT;
 		goto error;
