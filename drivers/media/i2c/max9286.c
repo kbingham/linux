@@ -852,7 +852,7 @@ static int max9286_init(struct device *dev, void *data)
 {
 	struct max9286_device *max9286_dev;
 	struct i2c_client *client;
-	struct fwnode_handle *ep;
+	struct device_node *ep;
 	unsigned int i;
 	int ret;
 
@@ -911,13 +911,13 @@ static int max9286_init(struct device *dev, void *data)
 	if (ret)
 		goto err_regulator;
 
-	ep = fwnode_graph_get_endpoint_by_id(dev_fwnode(dev), 4, -1);
+	ep = of_graph_get_endpoint_by_regs(dev->of_node, MAX9286_SRC_PAD, -1);
 	if (!ep) {
 		dev_err(dev, "Unable to retrieve endpoint on \"port@4\"\n");
 		ret = -ENOENT;
 		goto err_regulator;
 	}
-	max9286_dev->sd.fwnode = ep;
+	max9286_dev->sd.fwnode = of_fwnode_handle(ep);
 
 	ret = v4l2_async_register_subdev(&max9286_dev->sd);
 	if (ret < 0) {
@@ -946,7 +946,7 @@ err_subdev_unregister:
 	v4l2_async_unregister_subdev(&max9286_dev->sd);
 	max9286_i2c_mux_close(max9286_dev);
 err_put_node:
-	fwnode_handle_put(ep);
+	of_node_put(ep);
 err_regulator:
 	regulator_disable(max9286_dev->regulator);
 	max9286_dev->poc_enabled = false;
