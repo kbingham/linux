@@ -24,6 +24,7 @@
 #include <media/v4l2-async.h>
 #include <media/v4l2-ctrls.h>
 #include <media/v4l2-device.h>
+#include <media/v4l2-fwnode.h>
 #include <media/v4l2-subdev.h>
 
 /* Register 0x00 */
@@ -157,6 +158,7 @@ struct max9286_device {
 	unsigned int nsources;
 	unsigned int source_mask;
 	unsigned int route_mask;
+	unsigned int csi2_data_lanes;
 	struct max9286_source sources[MAX9286_NUM_GMSL];
 	struct v4l2_async_subdev *subdevs[MAX9286_NUM_GMSL];
 	struct v4l2_async_notifier notifier;
@@ -868,15 +870,10 @@ static int max9286_setup(struct max9286_device *dev)
 	 */
 	max9286_write(dev, 0x15, MAX9286_VCTYPE | MAX9286_0X15_RESV);
 
-	/*
-	 * FIXME: once this driver will have an endpoint, retrieve
-	 * CSI lanes number from there, and set image format properly.
-	 * For now, it stays hardcoded to 4 lane only to comply with
-	 * current VIN settings.
-	 */
 	/* Enable CSI-2 Lane D0-D3 only, DBL mode, YUV422 8-bit. */
-	max9286_write(dev, 0x12, MAX9286_CSIDBL | MAX9286_DBL |
-		      MAX9286_CSILANECNT(4) | MAX9286_DATATYPE_YUV422_8BIT);
+	max9286_write(dev, 0x12, MAX9286_CSIDBL	| MAX9286_DBL |
+		      MAX9286_CSILANECNT(dev->csi2_data_lanes) |
+		      MAX9286_DATATYPE_YUV422_8BIT);
 
 	/* Automatic: FRAMESYNC taken from the slowest Link. */
 	max9286_write(dev, 0x01, MAX9286_FSYNCMODE_INT_HIZ |
@@ -1094,14 +1091,34 @@ static int max9286_parse_dt(struct max9286_device *max9286)
 		dev_dbg(dev, "Endpoint %pOF on port %d",
 			ep.local_node, ep.port);
 
-		/* Skip the source port. */
-		if (ep.port == MAX9286_NUM_GMSL)
-			continue;
-
 		if (ep.port > MAX9286_NUM_GMSL) {
 			dev_err(dev, "Invalid endpoint %s on port %d",
 				of_node_full_name(ep.local_node),
 				ep.port);
+
+			continue;
+		}
+
+		/* For the source endpoint just parse the bus configuration. */
+		if (ep.port == MAX9286_SRC_PAD) {
+			struct v4l2_fwnode_endpoint *vep;
+
+			vep = v4l2_fwnode_endpoint_alloc_parse(
+					of_fwnode_handle(ep_np));
+			if (IS_ERR(vep))
+				return PTR_ERR(vep);
+
+			if (vep->bus_type != V4L2_MBUS_CSI2) {
+				dev_err(dev,
+					"Media bus %u type not supported\n",
+					vep->bus_type);
+				v4l2_fwnode_endpoint_free(vep);
+				return -EINVAL;
+			}
+
+			max9286->csi2_data_lanes =
+				vep->bus.mipi_csi2.num_data_lanes;
+			v4l2_fwnode_endpoint_free(vep);
 
 			continue;
 		}
