@@ -121,6 +121,7 @@
 #define MAX9286_MASKLINK(n)		((n) << 0)
 
 #define MAX9286_NUM_GMSL		4
+#define MAX9286_N_SINKS			4
 #define MAX9286_N_PADS			5
 #define MAX9286_SRC_PAD			4
 
@@ -150,6 +151,8 @@ struct max9286_device {
 	unsigned int mux_channel;
 
 	struct v4l2_ctrl_handler ctrls;
+
+	struct v4l2_mbus_framefmt fmt[MAX9286_N_SINKS];
 
 	unsigned int nsources;
 	unsigned int source_mask;
@@ -621,20 +624,67 @@ static int max9286_enum_mbus_code(struct v4l2_subdev *sd,
 	return 0;
 }
 
-static int max9286_get_fmt(struct v4l2_subdev *sd,
+static struct v4l2_mbus_framefmt *
+max9286_get_pad_format(struct max9286_device *dev,
+		       struct v4l2_subdev_pad_config *cfg,
+		       unsigned int pad, u32 which)
+{
+	switch (which) {
+	case V4L2_SUBDEV_FORMAT_TRY:
+		return v4l2_subdev_get_try_format(&dev->sd, cfg, pad);
+	case V4L2_SUBDEV_FORMAT_ACTIVE:
+		return &dev->fmt[pad];
+	default:
+		return NULL;
+	}
+}
+
+static int max9286_set_fmt(struct v4l2_subdev *sd,
 			   struct v4l2_subdev_pad_config *cfg,
 			   struct v4l2_subdev_format *format)
 {
-	struct v4l2_mbus_framefmt *mf = &format->format;
+	struct max9286_device *dev = sd_to_max9286(sd);
+	struct v4l2_mbus_framefmt *cfg_fmt;
 
 	if (format->pad >= MAX9286_SRC_PAD)
 		return -EINVAL;
 
-	mf->width	= 1280;
-	mf->height	= 800;
-	mf->code	= MEDIA_BUS_FMT_UYVY8_2X8;
-	mf->colorspace	= V4L2_COLORSPACE_SMPTE170M;
-	mf->field	= V4L2_FIELD_NONE;
+	/* Refuse non YUV422 formats as we hardcode DT to 8 bit YUV422 */
+	switch (format->format.code) {
+	case MEDIA_BUS_FMT_UYVY8_2X8:
+	case MEDIA_BUS_FMT_VYUY8_2X8:
+	case MEDIA_BUS_FMT_YUYV8_2X8:
+	case MEDIA_BUS_FMT_YVYU8_2X8:
+		break;
+	default:
+		format->format.code = MEDIA_BUS_FMT_YUYV8_2X8;
+		break;
+	}
+
+	cfg_fmt = max9286_get_pad_format(dev, cfg, format->pad, format->which);
+	if (!cfg_fmt)
+		return -EINVAL;
+
+	*cfg_fmt = format->format;
+
+	return 0;
+}
+
+static int max9286_get_fmt(struct v4l2_subdev *sd,
+			   struct v4l2_subdev_pad_config *cfg,
+			   struct v4l2_subdev_format *format)
+{
+	struct max9286_device *dev = sd_to_max9286(sd);
+	struct v4l2_mbus_framefmt *cfg_fmt;
+
+	if (format->pad >= MAX9286_SRC_PAD)
+		return -EINVAL;
+
+	cfg_fmt = max9286_get_pad_format(dev, cfg, format->pad, format->which);
+	if (!cfg_fmt)
+		return -EINVAL;
+
+	format->format = *cfg_fmt;
 
 	return 0;
 }
@@ -729,7 +779,7 @@ static const struct v4l2_subdev_video_ops max9286_video_ops = {
 static const struct v4l2_subdev_pad_ops max9286_pad_ops = {
 	.enum_mbus_code = max9286_enum_mbus_code,
 	.get_fmt	= max9286_get_fmt,
-	.set_fmt	= max9286_get_fmt,
+	.set_fmt	= max9286_set_fmt,
 	.get_frame_desc = max9286_get_frame_desc,
 	.get_routing	= max9286_get_routing,
 	.set_routing	= max9286_set_routing,
@@ -739,6 +789,18 @@ static const struct v4l2_subdev_ops max9286_subdev_ops = {
 	.video		= &max9286_video_ops,
 	.pad		= &max9286_pad_ops,
 };
+
+static void max9286_init_format(struct v4l2_mbus_framefmt *fmt)
+{
+	fmt->width		= 1280;
+	fmt->height		= 800;
+	fmt->code		= MEDIA_BUS_FMT_UYVY8_2X8;
+	fmt->colorspace		= V4L2_COLORSPACE_SRGB;
+	fmt->field		= V4L2_FIELD_NONE;
+	fmt->ycbcr_enc		= V4L2_YCBCR_ENC_DEFAULT;
+	fmt->quantization	= V4L2_QUANTIZATION_DEFAULT;
+	fmt->xfer_func		= V4L2_XFER_FUNC_DEFAULT;
+}
 
 /* -----------------------------------------------------------------------------
  * Probe/Remove
@@ -1102,6 +1164,7 @@ static int max9286_probe(struct i2c_client *client,
 			 const struct i2c_device_id *did)
 {
 	struct max9286_device *dev;
+	unsigned int i;
 	int ret;
 
 	dev = kzalloc(sizeof(*dev), GFP_KERNEL);
@@ -1110,6 +1173,9 @@ static int max9286_probe(struct i2c_client *client,
 
 	dev->client = client;
 	i2c_set_clientdata(client, dev);
+
+	for (i = 0; i < MAX9286_N_SINKS; i++)
+		max9286_init_format(&dev->fmt[i]);
 
 	ret = max9286_parse_dt(dev);
 	if (ret)
