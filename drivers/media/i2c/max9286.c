@@ -316,7 +316,7 @@ static int max9286_debugfs_init(struct max9286_device *dev)
 	/*
 	 * dentry pointers are discarded, and remove_recursive is used to
 	 * cleanup the tree. DEBUGFS_RO_ATTR defines the file operations with
-	 * the _fops extension to the function name
+	 * the _fops extension to the function name.
 	 */
 	debugfs_create_file("info", 0444, dev->dbgroot, dev,
 			    &max9286_debugfs_info_fops);
@@ -381,7 +381,7 @@ static int max9286_i2c_mux_select(struct i2c_mux_core *muxc, u32 chan)
 
 	/*
 	 * We must sleep after any change to the forward or reverse channel
-	 * configuration
+	 * configuration.
 	 */
 	usleep_range(3000, 5000);
 
@@ -524,7 +524,7 @@ static int max9286_check_video_links(struct max9286_device *dev)
 		return -EIO;
 	}
 
-	/* Make sure all enabled links are locked (4ms max).*/
+	/* Make sure all enabled links are locked (4ms max). */
 	for (i = 0; i < 10; i++) {
 		ret = max9286_read(dev, 0x27);
 		if (ret < 0)
@@ -556,7 +556,7 @@ static int max9286_s_stream(struct v4l2_subdev *sd, int enable)
 		/* FIXME: See note in max9286_i2c_mux_select() */
 		dev->streaming = 1;
 
-		/* Start all cameras */
+		/* Start all cameras. */
 		for_each_source(dev, source) {
 			ret = v4l2_subdev_call(source->sd, video, s_stream, 1);
 			if (ret)
@@ -591,14 +591,14 @@ static int max9286_s_stream(struct v4l2_subdev *sd, int enable)
 
 		/*
 		 * Enable CSI output, VC set according to link number.
-		 * Bit 7 must be set (chip manual says it's 0 and reserved)
+		 * Bit 7 must be set (chip manual says it's 0 and reserved).
 		 */
 		max9286_write(dev, 0x15, 0x80 | MAX9286_VCTYPE |
 			      MAX9286_CSIOUTEN | MAX9286_0X15_RESV);
 	} else {
 		max9286_write(dev, 0x15, MAX9286_VCTYPE | MAX9286_0X15_RESV);
 
-		/* Stop all cameras */
+		/* Stop all cameras. */
 		for_each_source(dev, source)
 			v4l2_subdev_call(source->sd, video, s_stream, 0);
 
@@ -781,7 +781,7 @@ static int max9286_setup(struct max9286_device *dev)
 	max9286_configure_i2c(dev, true);
 
 	/*
-	 * Reverse channel setup
+	 * Reverse channel setup.
 	 *
 	 * - Enable custom reverse channel configuration (through register 0x3f)
 	 *   and set the first pulse length to 35 clock cycles.
@@ -821,15 +821,15 @@ static int max9286_setup(struct max9286_device *dev)
 	 * For now, it stays hardcoded to 4 lane only to comply with
 	 * current VIN settings.
 	 */
-	/* Enable CSI-2 Lane D0-D3 only, DBL mode, YUV422 8-bit*/
+	/* Enable CSI-2 Lane D0-D3 only, DBL mode, YUV422 8-bit. */
 	max9286_write(dev, 0x12, MAX9286_CSIDBL | MAX9286_DBL |
 		      MAX9286_CSILANECNT(4) | MAX9286_DATATYPE_YUV422_8BIT);
 
-	/* Automatic: FRAMESYNC taken from the slowest Link */
+	/* Automatic: FRAMESYNC taken from the slowest Link. */
 	max9286_write(dev, 0x01, MAX9286_FSYNCMODE_INT_HIZ |
 		      MAX9286_FSYNCMETH_AUTO);
 
-	/* Enable HS/VS encoding, use D14/15 for HS/VS, invert VS */
+	/* Enable HS/VS encoding, use D14/15 for HS/VS, invert VS. */
 	max9286_write(dev, 0x0c, MAX9286_HVEN | MAX9286_INVVS |
 		      MAX9286_HVSRC_D14);
 
@@ -856,15 +856,14 @@ static int max9286_init(struct device *dev, void *data)
 	unsigned int i;
 	int ret;
 
-	if (!dev->of_node ||
-	    !of_match_node(max9286_dt_ids, dev->of_node))
-		/* skip non-max9286 devices */
+	/* Skip non-max9286 devices. */
+	if (!dev->of_node || !of_match_node(max9286_dt_ids, dev->of_node))
 		return 0;
 
 	client = to_i2c_client(dev);
 	max9286_dev = i2c_get_clientdata(client);
 
-	/* Enable the bus power */
+	/* Enable the bus power. */
 	ret = regulator_enable(max9286_dev->regulator);
 	if (ret < 0) {
 		dev_err(&client->dev, "Unable to turn PoC on\n");
@@ -933,11 +932,11 @@ static int max9286_init(struct device *dev, void *data)
 
 	/*
 	 * Re-configure I2C with local acknowledge disabled after cameras
-	 * have probed
+	 * have probed.
 	 */
 	max9286_configure_i2c(max9286_dev, false);
 
-	/* Leave the mux channels disabled until they are selected */
+	/* Leave the mux channels disabled until they are selected. */
 	max9286_i2c_mux_close(max9286_dev);
 
 	return 0;
@@ -962,7 +961,7 @@ static int max9286_is_bound(struct device *dev, void *data)
 	if (dev == this)
 		return 0;
 
-	/* skip non-max9286 devices */
+	/* Skip non-max9286 devices. */
 	if (!dev->of_node || !of_match_node(max9286_dt_ids, dev->of_node))
 		return 0;
 
@@ -1023,7 +1022,6 @@ static void max9286_cleanup_dt(struct max9286_device *max9286)
 	 */
 	v4l2_async_notifier_unregister(&max9286->notifier);
 
-	/* Release our FWNode references */
 	for_each_source(max9286, source) {
 		fwnode_handle_put(source->fwnode);
 		source->fwnode = NULL;
@@ -1043,7 +1041,7 @@ static int max9286_parse_dt(struct max9286_device *max9286)
 		dev_dbg(dev, "Endpoint %pOF on port %d",
 			ep.local_node, ep.port);
 
-		/* Skip the source port */
+		/* Skip the source port. */
 		if (ep.port == MAX9286_NUM_GMSL)
 			continue;
 
@@ -1055,7 +1053,7 @@ static int max9286_parse_dt(struct max9286_device *max9286)
 			continue;
 		}
 
-		/* Skip if the corresponding GMSL link is unavailable */
+		/* Skip if the corresponding GMSL link is unavailable. */
 		if (max9286_check_i2c_bus_by_id(dev, ep.port))
 			continue;
 
@@ -1151,7 +1149,7 @@ static int max9286_probe(struct i2c_client *client,
 	 */
 	max9286_configure_i2c(dev, false);
 
-	/* Add any userspace support before we return early */
+	/* Add any userspace support before we return early. */
 	max9286_debugfs_init(dev);
 
 	ret = device_for_each_child(client->dev.parent, &client->dev,
@@ -1166,7 +1164,7 @@ static int max9286_probe(struct i2c_client *client,
 	if (ret < 0)
 		goto err_regulator;
 
-	/* Leave the mux channels disabled until they are selected */
+	/* Leave the mux channels disabled until they are selected. */
 	max9286_i2c_mux_close(dev);
 
 	return 0;
