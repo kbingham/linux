@@ -804,6 +804,23 @@ static void max9286_init_format(struct v4l2_mbus_framefmt *fmt)
 	fmt->xfer_func		= V4L2_XFER_FUNC_DEFAULT;
 }
 
+static int max9286_open(struct v4l2_subdev *subdev, struct v4l2_subdev_fh *fh)
+{
+	struct v4l2_mbus_framefmt *format;
+	unsigned int i;
+
+	for (i = 0; i < MAX9286_N_SINKS; i++) {
+		format = v4l2_subdev_get_try_format(subdev, fh->pad, i);
+		max9286_init_format(format);
+	}
+
+	return 0;
+}
+
+static const struct v4l2_subdev_internal_ops max9286_subdev_internal_ops = {
+	.open = max9286_open,
+};
+
 /* -----------------------------------------------------------------------------
  * Probe/Remove
  */
@@ -936,6 +953,7 @@ static int max9286_init(struct device *dev, void *data)
 	usleep_range(7000000, 8000000);
 
 	v4l2_i2c_subdev_init(&max9286_dev->sd, client, &max9286_subdev_ops);
+	max9286_dev->sd.internal_ops = &max9286_subdev_internal_ops;
 	max9286_dev->sd.flags = V4L2_SUBDEV_FL_HAS_DEVNODE;
 
 	v4l2_ctrl_handler_init(&max9286_dev->ctrls, 1);
